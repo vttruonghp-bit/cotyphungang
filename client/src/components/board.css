@@ -460,9 +460,10 @@
 
 /* Hành động ngữ cảnh nổi sát ô vừa đến. */
 .tile { overflow: visible; }
+/* Popover phải nổi trên panel trung tâm để luôn bấm được. */
 .tile-action-pop {
-  position:absolute;
-  z-index:40;
+  position: absolute;
+  z-index: 80;
   display:flex;
   gap:4px;
   padding:4px;
@@ -471,10 +472,10 @@
   box-shadow:0 6px 18px rgb(0 0 0 / 28%);
   pointer-events:auto;
 }
-.side-bottom .tile-action-pop { bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); }
-.side-top .tile-action-pop { top:calc(100% + 5px); left:50%; transform:translateX(-50%); }
-.side-left .tile-action-pop { left:calc(100% + 5px); top:50%; transform:translateY(-50%); }
-.side-right .tile-action-pop { right:calc(100% + 5px); top:50%; transform:translateY(-50%); }
+.side-bottom .tile-action-pop { bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); }
+.side-top .tile-action-pop { top: calc(100% + 5px); left: 50%; transform: translateX(-50%); }
+.side-left .tile-action-pop { left: calc(100% + 5px); top: 50%; transform: translateY(-50%); }
+.side-right .tile-action-pop { right: calc(100% + 5px); top: 50%; transform: translateY(-50%); }
 .tile-action-btn {
   min-height:34px;
   padding:6px 9px;
