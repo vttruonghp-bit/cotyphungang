@@ -975,7 +975,7 @@ describe('hết giờ: đổ, tù, Metro (mục 11)', () => {
   it('hết giờ ở tù: thử đổ đôi, không ra thì vẫn ở tù (không trả 50Đ)', () => {
     const s = act(aTrongTu(), { type: 'timeout' }, [1, 2]);
     expect(player(s, 'a')).toMatchObject({ inJail: true, cash: 500, jailAttempts: 1 });
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
   });
 
   it('hết giờ ở tù khi có thẻ: vẫn thử đổ đôi, không tự dùng thẻ ở lần 1', () => {
@@ -989,17 +989,16 @@ describe('hết giờ: đổ, tù, Metro (mục 11)', () => {
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 18, cash: 500 });
   });
 
-  it('hết giờ lần thử 3 thất bại, có thẻ: dùng thẻ ra tù', () => {
-    const s0 = giuTheRaTu(truot(aTrongTu(), 2), 'a');
-    // Một lần hết giờ: tự đổ, trượt lần 3, dùng luôn thẻ ra tù rồi đi theo số vừa đổ.
-    const s = act(s0, { type: 'timeout' }, [1, 2]);
-    expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 500 });
-    expect(coTheRaTu(s, 'a')).toBe(false);
-    expect(s.decks.community).toContain('community-jail-free');
+  it('hết giờ lần thử 3 thất bại: chuyển sang bước bắt buộc chọn cách ra tù', () => {
+    const s = act(giuTheRaTu(truot(aTrongTu(), 2), 'a'), { type: 'timeout' }, [1, 2]);
+    expect(player(s, 'a')).toMatchObject({ inJail: true, position: 10, cash: 500 });
+    expect(coTheRaTu(s, 'a')).toBe(true);
+    expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
   });
 
-  it('hết giờ lần thử 3 thất bại, không thẻ: trả 50Đ', () => {
-    const s = act(truot(aTrongTu(), 2), { type: 'timeout' }, [1, 2]);
+  it('hết giờ ở bước bắt buộc ra tù, không thẻ: tự trả 50Đ', () => {
+    let s = act(truot(aTrongTu(), 2), { type: 'timeout' }, [1, 2]);
+    s = act(s, { type: 'timeout' });
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 450 });
   });
 
