@@ -358,6 +358,7 @@ export function GameScreen({
       <main className="land game-screen" style={accentStyle}>
         {/* Khi màn phụ đang mở, màn chính phía sau không bấm hay đọc tới được. */}
         <div className="land-main" inert={sheet !== null}>
+          <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
           <div className="land-stage">
             <div className="iso">
               <Board
@@ -417,7 +418,6 @@ export function GameScreen({
                 </button>
               </div>
             </CenterPanel>
-            <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
           </div>
 
           <aside className="land-side">
@@ -514,24 +514,25 @@ interface PlayerFramesProps {
   offline: ReadonlySet<string>;
 }
 
-const SLOTS = ['tl', 'tr', 'br', 'bl', 'tl', 'tr'] as const;
-
-/** Khung người chơi ở 4 góc màn (ván 5–6 người: thêm 1 khung ở 2 góc trên). */
+/** Toàn bộ người chơi nằm trong một cột riêng bên trái, không đè lên bàn cờ. */
 function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
   const cur = game.players[game.current]!;
   return (
-    <>
-      {(['tl', 'tr', 'br', 'bl'] as const).map((slot) => (
-        <div key={slot} className={`frames frames-${slot}`}>
-          {game.players.map((p, i) => {
-            if (SLOTS[i] !== slot) return null;
+    <aside className="player-rail" aria-label="Người chơi">
+      {game.players.map((p) => {
             const c = colorOf(p.color);
             const props = game.tiles.filter(
               (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
             );
             const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
             const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
-            return (
+        const c = colorOf(p.color);
+        const props = game.tiles.filter(
+          (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
+        );
+        const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
+        const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
+        return (
               <div
                 key={p.id}
                 className={`frame${p.id === cur.id ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
@@ -562,10 +563,8 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
                 </span>
               </div>
             );
-          })}
-        </div>
-      ))}
-    </>
+      })}
+    </aside>
   );
 }
 
