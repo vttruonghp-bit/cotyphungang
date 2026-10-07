@@ -1267,24 +1267,22 @@ describe('ở tù: thêm trường hợp biên (mục 6)', () => {
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
   });
 
-  it('hai người cùng ở tù: số lần thử của mỗi người tính riêng', () => {
-    let s = roll(aTrongTu(), 1, 2); // a trượt lần 1
-    setPlayer(s, 'b', { position: 25 });
-    s = roll(s, 2, 3); // b vào tù
-    s = roll(s, 1, 2); // a trượt lần 2
-    s = roll(s, 1, 2); // b trượt lần 1
-    expect(player(s, 'a').jailAttempts).toBe(2);
-    expect(player(s, 'b').jailAttempts).toBe(1);
-    s = roll(s, 1, 2); // a lần 3: trả 50Đ, đi tới 13
-    expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 450 });
-    s = act(s, { type: 'declineBuy', playerId: 'a' });
-    expect(s.pending).toEqual({ type: 'jail', playerId: 'b' });
-    expect(player(s, 'b')).toMatchObject({ inJail: true, jailAttempts: 1, cash: 500 });
+  it('ba lần thử tù của một người không cho người khác chen lượt', () => {
+    let s = roll(aTrongTu(), 1, 2);
+    expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
+    reject(s, { type: 'roll', playerId: 'b' }, [2, 3]);
+    s = roll(s, 1, 2);
+    expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
+    reject(s, { type: 'roll', playerId: 'b' }, [2, 3]);
+    s = roll(s, 1, 2);
+    expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
+    expect(player(s, 'a').jailAttempts).toBe(3);
   });
 
   it('lần 3 trả 50Đ rồi tới đất người khác: trả cả tiền thuê', () => {
     const s0 = own(truot(aTrongTu(), 2), 'b', 13);
-    let s = roll(s0, 1, 2); // 13 Hoàng Thành, thuê 10Đ
+    let s = roll(s0, 1, 2); // lần 3 trượt, phải chọn trả 50Đ
+    s = act(s, { type: 'payBail', playerId: 'a' });
     expect(cash(s, 'a')).toBe(450);
     expect(s.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 10, reason: 'rent' });
     s = act(s, { type: 'pay', playerId: 'a' });
