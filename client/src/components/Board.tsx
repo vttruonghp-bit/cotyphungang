@@ -168,7 +168,14 @@ function Tokens({
   );
 }
 
-export function Board({ game, focus, onTileClick, children, onWalkChange, tileAction }: BoardProps) {
+export function Board({
+  game,
+  focus,
+  onTileClick,
+  children,
+  onWalkChange,
+  tileAction,
+}: BoardProps) {
   const walk = useWalk(game, onWalkChange);
   const currentId = game.players[game.current]?.id;
   const positionOf = (p: PlayerState) => (walk?.playerId === p.id ? walk.at : p.position);
