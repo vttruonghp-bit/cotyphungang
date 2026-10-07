@@ -643,12 +643,9 @@ function timeout(s: GameState, rng: Rng): void {
     case 'roll':
       return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
     case 'jail':
-      // Thử đổ đôi; lần thứ 3 thất bại mà có thẻ thì dùng thẻ luôn, không chờ thêm 60 giây.
-      handle(s, { type: 'roll', playerId: pd.playerId }, rng);
-      if (s.pending.type === 'jailRelease' && s.pending.playerId === pd.playerId) {
-        handle(s, { type: 'useJailCard', playerId: pd.playerId }, rng);
-      }
-      return;
+      // Hết giờ ở một lần thử: máy chủ tự gieo. Nếu đây là lần 3 thất bại,
+      // dừng ở bước jailRelease để người chơi còn quyền chọn Trả 50 / Dùng thẻ.
+      return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
     case 'jailRelease': {
       const p = getPlayer(s, pd.playerId);
       return handle(
