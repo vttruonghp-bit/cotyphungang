@@ -883,3 +883,79 @@
 .land {
   background: #dcecf4 url('/assets/nen-sang.jpg') center / cover;
 }
+
+/* v4: 1/3 trên ô trung tâm chỉ dành cho nhận diện lượt + hai xúc xắc. */
+.land .center {
+  min-height: min(440px, 70cqh);
+}
+.turn-hero {
+  min-height: 33%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border: 3px solid var(--accent);
+  border-width: 0 0 3px;
+  background: color-mix(in srgb, var(--accent-soft) 82%, white);
+}
+.turn-hero-name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.turn-hero-name > span {
+  color: color-mix(in srgb, var(--accent) 82%, #111);
+  font-size: clamp(10px, 1.1cqw, 14px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+.turn-hero-name > strong {
+  overflow: hidden;
+  color: var(--accent);
+  font-size: clamp(30px, 4.3cqw, 54px);
+  font-weight: 1000;
+  line-height: 0.98;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 0 rgb(255 255 255 / 80%);
+  white-space: nowrap;
+}
+.turn-hero-name > small {
+  margin-top: 4px;
+  font-weight: 800;
+}
+.turn-hero-dice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft) 68%, white);
+}
+.land .center-head {
+  border: 2px solid var(--accent);
+  border-width: 0 0 2px;
+}
+.land .center-body {
+  border-inline: 2px solid color-mix(in srgb, var(--accent) 82%, transparent);
+}
+
+/* Mỗi thẻ người chơi có nền màu riêng rõ ràng; người đang chơi nổi bật hơn. */
+.player-rail .frame {
+  border-width: 3px;
+  background: color-mix(in srgb, var(--pc) 24%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc) 36%, transparent);
+}
+.player-rail .frame.is-turn {
+  background: color-mix(in srgb, var(--pc) 38%, white);
+  box-shadow:
+    0 0 16px 3px color-mix(in srgb, var(--pc) 62%, transparent),
+    inset 0 0 0 2px rgb(255 255 255 / 70%);
+}
+.player-rail .frame-name {
+  color: color-mix(in srgb, var(--pc) 82%, #111);
+  font-size: 13px;
+  font-weight: 950;
+}

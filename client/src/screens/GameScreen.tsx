@@ -722,6 +722,20 @@ function CenterPanel({
 
   return (
     <div className="center">
+      <div className="turn-hero">
+        <div className="turn-hero-name">
+          <span>{isTurn ? 'LƯỢT CỦA' : 'ĐANG CHỜ'}</span>
+          <strong>{me.name}</strong>
+          {away && <small>mất kết nối</small>}
+        </div>
+        <div className="turn-hero-dice">
+          {dice && !viewing ? (
+            <Dice values={dice} color={diceColor} size={58} rolling={rolling} key={rollKey} />
+          ) : (
+            <Dice values={[1, 1]} color={diceColor} size={58} />
+          )}
+        </div>
+      </div>
       <div
         className="center-head"
         style={{
@@ -729,15 +743,7 @@ function CenterPanel({
         }}
       >
         <span className="center-eyebrow">
-          {viewing ? 'Ô đang xem · chạm lại để đóng' : 'Ô hiện tại'} ·{' '}
-          {mine
-            ? isTurn
-              ? 'lượt của bạn'
-              : 'ván chờ bạn'
-            : isTurn
-              ? `lượt ${me.name}`
-              : `chờ ${me.name}`}
-          {away && ' · mất kết nối'}
+          {viewing ? 'Ô đang xem · chạm lại để đóng' : 'Ô hiện tại'}
         </span>
         <h2 className="center-tile-name">{t.name}</h2>
       </div>
@@ -788,9 +794,6 @@ function CenterPanel({
         )}
         {!arrivalOnly && (
           <div className="center-row">
-            {dice && !viewing && (
-              <Dice values={dice} color={diceColor} size={26} rolling={rolling} key={rollKey} />
-            )}
             {after !== null && (
               <span className="center-after">
                 Tiền {you.name}: {money(me.cash)} →{' '}
