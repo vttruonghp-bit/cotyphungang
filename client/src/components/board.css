@@ -520,3 +520,18 @@
   background: #fff;
   color: #172033;
 }
+
+/* Full center: contextual actions must render above the entire center layer. */
+.board-center {
+  position: relative;
+  z-index: 1;
+}
+
+.tile:has(.tile-action-pop) {
+  position: relative;
+  z-index: 1000;
+}
+
+.tile-action-pop {
+  z-index: 1001;
+}
