@@ -365,6 +365,24 @@ export function GameScreen({
               <Board
                 game={game}
                 focus={viewTile ?? waiter.position}
+                tileAction={
+                  !motionLocked && myMove && main && ['buy', 'upgrade', 'pay'].includes(pd.type)
+                    ? {
+                        tile: waiter.position,
+                        primary: (
+                          <button type="button" className={`tile-action-btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>
+                            {main.label}
+                          </button>
+                        ),
+                        secondary:
+                          pd.type === 'buy' || pd.type === 'upgrade' ? (
+                            <button type="button" className="tile-action-btn tile-action-skip" disabled={busy > 0} onClick={secondary.run}>
+                              {secondary.label}
+                            </button>
+                          ) : undefined,
+                      }
+                    : null
+                }
                 onTileClick={
                   motionLocked ? undefined : (i) => setViewTile((v) => (v === i ? null : i))
                 }
@@ -391,7 +409,7 @@ export function GameScreen({
               arrivalOnly={arrivalHold}
               heroBottom={waiter.position >= 11 && waiter.position <= 30}
             >
-              <div className="btn-row action-bar">
+              <div className={`btn-row action-bar${myMove && main && ['buy', 'upgrade', 'pay'].includes(pd.type) ? ' action-moved-to-tile' : ''}`}>
                 {main ? (
                   <button
                     type="button"
