@@ -325,9 +325,8 @@ function handle(s: GameState, a: Action, rng: Rng): void {
         s.pending = { type: 'roll', playerId: p.id };
         return;
       }
-      if (a.type === 'payBail' && p.cash < JAIL_BAIL) {
-        throw new RuleError(`Cần ${JAIL_BAIL}Đ để bảo lãnh, hãy dùng thẻ ra tù`);
-      }
+      // Ở bước bắt buộc ra tù, chọn Trả 50 vẫn hợp lệ khi tiền mặt chưa đủ:
+      // bailStep sẽ đưa người chơi vào luồng xử lý nợ/thanh lý tài sản hiện có.
       const after: Step = { type: 'moveAfterJail', playerId: p.id, steps: pd.steps };
       prepend(s, a.type === 'payBail' ? [bailStep(p), after] : [after]);
       return advance(s, rng);
