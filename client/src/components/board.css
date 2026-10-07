@@ -338,62 +338,88 @@
   }
 }
 
-/* ---- Bàn cờ hình thoi (màn ngang): bàn vuông xoay 45° rồi ép dọc --iso ---- */
+/* Màn ngang mới: giữ nguyên bàn cờ 11×11 nhìn thẳng, không xoay hình thoi. */
 .board {
-  --iso: 0.58;
   --corner: 1.3fr;
   --corner-row: 1.3fr;
+  --b: min(100cqw, 100cqh);
+  width: 100%;
+  height: 100%;
   aspect-ratio: 1;
-  background: rgb(20 28 48 / 70%);
-  box-shadow: 0 0 0 3px rgb(255 214 120 / 55%);
-  border-radius: 6px;
+  border: 3px solid rgb(255 214 120 / 72%);
+  border-radius: 12px;
+  background: rgb(18 27 45 / 82%);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 42%);
+  overflow: visible;
 }
 
 .tile {
-  overflow: visible;
-  border-radius: 2px;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
+  overflow: hidden;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 90ms ease-out, filter 120ms ease-out;
+  will-change: transform;
 }
 
-.tile[style*='--owner'] {
-  background: var(--owner-soft);
+.tile-stomp {
+  z-index: 12;
+  animation: tile-stomp 180ms cubic-bezier(0.18, 0.8, 0.25, 1);
+  filter: brightness(1.08);
 }
 
-/* Nội dung đứng thẳng trên ô: xoay ngược bàn cờ */
+@keyframes tile-stomp {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .tile-up {
-  position: absolute;
-  left: 50%;
-  top: 50%;
+  position: relative;
   z-index: 2;
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
-  width: 150%;
-  transform: translate(-50%, -50%) rotate(-45deg) scaleY(calc(1 / var(--iso)));
-  font-size: calc(var(--b) * 0.0165);
-  pointer-events: none;
-}
-
-.tile-up .tile-name {
-  margin: 0;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
 }
 
 .tile-price {
-  font-size: 0.85em;
+  font-size: 0.82em;
   font-weight: 800;
-  opacity: 0.75;
+  opacity: 0.78;
 }
 
 .tile-house {
   position: absolute;
-  bottom: 70%;
-  width: calc(var(--b) * 0.05);
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 50%));
+  top: calc(var(--strip) + 2px);
+  right: 2px;
+  width: 42%;
+  max-height: 34%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 45%));
 }
 
 .tile-up .tokens {
-  position: absolute;
-  bottom: 40%;
-  min-height: 0;
-  --tk: calc(var(--b) * 0.036);
+  margin-top: auto;
+}
+
+.board-center {
+  background:
+    linear-gradient(rgb(8 15 28 / 48%), rgb(8 15 28 / 70%)),
+    url('/assets/trung-tam.jpg') center / cover;
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-stomp {
+    animation: none;
+  }
 }

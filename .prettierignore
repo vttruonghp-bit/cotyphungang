@@ -1,3 +1,5 @@
 node_modules
 dist
 package-lock.json
+client/src/components/board.css
+client/src/screens/GameScreen.tsx
