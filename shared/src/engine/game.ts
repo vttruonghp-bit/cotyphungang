@@ -325,9 +325,8 @@ function handle(s: GameState, a: Action, rng: Rng): void {
         s.pending = { type: 'roll', playerId: p.id };
         return;
       }
-      if (a.type === 'payBail' && p.cash < JAIL_BAIL) {
-        throw new RuleError(`Cần ${JAIL_BAIL}Đ để bảo lãnh, hãy dùng thẻ ra tù`);
-      }
+      // Ở bước bắt buộc ra tù, chọn Trả 50 vẫn hợp lệ khi tiền mặt chưa đủ:
+      // bailStep sẽ đưa người chơi vào luồng xử lý nợ/thanh lý tài sản hiện có.
       const after: Step = { type: 'moveAfterJail', playerId: p.id, steps: pd.steps };
       prepend(s, a.type === 'payBail' ? [bailStep(p), after] : [after]);
       return advance(s, rng);
@@ -482,13 +481,16 @@ function doJailRoll(s: GameState, rng: Rng) {
     prepend(s, [{ type: 'moveAfterJail', playerId: p.id, steps: d1 + d2 }]);
     return advance(s, rng);
   }
-  if (p.jailAttempts < MAX_JAIL_TURNS) return advance(s, rng);
-  if (hasCard(p, 'jailFree')) {
-    s.pending = { type: 'jailRelease', playerId: p.id, steps: d1 + d2 };
+  if (p.jailAttempts < MAX_JAIL_TURNS) {
+    // Ba lần thử đôi là một chuỗi liên tục trong cùng lượt:
+    // trượt lần 1/2 thì hỏi lại chính người này, không chuyển sang người kế tiếp.
+    s.pending = { type: 'jail', playerId: p.id };
     return;
   }
-  prepend(s, [bailStep(p), { type: 'moveAfterJail', playerId: p.id, steps: d1 + d2 }]);
-  return advance(s, rng);
+  // Trượt lần 3: không được thử nữa. Người chơi phải chọn trả 50Đ
+  // hoặc dùng thẻ ra tù (nếu có), rồi đi theo tổng xúc xắc của lần thử thứ 3.
+  s.pending = { type: 'jailRelease', playerId: p.id, steps: d1 + d2 };
+  return;
 }
 
 const HIGHWAY_STEPS = (() => {
@@ -640,14 +642,19 @@ function timeout(s: GameState, rng: Rng): void {
     case 'roll':
       return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
     case 'jail':
-      // Thử đổ đôi; lần thứ 3 thất bại mà có thẻ thì dùng thẻ luôn, không chờ thêm 60 giây.
-      handle(s, { type: 'roll', playerId: pd.playerId }, rng);
-      if (s.pending.type === 'jailRelease' && s.pending.playerId === pd.playerId) {
-        handle(s, { type: 'useJailCard', playerId: pd.playerId }, rng);
-      }
-      return;
-    case 'jailRelease':
-      return handle(s, { type: 'useJailCard', playerId: pd.playerId }, rng);
+      // Hết giờ ở một lần thử: máy chủ tự gieo. Nếu đây là lần 3 thất bại,
+      // dừng ở bước jailRelease để người chơi còn quyền chọn Trả 50 / Dùng thẻ.
+      return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
+    case 'jailRelease': {
+      const p = getPlayer(s, pd.playerId);
+      return handle(
+        s,
+        hasCard(p, 'jailFree')
+          ? { type: 'useJailCard', playerId: pd.playerId }
+          : { type: 'payBail', playerId: pd.playerId },
+        rng,
+      );
+    }
     case 'buy':
       return handle(s, { type: 'declineBuy', playerId: pd.playerId }, rng);
     case 'upgrade':

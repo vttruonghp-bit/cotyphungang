@@ -103,10 +103,13 @@ export function chooseAction(s: GameState, rng: Rng): Action {
       }
       return { type: 'roll', playerId: id };
     }
-    case 'jailRelease':
-      return rng.int(0, 1) && me.cash >= JAIL_BAIL
+    case 'jailRelease': {
+      const hasJailCard = me.heldCards.some((c) => c.kind === 'jailFree');
+      if (!hasJailCard) return { type: 'payBail', playerId: id };
+      return rng.int(0, 1)
         ? { type: 'payBail', playerId: id }
         : { type: 'useJailCard', playerId: id };
+    }
     case 'buy':
       return { type: rng.int(1, 10) <= 8 ? 'buy' : 'declineBuy', playerId: id };
     case 'upgrade':

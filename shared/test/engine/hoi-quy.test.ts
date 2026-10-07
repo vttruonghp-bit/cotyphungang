@@ -28,10 +28,9 @@ describe('các lỗi đã sửa ở Bước 1', () => {
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
   });
 
-  it('lần thử thứ 3 trượt, có thẻ mà thiếu 50Đ: không chọn trả được, dùng thẻ thì ra', () => {
+  it('lần thử thứ 3 trượt, có thẻ mà thiếu 50Đ: vẫn được chọn thẻ để ra tù', () => {
     const s = roll(aTrongTuLan3(40), 1, 2);
     expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
-    reject(s, { type: 'payBail', playerId: 'a' });
     const s2 = act(s, { type: 'useJailCard', playerId: 'a' });
     expect(player(s2, 'a')).toMatchObject({ inJail: false, position: 13, cash: 40 });
   });
