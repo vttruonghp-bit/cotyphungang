@@ -879,11 +879,12 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
     expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
   });
 
-  it('lần 3 đủ tiền sau khi quản lý tài sản: trả 50Đ rồi đi theo tổng', () => {
+  it('lần 3 chọn trả 50Đ khi thiếu tiền: vào xử lý nợ rồi thanh lý tài sản', () => {
     let s = own(setPlayer(truot(aTrongTu(), 2), 'a', { cash: 30 }), 'a', 39);
     s = roll(s, 1, 2);
-    s = act(s, { type: 'manage', playerId: 'a', ops: [{ op: 'mortgage', tile: 39 }] });
     s = act(s, { type: 'payBail', playerId: 'a' });
+    s = act(s, { type: 'manage', playerId: 'a', ops: [{ op: 'mortgage', tile: 39 }] });
+    if (s.pending.type === 'pay') s = act(s, { type: 'pay', playerId: 'a' });
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13 });
     expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
   });
@@ -1120,8 +1121,8 @@ describe('chuyển lượt theo vòng ghế', () => {
     let s = setPlayer(newGame(3), 'b', { position: 10, inJail: true });
     s = luotNhanh(s); // a
     expect(s.pending).toEqual({ type: 'jail', playerId: 'b' });
-    s = roll(s, 1, 2); // b trượt
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'c' });
+    s = roll(s, 1, 2); // b trượt lần 1
+    expect(s.pending).toEqual({ type: 'jail', playerId: 'b' });
   });
 
   it('sau lượt có đổ đôi, người kế tiếp theo ghế mới tới lượt', () => {
