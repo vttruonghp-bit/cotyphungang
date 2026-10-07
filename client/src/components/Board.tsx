@@ -20,10 +20,33 @@ interface BoardProps {
   onTileClick?: (index: number) => void;
   /** Nội dung ô trung tâm 9×9. */
   children?: ReactNode;
+  /** Báo cho màn chính biết quân đang chạy để khóa thao tác. */
+  onWalkChange?: (walking: boolean, destination: number | null) => void;
 }
 
-/** Thời gian quân đi qua mỗi ô khi vừa đổ xúc xắc. */
-const STEP_MS = 110;
+/** Nhịp đi thích ứng: hành trình ngắn nhanh, hành trình dài tối đa khoảng 4 giây. */
+const walkDuration = (steps: number) => {
+  if (steps <= 1) return 900;
+  if (steps <= 3) return 1200 + (steps - 1) * 300;
+  if (steps <= 6) return 2000 + (steps - 4) * 350;
+  if (steps <= 9) return 3000 + (steps - 7) * 250;
+  return Math.min(4000, 3600 + (steps - 10) * 200);
+};
+
+/** Ba ô cuối chiếm nhiều thời gian hơn để tạo cảm giác giảm tốc. */
+function stepDelays(steps: number): number[] {
+  if (steps <= 0) return [];
+  const total = walkDuration(steps);
+  const weights = Array.from({ length: steps }, (_, i) => {
+    const left = steps - i;
+    if (left === 1) return 3.2;
+    if (left === 2) return 2.2;
+    if (left === 3) return 1.55;
+    return 0.72 + i * 0.035;
+  });
+  const sum = weights.reduce((a, b) => a + b, 0);
+  return weights.map((w) => Math.round((total * w) / sum));
+}
 
 function cornerSide(tile: Tile): string {
   const { row, col } = gridPosition(tile.index);
@@ -78,17 +101,25 @@ const reducedMotion = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
 /** Quân vừa đổ xúc xắc đi từng ô tới chỗ mới; trả về ô đang vẽ của quân đó trong lúc đi. */
-function useWalk(game: GameState): { playerId: string; at: number } | null {
+function useWalk(
+  game: GameState,
+  onWalkChange?: (walking: boolean, destination: number | null) => void,
+): { playerId: string; at: number; stomp: number } | null {
   const walk = useMemo(() => (reducedMotion() ? null : walkOf(game)), [game]);
   const [progress, setProgress] = useState({ game, step: 0 });
   const step = progress.game === game ? progress.step : 0;
   const walking = walk !== null && step < walk.steps;
+  const delays = useMemo(() => (walk ? stepDelays(walk.steps) : []), [walk]);
   useEffect(() => {
+    if (!walk) return;
+    onWalkChange?.(walking, (walk.from + walk.steps) % BOARD_SIZE);
     if (!walking) return;
-    const t = setTimeout(() => setProgress({ game, step: step + 1 }), STEP_MS);
+    const t = setTimeout(() => setProgress({ game, step: step + 1 }), delays[step] ?? 120);
     return () => clearTimeout(t);
-  }, [walking, game, step]);
-  return walking ? { playerId: walk.playerId, at: (walk.from + step) % BOARD_SIZE } : null;
+  }, [walking, walk, game, step, delays, onWalkChange]);
+  if (!walk || !walking) return null;
+  const at = (walk.from + step) % BOARD_SIZE;
+  return { playerId: walk.playerId, at, stomp: at };
 }
 
 /** Quân trên một ô ở cạnh dưới; đông người thì xếp chồng, ô góc chia 2 hàng. */
@@ -135,8 +166,8 @@ function Tokens({
   );
 }
 
-export function Board({ game, focus, onTileClick, children }: BoardProps) {
-  const walk = useWalk(game);
+export function Board({ game, focus, onTileClick, children, onWalkChange }: BoardProps) {
+  const walk = useWalk(game, onWalkChange);
   const currentId = game.players[game.current]?.id;
   const positionOf = (p: PlayerState) => (walk?.playerId === p.id ? walk.at : p.position);
   return (
@@ -161,6 +192,7 @@ export function Board({ game, focus, onTileClick, children }: BoardProps) {
           hotel ? 'tile-hotel' : '',
           st?.mortgaged ? 'tile-mortgaged' : '',
           focus === tile.index ? 'tile-focus' : '',
+          walk?.stomp === tile.index ? 'tile-stomp' : '',
           `side-${cornerSide(tile)}`,
         ]
           .filter(Boolean)
