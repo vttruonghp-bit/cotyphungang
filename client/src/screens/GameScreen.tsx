@@ -726,6 +726,10 @@ function CenterPanel({
         <div className="turn-hero-name">
           <span>{isTurn ? 'LƯỢT CỦA' : 'ĐANG CHỜ'}</span>
           <strong>{me.name}</strong>
+          <span className="turn-hero-stats">
+            <b>{money(me.cash)}</b>
+            <span>🏠 {assetCount(game, me.id)} tài sản</span>
+          </span>
           {away && <small>mất kết nối</small>}
         </div>
         <div className="turn-hero-dice">
