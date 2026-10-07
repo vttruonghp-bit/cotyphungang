@@ -74,12 +74,11 @@ function aTrongTu(n = 2): GameState {
   return s;
 }
 
-/** `a` (đang ở tù) thử đổ trượt `k` lần bằng 1+2, người khác đi lượt nhanh xen kẽ. */
+/** `a` (đang ở tù) thử đổ trượt `k` lần bằng 1+2 liên tiếp trong cùng lượt. */
 function truot(s: GameState, k: number): GameState {
   for (let i = 0; i < k; i++) {
     expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
     s = roll(s, 1, 2);
-    while (who(s) !== 'a') s = luotNhanh(s);
   }
   return s;
 }
@@ -797,7 +796,7 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
     expect(s.pending).toEqual({ type: 'roll', playerId: 'a' });
   });
 
-  it('không ra đôi lần 1: vẫn ở tù, không mất tiền, hết lượt', () => {
+  it('không ra đôi lần 1: vẫn ở tù, không mất tiền và được thử tiếp ngay', () => {
     const s = roll(aTrongTu(), 1, 2);
     expect(player(s, 'a')).toMatchObject({
       inJail: true,
@@ -805,10 +804,10 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
       cash: 500,
       jailAttempts: 1,
     });
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
   });
 
-  it('không ra đôi lần 2: vẫn ở tù', () => {
+  it('không ra đôi lần 2: vẫn ở tù và được thử lần 3 ngay', () => {
     const s = truot(aTrongTu(), 2);
     expect(player(s, 'a')).toMatchObject({
       inJail: true,
@@ -819,14 +818,15 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
     expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
   });
 
-  it('lần 3 không ra đôi, không có thẻ: bắt buộc trả 50Đ rồi đi theo tổng lần gieo đó', () => {
+  it('lần 3 không ra đôi: dừng thử và bắt buộc chọn trả 50Đ hoặc dùng thẻ', () => {
     const s = roll(truot(aTrongTu(), 2), 2, 4);
-    expect(player(s, 'a')).toMatchObject({ inJail: false, position: 16, cash: 450 });
-    expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 16 });
+    expect(player(s, 'a')).toMatchObject({ inJail: true, position: 10, cash: 500 });
+    expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 6 });
   });
 
-  it('lần 3 không ra đôi thì không có lượt thêm', () => {
+  it('lần 3 không ra đôi, trả 50Đ rồi đi thì không có lượt thêm', () => {
     let s = roll(truot(aTrongTu(), 2), 2, 4);
+    s = act(s, { type: 'payBail', playerId: 'a' });
     s = act(s, { type: 'declineBuy', playerId: 'a' });
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
   });
@@ -867,13 +867,15 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
 
   it('lần 3 có đúng 50Đ: trả hết còn 0Đ rồi đi', () => {
     const s0 = setPlayer(truot(aTrongTu(), 2), 'a', { cash: 50 });
-    const s = roll(s0, 1, 2);
+    let s = roll(s0, 1, 2);
+    s = act(s, { type: 'payBail', playerId: 'a' });
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 0 });
   });
 
   it('lần 3 thiếu tiền nhưng có tài sản: vào Xử lý nợ 50Đ với Ngân hàng', () => {
     const s0 = own(setPlayer(truot(aTrongTu(), 2), 'a', { cash: 30 }), 'a', 39);
-    const s = roll(s0, 1, 2);
+    let s = roll(s0, 1, 2);
+    s = act(s, { type: 'payBail', playerId: 'a' });
     expect(s.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 50, reason: 'jailBail' });
     expect(cash(s, 'a')).toBe(30);
   });
@@ -881,6 +883,7 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
   it('lần 3 thiếu tiền: cắm đất trả đủ 50Đ rồi mới đi theo tổng', () => {
     const s0 = own(setPlayer(truot(aTrongTu(), 2), 'a', { cash: 30 }), 'a', 39);
     let s = roll(s0, 1, 2);
+    s = act(s, { type: 'payBail', playerId: 'a' });
     s = act(s, { type: 'manage', playerId: 'a', ops: [{ op: 'mortgage', tile: 39 }] });
     if (s.pending.type === 'pay') s = act(s, { type: 'pay', playerId: 'a' });
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 180 });
@@ -889,7 +892,8 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
 
   it('lần 3 thiếu tiền và không có gì để thanh lý: phá sản ngay, ván kết thúc', () => {
     const s0 = setPlayer(truot(aTrongTu(), 2), 'a', { cash: 30 });
-    const s = roll(s0, 1, 2);
+    let s = roll(s0, 1, 2);
+    s = act(s, { type: 'payBail', playerId: 'a' });
     expect(isGameOver(s)).toBe(true);
     expect(s.loserId).toBe('a');
     expect(player(s, 'a').status).toBe('bankrupt');
