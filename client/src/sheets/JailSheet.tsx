@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { BOARD_SIZE, JAIL_BAIL, JAIL_INDEX, MAX_JAIL_TURNS, type GameState } from '@cotiphu/shared';
 import { Dice } from '../components/Dice';
 import { Sheet, SheetGlyph } from '../components/Sheet';
@@ -40,6 +40,17 @@ function JailChooser({ game, dispatch, onOpenManage, extra, id }: JailSheetProps
   const attempt = release ? MAX_JAIL_TURNS : p.jailAttempts + 1;
   const last = [...game.events].reverse().find((e) => e.type === 'roll');
   const lastRoll = last?.type === 'roll' ? last : null;
+  const jailRoll = lastRoll?.playerId === id && lastRoll.jail ? lastRoll : null;
+  const [rollingDice, setRollingDice] = useState(Boolean(jailRoll));
+  useEffect(() => {
+    if (!jailRoll) {
+      setRollingDice(false);
+      return;
+    }
+    setRollingDice(true);
+    const timer = setTimeout(() => setRollingDice(false), 2000);
+    return () => clearTimeout(timer);
+  }, [jailRoll?.dice[0], jailRoll?.dice[1], p.jailAttempts]);
 
   const run = () => {
     if (way === 'roll') void dispatch({ type: 'roll', playerId: id });
@@ -143,7 +154,28 @@ function JailChooser({ game, dispatch, onOpenManage, extra, id }: JailSheetProps
               ))}
             </span>
           </div>
-          <p>Chọn một cách ra tù trước khi đi.</p>
+          {jailRoll && (
+            <div className="move-attempt-dice jail-live-dice" aria-live="polite">
+              <Dice
+                values={jailRoll.dice}
+                color={colorOf(p.color).main}
+                size={42}
+                rolling={rollingDice}
+              />
+              {!rollingDice && (
+                <b>
+                  {jailRoll.dice[0]} + {jailRoll.dice[1]} · không ra đôi
+                </b>
+              )}
+            </div>
+          )}
+          <p>
+            {rollingDice
+              ? 'Đang gieo xúc xắc…'
+              : jailRoll
+                ? 'Không ra đôi · xúc xắc được giữ lại để đối chiếu. Chọn cách tiếp theo.'
+                : 'Chọn một cách ra tù trước khi đi.'}
+          </p>
         </div>
       )}
 
