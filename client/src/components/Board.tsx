@@ -26,11 +26,11 @@ interface BoardProps {
 
 /** Nhịp đi thích ứng: hành trình ngắn nhanh, hành trình dài tối đa khoảng 4 giây. */
 const walkDuration = (steps: number) => {
-  if (steps <= 1) return 900;
-  if (steps <= 3) return 1200 + (steps - 1) * 300;
-  if (steps <= 6) return 2000 + (steps - 4) * 350;
-  if (steps <= 9) return 3000 + (steps - 7) * 250;
-  return Math.min(4000, 3600 + (steps - 10) * 200);
+  if (steps <= 1) return 520;
+  if (steps <= 3) return 700 + (steps - 1) * 180;
+  if (steps <= 6) return 1200 + (steps - 4) * 190;
+  if (steps <= 9) return 1800 + (steps - 7) * 180;
+  return Math.min(2800, 2300 + (steps - 10) * 120);
 };
 
 /** Ba ô cuối chiếm nhiều thời gian hơn để tạo cảm giác giảm tốc. */
@@ -39,10 +39,10 @@ function stepDelays(steps: number): number[] {
   const total = walkDuration(steps);
   const weights = Array.from({ length: steps }, (_, i) => {
     const left = steps - i;
-    if (left === 1) return 3.2;
-    if (left === 2) return 2.2;
-    if (left === 3) return 1.55;
-    return 0.72 + i * 0.035;
+    if (left === 1) return 1.7;
+    if (left === 2) return 1.45;
+    if (left === 3) return 1.2;
+    return 0.88 + i * 0.02;
   });
   const sum = weights.reduce((a, b) => a + b, 0);
   return weights.map((w) => Math.round((total * w) / sum));
@@ -238,7 +238,6 @@ export function Board({ game, focus, onTileClick, children, onWalkChange }: Boar
                 />
               )}
               <span className={tight ? 'tile-name tile-name-tight' : 'tile-name'}>{name}</span>
-              {'price' in tile && !owner && <span className="tile-price">{tile.price}Đ</span>}
               {here.length > 0 && (
                 <Tokens
                   players={here}
