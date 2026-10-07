@@ -807,5 +807,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arrival-name-hold { animation: none; }
+  .arrival-name-hold {
+    animation: none;
+  }
 }
