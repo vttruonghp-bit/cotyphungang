@@ -358,6 +358,7 @@ export function GameScreen({
       <main className="land game-screen" style={accentStyle}>
         {/* Khi màn phụ đang mở, màn chính phía sau không bấm hay đọc tới được. */}
         <div className="land-main" inert={sheet !== null}>
+          <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
           <div className="land-stage">
             <div className="iso">
               <Board
@@ -417,7 +418,6 @@ export function GameScreen({
                 </button>
               </div>
             </CenterPanel>
-            <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
           </div>
 
           <aside className="land-side">
@@ -514,58 +514,51 @@ interface PlayerFramesProps {
   offline: ReadonlySet<string>;
 }
 
-const SLOTS = ['tl', 'tr', 'br', 'bl', 'tl', 'tr'] as const;
-
-/** Khung người chơi ở 4 góc màn (ván 5–6 người: thêm 1 khung ở 2 góc trên). */
+/** Toàn bộ người chơi nằm trong một cột riêng bên trái, không đè lên bàn cờ. */
 function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
   const cur = game.players[game.current]!;
   return (
-    <>
-      {(['tl', 'tr', 'br', 'bl'] as const).map((slot) => (
-        <div key={slot} className={`frames frames-${slot}`}>
-          {game.players.map((p, i) => {
-            if (SLOTS[i] !== slot) return null;
-            const c = colorOf(p.color);
-            const props = game.tiles.filter(
-              (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
-            );
-            const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
-            const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
-            return (
-              <div
-                key={p.id}
-                className={`frame${p.id === cur.id ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
-                style={{ ['--pc' as string]: c.main }}
-              >
-                <span className="frame-avatar">
-                  <img
-                    src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`}
-                    alt=""
-                  />
-                  <span className="frame-token">
-                    <TokenIcon icon={p.icon} color={p.color} size={16} />
-                  </span>
-                  {offline.has(p.id) && <span className="offline-dot" />}
-                </span>
-                <span className="frame-text">
-                  <b className="frame-name">
-                    {p.name}
-                    {p.id === meId ? ' (bạn)' : ''}
-                  </b>
-                  <span className="frame-cash">{money(p.cash)}</span>
-                  <span className="frame-stats">
-                    <span title="Tài sản">🏠{assetCount(game, p.id)}</span>
-                    <span title="Nhà">🏘{houses}</span>
-                    <span title="Khách sạn">🏨{hotels}</span>
-                    <span title="Thẻ">🃏{p.heldCards.length}</span>
-                  </span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </>
+    <aside className="player-rail" aria-label="Người chơi">
+      {game.players.map((p) => {
+        const c = colorOf(p.color);
+        const props = game.tiles.filter(
+          (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
+        );
+        const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
+        const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
+        return (
+          <div
+            key={p.id}
+            className={`frame${p.id === cur.id ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
+            style={{ ['--pc' as string]: c.main }}
+          >
+            <span className="frame-avatar">
+              <img
+                src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`}
+                alt=""
+              />
+              <span className="frame-token">
+                <TokenIcon icon={p.icon} color={p.color} size={16} />
+              </span>
+              {offline.has(p.id) && <span className="offline-dot" />}
+            </span>
+            <span className="frame-text">
+              <b className="frame-name">
+                {p.name}
+                {p.id === meId ? ' (bạn)' : ''}
+              </b>
+              <span className="frame-cash">{money(p.cash)}</span>
+              <span className="frame-stats">
+                <span title="Tài sản">🏠{assetCount(game, p.id)}</span>
+                <span title="Nhà">🏘{houses}</span>
+                <span title="Khách sạn">🏨{hotels}</span>
+                <span title="Thẻ">🃏{p.heldCards.length}</span>
+              </span>
+            </span>
+          </div>
+        );
+      })}
+    </aside>
   );
 }
 
@@ -729,7 +722,12 @@ function CenterPanel({
 
   return (
     <div className="center">
-      <div className="center-head">
+      <div
+        className="center-head"
+        style={{
+          ['--tile-art' as string]: `url(/assets/tile-${String(tile).padStart(2, '0')}.jpg)`,
+        }}
+      >
         <span className="center-eyebrow">
           {viewing ? 'Ô đang xem · chạm lại để đóng' : 'Ô hiện tại'} ·{' '}
           {mine
