@@ -1006,7 +1006,6 @@
   color: color-mix(in srgb, var(--pc) 85%, #111);
 }
 
-
 /* v7: hero tự né nửa bàn cờ có quân; danh sách tài sản người chờ gọn thành 2 cột. */
 .center.hero-bottom .turn-hero { order: 10; margin-top: auto; }
 .center.hero-bottom .center-head { order: 1; }
@@ -1024,6 +1023,5 @@
 }
 .frame-assets-compact > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .frame-assets-active { font-size:9.5px; }
-
 
 .action-moved-to-tile { visibility:hidden; min-height:52px; pointer-events:none; }
