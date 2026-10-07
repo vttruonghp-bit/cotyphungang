@@ -423,3 +423,36 @@
     animation: none;
   }
 }
+
+/* v3: tên ô cao hơn, quân lớn khoảng nửa chiều cao ô, bỏ dòng giá. */
+.board {
+  --tk: calc(var(--b) * 0.043);
+}
+.tile-up {
+  justify-content: flex-start;
+}
+.tile-name {
+  position: relative;
+  z-index: 3;
+  margin: calc(var(--strip) * 0.55) 0 0;
+  min-height: 34%;
+  display: -webkit-box;
+  align-content: start;
+}
+.tile-corner .tile-name {
+  margin-top: 2px;
+}
+.tile-price {
+  display: none;
+}
+.tile-up .tokens {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  min-height: var(--tk);
+  margin: 0;
+}
+.tokens .token-icon {
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 42%));
+}
