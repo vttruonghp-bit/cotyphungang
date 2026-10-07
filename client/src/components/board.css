@@ -460,9 +460,19 @@
 
 /* Hành động ngữ cảnh nổi sát ô vừa đến. */
 .tile { overflow: visible; }
+.tile:has(.tile-action-pop) {
+  position: relative;
+  z-index: 1000;
+}
+
+.board-center {
+  position: relative;
+  z-index: 1;
+}
+
 .tile-action-pop {
   position:absolute;
-  z-index:40;
+  z-index:1001;
   display:flex;
   gap:4px;
   padding:4px;
