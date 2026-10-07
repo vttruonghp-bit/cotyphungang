@@ -216,7 +216,8 @@ export function GameScreen({
   // Online chỉ người đang nợ thấy Xử lý nợ, và chỉ người ván đang chờ thấy Metro, tù, chọn ô.
   const debtor = debtorOf(game, previous);
   const myDebt = debtor !== null && (!online || debtor === me.id) ? debtor : null;
-  const reveal = reveals[0];
+  const visibleReveals = online ? reveals.filter((r) => r.event.playerId === me.id) : reveals;
+  const reveal = visibleReveals[0];
   let sheet: ReactNode = null;
   // Thẻ làm phá sản vẫn hiện trước, rồi mới tới màn kết thúc.
   // Thẻ của người cầm máy: chọn 1 lá trong quạt bài trước (chỉ để xem, bộ luật đã rút sẵn).
@@ -242,7 +243,7 @@ export function GameScreen({
         game={reveal.game}
         previous={reveal.previous}
         event={reveal.event}
-        onContinue={() => setReveals((r) => r.slice(1))}
+        onContinue={() => setReveals((r) => r.filter((x) => x !== reveal))}
       />
     );
   } else if (pd.type === 'ended') {
