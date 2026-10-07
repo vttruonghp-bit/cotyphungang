@@ -482,13 +482,16 @@ function doJailRoll(s: GameState, rng: Rng) {
     prepend(s, [{ type: 'moveAfterJail', playerId: p.id, steps: d1 + d2 }]);
     return advance(s, rng);
   }
-  if (p.jailAttempts < MAX_JAIL_TURNS) return advance(s, rng);
-  if (hasCard(p, 'jailFree')) {
-    s.pending = { type: 'jailRelease', playerId: p.id, steps: d1 + d2 };
+  if (p.jailAttempts < MAX_JAIL_TURNS) {
+    // Ba lần thử đôi là một chuỗi liên tục trong cùng lượt:
+    // trượt lần 1/2 thì hỏi lại chính người này, không chuyển sang người kế tiếp.
+    s.pending = { type: 'jail', playerId: p.id };
     return;
   }
-  prepend(s, [bailStep(p), { type: 'moveAfterJail', playerId: p.id, steps: d1 + d2 }]);
-  return advance(s, rng);
+  // Trượt lần 3: không được thử nữa. Người chơi phải chọn trả 50Đ
+  // hoặc dùng thẻ ra tù (nếu có), rồi đi theo tổng xúc xắc của lần thử thứ 3.
+  s.pending = { type: 'jailRelease', playerId: p.id, steps: d1 + d2 };
+  return;
 }
 
 const HIGHWAY_STEPS = (() => {
