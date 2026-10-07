@@ -765,15 +765,27 @@
   color: #fff !important;
   font-size: clamp(18px, 2.2cqw, 30px) !important;
   font-weight: 950 !important;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   animation: arrival-name 1s ease both;
 }
 @keyframes arrival-name {
-  0% { opacity: 0; transform: scale(.9); }
-  20% { opacity: 1; transform: scale(1.05); }
-  70% { opacity: 1; transform: scale(1); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Màn phụ chỉ nằm trong vùng trung tâm 9×9 của bàn cờ. */
