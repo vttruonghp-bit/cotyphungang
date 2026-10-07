@@ -959,3 +959,49 @@
   font-size: 13px;
   font-weight: 950;
 }
+
+/* v6: cột người chơi mang màu người đang lượt; người đang chơi lên đầu và mở rộng chi tiết. */
+.player-rail {
+  justify-content: flex-start;
+  background: color-mix(in srgb, var(--turn-pc) 34%, rgb(8 16 29 / 88%));
+  border-right: 3px solid var(--turn-pc);
+}
+.player-rail .frame-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+.player-rail .frame-topline .frame-cash {
+  flex: none;
+}
+.player-rail .frame.is-expanded {
+  aspect-ratio: 1 / 1;
+  align-items: flex-start;
+  overflow: hidden;
+  padding: 8px;
+}
+.player-rail .frame.is-expanded .frame-avatar {
+  width: 48px;
+  height: 48px;
+}
+.player-rail .frame.is-expanded .frame-text {
+  flex: 1;
+  height: 100%;
+}
+.frame-assets {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  overflow-y: auto;
+  font-size: 9.5px;
+  line-height: 1.25;
+}
+.frame-assets > span {
+  display: block;
+}
+.frame-assets b {
+  color: color-mix(in srgb, var(--pc) 85%, #111);
+}

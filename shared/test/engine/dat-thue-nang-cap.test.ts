@@ -291,11 +291,11 @@ describe('mua đất, ga, nhà máy vô chủ (mục 4)', () => {
     expect(s.pending).toEqual({ type: 'buy', playerId: 'b', tile: 3 });
   });
 
-  it('thiếu 1Đ so với giá thì không được hỏi mua, lượt chuyển luôn', () => {
+  it('thiếu 1Đ so với giá vẫn được hỏi mua', () => {
     let s = newGame();
     setPlayer(s, 'a', { cash: 59 });
     s = roll(s, 1, 2);
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 3 });
     expect(s.tiles[3]!.owner).toBeNull();
     expect(cash(s, 'a')).toBe(59);
   });
@@ -311,7 +311,7 @@ describe('mua đất, ga, nhà máy vô chủ (mục 4)', () => {
     expect(s.tiles[3]!.owner).toBe('a');
   });
 
-  it('Phú Quốc: đủ đúng 400Đ thì mua được, 399Đ thì không được hỏi', () => {
+  it('Phú Quốc: đủ đúng 400Đ mua ngay; 399Đ vẫn được hỏi mua', () => {
     let s = newGame();
     setPlayer(s, 'a', { cash: 400 });
     s = buy(landA(s, 39));
@@ -321,20 +321,20 @@ describe('mua đất, ga, nhà máy vô chủ (mục 4)', () => {
     let t = newGame();
     setPlayer(t, 'a', { cash: 399 });
     t = landA(t, 39);
-    expect(t.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(t.pending).toEqual({ type: 'buy', playerId: 'a', tile: 39 });
     expect(t.tiles[39]!.owner).toBeNull();
   });
 
-  it('ga và nhà máy vô chủ: thiếu tiền thì không được hỏi mua', () => {
+  it('ga và nhà máy vô chủ: thiếu tiền vẫn được hỏi mua', () => {
     let s = newGame();
     setPlayer(s, 'a', { cash: 199 });
     s = landA(s, 5);
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 5 });
 
     let t = newGame();
     setPlayer(t, 'a', { cash: 149 });
     t = landA(t, 12);
-    expect(t.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(t.pending).toEqual({ type: 'buy', playerId: 'a', tile: 12 });
   });
 
   it('qua ô 00 nhận 200Đ trước, rồi mới xét đủ tiền mua', () => {
@@ -347,12 +347,14 @@ describe('mua đất, ga, nhà máy vô chủ (mục 4)', () => {
     expect(cash(s, 'a')).toBe(140);
   });
 
-  it('không được Ụp/Mở giữa lượt để lấy tiền mua: thiếu tiền mặt thì không được hỏi dù còn tài sản', () => {
+  it('thiếu tiền mặt vẫn hỏi mua; sau khi chọn mua mới vào xử lý nợ', () => {
     let s = newGame();
     setPlayer(s, 'a', { cash: 50 });
     own(s, 'a', 39);
     s = roll(s, 1, 2);
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 3 });
+    s = buy(s);
+    expect(s.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 60, reason: 'purchase' });
     expect(s.tiles[3]!.owner).toBeNull();
   });
 

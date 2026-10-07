@@ -113,10 +113,8 @@ function landOwnable(
         net: 0,
       };
     }
-    if (p.cash < tile.price) {
-      addLog(s, p.id, `Không đủ tiền mua ${tile.name}`);
-      return none;
-    }
+    // Luôn hỏi mua dù tiền mặt hiện tại chưa đủ. Nếu người chơi chọn mua,
+    // engine sẽ cho họ vào luồng xử lý nợ/thanh lý tài sản để đủ tiền.
     return { steps: [{ type: 'buy', playerId: p.id, tile: index }], net: 0 };
   }
 

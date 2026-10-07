@@ -1693,13 +1693,13 @@ describe('biên tiền mặt khi thẻ đưa tới ô (mục 1, mục 4, mục 1
     expect(cash(s, 'a')).toBe(100);
   });
 
-  it('thẻ đưa tới đất vô chủ mà không đủ tiền mặt: không được mời mua (mua là tự nguyện)', () => {
+  it('thẻ đưa tới đất vô chủ mà không đủ tiền mặt: vẫn được mời mua', () => {
     const s0 = newGame();
     setPlayer(s0, 'a', { cash: 399 });
     const s = rut(s0, 'chance-phu-quoc', 7);
     expect(player(s, 'a').position).toBe(39);
     expect(chuO(s, 39)).toBeNull();
-    expect(s.pending).toEqual(LUOT_B);
+    expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 39 });
   });
 
   it('0Đ tiền mặt, Bưu Điện của người khác: nhận 200Đ trước nên trả được 6Đ', () => {
