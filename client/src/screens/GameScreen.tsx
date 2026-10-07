@@ -517,19 +517,31 @@ interface PlayerFramesProps {
 /** Toàn bộ người chơi nằm trong một cột riêng bên trái, không đè lên bàn cờ. */
 function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
   const cur = game.players[game.current]!;
+  const ordered = [cur, ...game.players.filter((p) => p.id !== cur.id)];
+
+  const owned = (p: PlayerState, kind: 'property' | 'station' | 'utility') =>
+    game.tiles
+      .map((st, i) => ({ st, tile: BOARD[i]! }))
+      .filter(({ st, tile }) => st?.owner === p.id && tile.kind === kind);
+
   return (
-    <aside className="player-rail" aria-label="Người chơi">
-      {game.players.map((p) => {
+    <aside
+      className="player-rail"
+      aria-label="Người chơi"
+      style={{ ['--turn-pc' as string]: colorOf(cur.color).main }}
+    >
+      {ordered.map((p) => {
         const c = colorOf(p.color);
-        const props = game.tiles.filter(
-          (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
-        );
-        const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
-        const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
+        const properties = owned(p, 'property');
+        const stations = owned(p, 'station');
+        const utilities = owned(p, 'utility');
+        const active = p.id === cur.id;
+        const bareLand = properties.filter(({ st }) => st!.level === 0);
+        const built = properties.filter(({ st }) => st!.level > 0);
         return (
           <div
             key={p.id}
-            className={`frame${p.id === cur.id ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
+            className={`frame${active ? ' is-turn is-expanded' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
             style={{ ['--pc' as string]: c.main }}
           >
             <span className="frame-avatar">
@@ -543,17 +555,31 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
               {offline.has(p.id) && <span className="offline-dot" />}
             </span>
             <span className="frame-text">
-              <b className="frame-name">
-                {p.name}
-                {p.id === meId ? ' (bạn)' : ''}
-              </b>
-              <span className="frame-cash">{money(p.cash)}</span>
-              <span className="frame-stats">
-                <span title="Tài sản">🏠{assetCount(game, p.id)}</span>
-                <span title="Nhà">🏘{houses}</span>
-                <span title="Khách sạn">🏨{hotels}</span>
-                <span title="Thẻ">🃏{p.heldCards.length}</span>
+              <span className="frame-topline">
+                <b className="frame-name">
+                  {p.name}{p.id === meId ? ' (bạn)' : ''}
+                </b>
+                <b className="frame-cash">{money(p.cash)}</b>
               </span>
+              {!active ? (
+                <span className="frame-stats">
+                  <span title="Ô đất">🏠{properties.length}</span>
+                  <span title="Nhà ga">🚉{stations.length}</span>
+                  <span title="Nhà máy">🏭{utilities.length}</span>
+                  <span title="Thẻ">🃏{p.heldCards.length}</span>
+                </span>
+              ) : (
+                <span className="frame-assets">
+                  {built.length > 0 && (
+                    <span><b>Nhà:</b> {built.map(({ st, tile }) => `${tile.name} ${st!.level >= HOTEL_LEVEL ? '🏨' : '🏠'.repeat(st!.level)}`).join(' · ')}</span>
+                  )}
+                  {bareLand.length > 0 && <span><b>Đất:</b> {bareLand.map(({ tile }) => tile.name).join(' · ')}</span>}
+                  {stations.length > 0 && <span><b>Ga:</b> {stations.map(({ tile }) => tile.name).join(' · ')}</span>}
+                  {utilities.length > 0 && <span><b>Nhà máy:</b> {utilities.map(({ tile }) => tile.name).join(' · ')}</span>}
+                  {p.heldCards.length > 0 && <span><b>Thẻ:</b> {p.heldCards.map((card) => getCard(card.cardId).title).join(' · ')}</span>}
+                  {properties.length + stations.length + utilities.length + p.heldCards.length === 0 && <span>Chưa có tài sản</span>}
+                </span>
+              )}
             </span>
           </div>
         );
