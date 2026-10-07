@@ -494,7 +494,7 @@ describe('Xử lý nợ (mục 10)', () => {
     const s3 = pay(s2, 'a');
     expect(cash(s3, 'a')).toBe(25);
     expect(cash(s3, 'b')).toBe(1100);
-    expect(s3.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s3.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
   });
 
   it('Chỉ thanh toán khi đủ toàn bộ: gom từng phần, chưa đủ thì Trả tiền bị từ chối', () => {
@@ -1312,7 +1312,7 @@ describe('Hết giờ khi đang nợ: máy chủ thanh lý theo thứ tự mặc
     const s = timeout(s1);
     expect(tile(s, 1).mortgaged).toBe(true);
     expect(player(s, 'a')).toMatchObject({ position: 13, inJail: false, cash: 0 });
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
   });
 
   it('Hết giờ khi nợ thuế: Phố Cổ và Chợ Đồng Xuân cùng giá thì chỉ cắm một ô nếu đã đủ', () => {
