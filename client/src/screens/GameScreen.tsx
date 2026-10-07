@@ -114,6 +114,9 @@ export function GameScreen({
   const [reveals, setReveals] = useState(() => revealsOf(view));
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<object | null>(null);
+  const [walking, setWalking] = useState(false);
+  const [arrivalTile, setArrivalTile] = useState<number | null>(null);
+  const [arrivalHold, setArrivalHold] = useState(false);
 
   const cur = game.players[game.current]!;
   const waiter = waitingPlayer(game);
@@ -124,6 +127,17 @@ export function GameScreen({
   const accent = colorOf(waiter.color);
   const meColor = colorOf(me.color);
   const pd = game.pending;
+
+  // Sau khi quân dừng: giữ tên ô đích 1 giây rồi mới cho hiện thao tác/màn phụ.
+  useEffect(() => {
+    if (walking || arrivalTile === null) return;
+    setArrivalHold(true);
+    const t = setTimeout(() => {
+      setArrivalHold(false);
+      setArrivalTile(null);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [walking, arrivalTile]);
   const offline = new Set(online?.seats.filter((s) => !s.connected).map((s) => s.id));
 
   // Mỗi thao tác mới: về xem ô đang đứng, xếp các lá thẻ vừa rút vào hàng chờ xem. Đặt lại ngay
@@ -196,7 +210,9 @@ export function GameScreen({
     </div>
   );
 
-  // Màn phụ: thẻ vừa rút trước, rồi tới việc ván đang chờ, rồi các màn người chơi tự mở.
+  const motionLocked = walking || arrivalHold;
+
+  // Màn phụ: chỉ hiện sau khi quân dừng và tên ô đích đã được giữ 1 giây.
   // Online chỉ người đang nợ thấy Xử lý nợ, và chỉ người ván đang chờ thấy Metro, tù, chọn ô.
   const debtor = debtorOf(game, previous);
   const myDebt = debtor !== null && (!online || debtor === me.id) ? debtor : null;
@@ -211,7 +227,9 @@ export function GameScreen({
     (!online || reveal.event.playerId === me.id)
       ? reveal.event
       : null;
-  if (reveal && fan) {
+  if (motionLocked) {
+    sheet = null;
+  } else if (reveal && fan) {
     const deck = getCard(fan.cardId).deck;
     const d = (reveal.previous ?? reveal.game).decks[deck] as unknown;
     const count =
@@ -345,7 +363,11 @@ export function GameScreen({
               <Board
                 game={game}
                 focus={viewTile ?? waiter.position}
-                onTileClick={(i) => setViewTile((v) => (v === i ? null : i))}
+                onTileClick={motionLocked ? undefined : (i) => setViewTile((v) => (v === i ? null : i))}
+                onWalkChange={(isWalking, destination) => {
+                  setWalking(isWalking);
+                  if (isWalking && destination !== null) setArrivalTile(destination);
+                }}
               />
             </div>
             <CenterPanel
@@ -353,20 +375,21 @@ export function GameScreen({
               me={waiter}
               mine={online !== null && waiter.id === me.id}
               away={offline.has(waiter.id)}
-              tile={viewTile ?? waiter.position}
+              tile={arrivalHold && arrivalTile !== null ? arrivalTile : (viewTile ?? waiter.position)}
               viewing={viewTile !== null}
               dice={dice}
               diceColor={rollerColor}
               rollKey={actions}
               formula={formula}
-              notice={notice}
+              notice={arrivalHold && arrivalTile !== null ? 'Đã đến nơi' : notice}
+              arrivalOnly={arrivalHold}
             >
               <div className="btn-row action-bar">
                 {main ? (
                   <button
                     type="button"
                     className={`btn btn-grow ${main.tone}`}
-                    disabled={busy > 0}
+                    disabled={busy > 0 || motionLocked}
                     aria-busy={busy > 0}
                     onClick={main.run}
                   >
@@ -380,7 +403,7 @@ export function GameScreen({
                 <button
                   type="button"
                   className={`btn ${secondary.tone}`}
-                  disabled={busy > 0 && myMove && (pd.type === 'buy' || pd.type === 'upgrade')}
+                  disabled={motionLocked || (busy > 0 && myMove && (pd.type === 'buy' || pd.type === 'upgrade'))}
                   onClick={secondary.run}
                 >
                   {secondary.label}
@@ -557,6 +580,8 @@ interface CenterPanelProps {
   notice: string | null;
   /** Các nút thao tác. */
   children: ReactNode;
+  /** Trong 1 giây sau khi dừng chỉ hiện tên ô. */
+  arrivalOnly?: boolean;
 }
 
 interface PayFormula {
@@ -678,6 +703,7 @@ function CenterPanel({
   formula,
   notice,
   children,
+  arrivalOnly = false,
 }: CenterPanelProps) {
   const t = BOARD[tile]!;
   const you = mine ? { ...me, name: 'bạn' } : me;
@@ -710,15 +736,15 @@ function CenterPanel({
         </span>
         <h2 className="center-tile-name">{t.name}</h2>
       </div>
-      <div className="center-body">
-        <p
+      <div className={arrivalOnly ? 'center-body arrival-only' : 'center-body'}>
+        {!arrivalOnly && <p
           className="center-tile-owner"
           style={owner ? { color: colorOf(owner.color).main } : undefined}
         >
           {tileDescription(game, tile)}
           {st?.mortgaged ? ' · đang cắm' : ''}
-        </p>
-        {t.kind === 'property' ? (
+        </p>}
+        {!arrivalOnly && (t.kind === 'property' ? (
           <table className="rent-table">
             <thead>
               <tr>
@@ -746,13 +772,13 @@ function CenterPanel({
               {pay?.label ?? 'Tiền thuê'}: <b>{pay?.text ?? rentText(game, tile)}</b>
             </p>
           )
-        )}
-        {t.kind === 'property' && pay && (
+        ))}
+        {!arrivalOnly && t.kind === 'property' && pay && (
           <p className="center-rent">
             {pay.label}: <b>{pay.text}</b>
           </p>
         )}
-        <div className="center-row">
+        {!arrivalOnly && <div className="center-row">
           {dice && !viewing && (
             <Dice values={dice} color={diceColor} size={26} rolling={rolling} key={rollKey} />
           )}
@@ -764,11 +790,11 @@ function CenterPanel({
               </b>
             </span>
           )}
-        </div>
-        <p className="center-wait">
-          {notice ?? (mine ? capitalize(waitingText(game, you)) : waitingText(game, me))}
+        </div>}
+        <p className={arrivalOnly ? 'center-wait arrival-name-hold' : 'center-wait'}>
+          {arrivalOnly ? t.name : (notice ?? (mine ? capitalize(waitingText(game, you)) : waitingText(game, me)))}
         </p>
-        {children}
+        {!arrivalOnly && children}
       </div>
     </div>
   );
