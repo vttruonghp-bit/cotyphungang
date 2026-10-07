@@ -124,6 +124,11 @@ export function ManageSheet({
   });
 
   // Thanh lý theo dự thảo rồi trả luôn: lệnh trả chỉ gửi khi thanh lý đã xong.
+  const cancelPurchase = once(async () => {
+    setOps([]);
+    if ((await dispatch({ type: 'cancelPurchase', playerId })) === null) onClose();
+  });
+
   const settle = once(async () => {
     if (draft.ops.length > 0) {
       if ((await dispatch({ type: 'manage', playerId, ops: draft.ops })) !== null) return;
@@ -168,6 +173,7 @@ export function ManageSheet({
           onShowBoard={onShowBoard}
           onConfirm={confirm}
           onSettle={settle}
+          onCancelPurchase={debt?.reason === 'purchase' ? cancelPurchase : undefined}
         />
       }
     >
@@ -461,6 +467,7 @@ interface FooterProps {
   onShowBoard?: () => void;
   onConfirm: () => void;
   onSettle: () => void;
+  onCancelPurchase?: () => void;
 }
 
 /** Dòng tiền luôn hiện ở chân màn, kể cả khi danh sách tài sản đã cuộn qua hộp tiền ở trên. */
@@ -493,6 +500,7 @@ function Footer({
   onShowBoard,
   onConfirm,
   onSettle,
+  onCancelPurchase,
 }: FooterProps) {
   if (mode === 'view') {
     return (
@@ -508,6 +516,11 @@ function Footer({
         <FooterCash draft={draft} debt={debt} />
         {warning && <p className="manage-warn">{warning}</p>}
         <div className="btn-row">
+          {onCancelPurchase && (
+            <button type="button" className="btn btn-outline" onClick={onCancelPurchase}>
+              Hoàn tác mua
+            </button>
+          )}
           {onShowBoard && (
             <button type="button" className="btn btn-outline manage-peek" onClick={onShowBoard}>
               Xem bàn cờ
