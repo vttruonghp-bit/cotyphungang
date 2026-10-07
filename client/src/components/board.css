@@ -458,65 +458,32 @@
 }
 
 
-/* Hành động ngữ cảnh nổi sát ô vừa đến.
-   Nâng chính grid item lên trên board-center; z-index của popover một mình không đủ. */
-.tile {
-  overflow: visible;
-}
-
-.tile:has(.tile-action-pop) {
-  z-index: 100;
-}
-
+/* Hành động ngữ cảnh nổi sát ô vừa đến. */
+.tile { overflow: visible; }
 .tile-action-pop {
-  position: absolute;
-  z-index: 110;
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 10px;
-  background: rgb(10 18 32 / 92%);
-  box-shadow: 0 6px 18px rgb(0 0 0 / 28%);
-  pointer-events: auto;
+  position:absolute;
+  z-index:40;
+  display:flex;
+  gap:4px;
+  padding:4px;
+  border-radius:10px;
+  background:rgb(10 18 32 / 92%);
+  box-shadow:0 6px 18px rgb(0 0 0 / 28%);
+  pointer-events:auto;
 }
-
-.side-bottom .tile-action-pop {
-  bottom: calc(100% + 5px);
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.side-top .tile-action-pop {
-  top: calc(100% + 5px);
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.side-left .tile-action-pop {
-  left: calc(100% + 5px);
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.side-right .tile-action-pop {
-  right: calc(100% + 5px);
-  top: 50%;
-  transform: translateY(-50%);
-}
-
+.side-bottom .tile-action-pop { bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); }
+.side-top .tile-action-pop { top:calc(100% + 5px); left:50%; transform:translateX(-50%); }
+.side-left .tile-action-pop { left:calc(100% + 5px); top:50%; transform:translateY(-50%); }
+.side-right .tile-action-pop { right:calc(100% + 5px); top:50%; transform:translateY(-50%); }
 .tile-action-btn {
-  min-height: 34px;
-  padding: 6px 9px;
-  border: 1px solid rgb(255 255 255 / 45%);
-  border-radius: 8px;
-  font: inherit;
-  font-size: 10px;
-  font-weight: 900;
-  white-space: nowrap;
-  cursor: pointer;
+  min-height:34px;
+  padding:6px 9px;
+  border:1px solid rgb(255 255 255 / 45%);
+  border-radius:8px;
+  font:inherit;
+  font-size:10px;
+  font-weight:900;
+  white-space:nowrap;
+  cursor:pointer;
 }
-
-.tile-action-skip {
-  background: #fff;
-  color: #172033;
-}
+.tile-action-skip { background:#fff; color:#172033; }
