@@ -722,7 +722,12 @@ function CenterPanel({
 
   return (
     <div className="center">
-      <div className="center-head">
+      <div
+        className="center-head"
+        style={{
+          ['--tile-art' as string]: `url(/assets/tile-${String(tile).padStart(2, '0')}.jpg)`,
+        }}
+      >
         <span className="center-eyebrow">
           {viewing ? 'Ô đang xem · chạm lại để đóng' : 'Ô hiện tại'} ·{' '}
           {mine
