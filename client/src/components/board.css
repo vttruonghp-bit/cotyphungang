@@ -461,6 +461,11 @@
 /* Hành động ngữ cảnh nổi sát ô vừa đến. */
 .tile { overflow: visible; }
 /* Popover phải nổi trên panel trung tâm để luôn bấm được. */
+/* Ô tile là grid item: phải nâng chính tile lên trên board-center; z-index của con không thể thoát stacking context của tile. */
+.tile:has(.tile-action-pop) {
+  z-index: 70;
+}
+
 .tile-action-pop {
   position: absolute;
   z-index: 80;
