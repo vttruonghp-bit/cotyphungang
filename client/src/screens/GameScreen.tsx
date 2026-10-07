@@ -363,7 +363,9 @@ export function GameScreen({
               <Board
                 game={game}
                 focus={viewTile ?? waiter.position}
-                onTileClick={motionLocked ? undefined : (i) => setViewTile((v) => (v === i ? null : i))}
+                onTileClick={
+                  motionLocked ? undefined : (i) => setViewTile((v) => (v === i ? null : i))
+                }
                 onWalkChange={(isWalking, destination) => {
                   setWalking(isWalking);
                   if (isWalking && destination !== null) setArrivalTile(destination);
@@ -375,7 +377,9 @@ export function GameScreen({
               me={waiter}
               mine={online !== null && waiter.id === me.id}
               away={offline.has(waiter.id)}
-              tile={arrivalHold && arrivalTile !== null ? arrivalTile : (viewTile ?? waiter.position)}
+              tile={
+                arrivalHold && arrivalTile !== null ? arrivalTile : (viewTile ?? waiter.position)
+              }
               viewing={viewTile !== null}
               dice={dice}
               diceColor={rollerColor}
@@ -403,7 +407,10 @@ export function GameScreen({
                 <button
                   type="button"
                   className={`btn ${secondary.tone}`}
-                  disabled={motionLocked || (busy > 0 && myMove && (pd.type === 'buy' || pd.type === 'upgrade'))}
+                  disabled={
+                    motionLocked ||
+                    (busy > 0 && myMove && (pd.type === 'buy' || pd.type === 'upgrade'))
+                  }
                   onClick={secondary.run}
                 >
                   {secondary.label}
@@ -737,14 +744,17 @@ function CenterPanel({
         <h2 className="center-tile-name">{t.name}</h2>
       </div>
       <div className={arrivalOnly ? 'center-body arrival-only' : 'center-body'}>
-        {!arrivalOnly && <p
-          className="center-tile-owner"
-          style={owner ? { color: colorOf(owner.color).main } : undefined}
-        >
-          {tileDescription(game, tile)}
-          {st?.mortgaged ? ' · đang cắm' : ''}
-        </p>}
-        {!arrivalOnly && (t.kind === 'property' ? (
+        {!arrivalOnly && (
+          <p
+            className="center-tile-owner"
+            style={owner ? { color: colorOf(owner.color).main } : undefined}
+          >
+            {tileDescription(game, tile)}
+            {st?.mortgaged ? ' · đang cắm' : ''}
+          </p>
+        )}
+        {!arrivalOnly &&
+          (t.kind === 'property' ? (
           <table className="rent-table">
             <thead>
               <tr>
@@ -772,13 +782,14 @@ function CenterPanel({
               {pay?.label ?? 'Tiền thuê'}: <b>{pay?.text ?? rentText(game, tile)}</b>
             </p>
           )
-        ))}
+          ))}
         {!arrivalOnly && t.kind === 'property' && pay && (
           <p className="center-rent">
             {pay.label}: <b>{pay.text}</b>
           </p>
         )}
-        {!arrivalOnly && <div className="center-row">
+        {!arrivalOnly && (
+          <div className="center-row">
           {dice && !viewing && (
             <Dice values={dice} color={diceColor} size={26} rolling={rolling} key={rollKey} />
           )}
@@ -790,9 +801,12 @@ function CenterPanel({
               </b>
             </span>
           )}
-        </div>}
+          </div>
+        )}
         <p className={arrivalOnly ? 'center-wait arrival-name-hold' : 'center-wait'}>
-          {arrivalOnly ? t.name : (notice ?? (mine ? capitalize(waitingText(game, you)) : waitingText(game, me)))}
+          {arrivalOnly
+            ? t.name
+            : (notice ?? (mine ? capitalize(waitingText(game, you)) : waitingText(game, me)))}
         </p>
         {!arrivalOnly && children}
       </div>
