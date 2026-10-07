@@ -335,7 +335,23 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       const pd = expectPending(s, a.playerId, 'buy');
       const p = getPlayer(s, a.playerId);
       const tile = ownableTile(pd.tile);
-      if (p.cash < tile.price) throw new RuleError('Không đủ tiền mua');
+      if (p.cash < tile.price) {
+        // Chọn mua khi chưa đủ tiền: giữ quyền mua và chuyển sang xử lý nợ.
+        // grantTile chỉ sang tên sau khi người chơi đã thanh lý đủ và trả đủ giá mua.
+        prepend(s, [
+          {
+            type: 'pay',
+            playerId: p.id,
+            creditors: [{ playerId: null, amount: tile.price }],
+            total: tile.price,
+            reason: 'purchase',
+            confirm: false,
+            label: `Mua ${tile.name}`,
+            grantTile: pd.tile,
+          },
+        ]);
+        return advance(s, rng);
+      }
       p.cash -= tile.price;
       const t = tileState(s, pd.tile);
       t.owner = p.id;
