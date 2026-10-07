@@ -1,38 +1,31 @@
 .dice {
   display: inline-flex;
-  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  perspective: 420px;
+}
+
+.die {
+  filter: drop-shadow(0 5px 5px rgb(0 0 0 / 30%));
+  transform-origin: 50% 50%;
 }
 
 .die-rolling {
-  animation: die-shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  animation: die-toss 900ms cubic-bezier(.18,.72,.2,1);
 }
 
-@keyframes die-shake {
-  0% {
-    transform: rotate(0) translate(0, 0);
-  }
-  15% {
-    transform: rotate(-25deg) translate(-3px, -4px);
-  }
-  30% {
-    transform: rotate(20deg) translate(3px, 2px);
-  }
-  45% {
-    transform: rotate(-15deg) translate(-2px, 3px);
-  }
-  60% {
-    transform: rotate(10deg) translate(2px, -2px);
-  }
-  80% {
-    transform: rotate(-4deg);
-  }
-  100% {
-    transform: rotate(0);
-  }
+@keyframes die-toss {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+  16%  { transform: translate3d(-7px,-15px,0) rotate(-42deg) scale(1.08); }
+  32%  { transform: translate3d(9px,-8px,0) rotate(76deg) scale(.96); }
+  49%  { transform: translate3d(-5px,-4px,0) rotate(145deg) scale(1.05); }
+  65%  { transform: translate3d(5px,-2px,0) rotate(205deg) scale(.98); }
+  80%  { transform: translate3d(-2px,0,0) rotate(252deg) scale(1.02); }
+  91%  { transform: translate3d(1px,-1px,0) rotate(266deg) scale(1); }
+  100% { transform: translate3d(0,0,0) rotate(270deg) scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .die-rolling {
-    animation: none;
-  }
+  .die-rolling { animation: none; }
 }
