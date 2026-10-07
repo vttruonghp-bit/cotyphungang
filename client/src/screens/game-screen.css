@@ -959,3 +959,18 @@
   font-size: 13px;
   font-weight: 950;
 }
+
+.turn-hero-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 5px;
+  font-size: clamp(12px, 1.45cqw, 17px);
+  font-weight: 850;
+  white-space: nowrap;
+}
+.turn-hero-stats > b {
+  color: var(--accent);
+  font-size: 1.25em;
+  font-weight: 1000;
+}
