@@ -22,6 +22,8 @@ interface BoardProps {
   children?: ReactNode;
   /** Báo cho màn chính biết quân đang chạy để khóa thao tác. */
   onWalkChange?: (walking: boolean, destination: number | null) => void;
+  /** Hành động ngữ cảnh bám sát ô người chơi vừa đến. */
+  tileAction?: { tile: number; primary: ReactNode; secondary?: ReactNode } | null;
 }
 
 /** Nhịp đi thích ứng: hành trình ngắn nhanh, hành trình dài tối đa khoảng 4 giây. */
@@ -166,7 +168,7 @@ function Tokens({
   );
 }
 
-export function Board({ game, focus, onTileClick, children, onWalkChange }: BoardProps) {
+export function Board({ game, focus, onTileClick, children, onWalkChange, tileAction }: BoardProps) {
   const walk = useWalk(game, onWalkChange);
   const currentId = game.players[game.current]?.id;
   const positionOf = (p: PlayerState) => (walk?.playerId === p.id ? walk.at : p.position);
@@ -219,6 +221,12 @@ export function Board({ game, focus, onTileClick, children, onWalkChange }: Boar
             onClick={onTileClick ? () => onTileClick(tile.index) : undefined}
             aria-label={label}
           >
+            {tileAction?.tile === tile.index && (
+              <span className="tile-action-pop" onClick={(e) => e.stopPropagation()}>
+                {tileAction.primary}
+                {tileAction.secondary}
+              </span>
+            )}
             {tile.kind === 'property' && (
               <LevelStrip level={st?.level ?? 0} color={ownerColor?.main ?? null} />
             )}
