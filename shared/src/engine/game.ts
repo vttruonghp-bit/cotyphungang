@@ -649,8 +649,16 @@ function timeout(s: GameState, rng: Rng): void {
         handle(s, { type: 'useJailCard', playerId: pd.playerId }, rng);
       }
       return;
-    case 'jailRelease':
-      return handle(s, { type: 'useJailCard', playerId: pd.playerId }, rng);
+    case 'jailRelease': {
+      const p = getPlayer(s, pd.playerId);
+      return handle(
+        s,
+        hasCard(p, 'jailFree')
+          ? { type: 'useJailCard', playerId: pd.playerId }
+          : { type: 'payBail', playerId: pd.playerId },
+        rng,
+      );
+    }
     case 'buy':
       return handle(s, { type: 'declineBuy', playerId: pd.playerId }, rng);
     case 'upgrade':
