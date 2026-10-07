@@ -1024,3 +1024,6 @@
 }
 .frame-assets-compact > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .frame-assets-active { font-size:9.5px; }
+
+
+.action-moved-to-tile { visibility:hidden; min-height:52px; pointer-events:none; }
