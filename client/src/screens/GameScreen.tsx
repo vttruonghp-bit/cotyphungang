@@ -755,33 +755,33 @@ function CenterPanel({
         )}
         {!arrivalOnly &&
           (t.kind === 'property' ? (
-          <table className="rent-table">
-            <thead>
-              <tr>
-                <th>Trống</th>
-                <th>1 nhà</th>
-                <th>2 nhà</th>
-                <th>3 nhà</th>
-                <th>4 nhà</th>
-                <th>KS</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                {t.rents.map((r, k) => (
-                  <td key={k} className={owner && st!.level === k ? 'is-now' : ''}>
-                    {r}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        ) : (
-          owner && (
-            <p className="center-rent">
-              {pay?.label ?? 'Tiền thuê'}: <b>{pay?.text ?? rentText(game, tile)}</b>
-            </p>
-          )
+            <table className="rent-table">
+              <thead>
+                <tr>
+                  <th>Trống</th>
+                  <th>1 nhà</th>
+                  <th>2 nhà</th>
+                  <th>3 nhà</th>
+                  <th>4 nhà</th>
+                  <th>KS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {t.rents.map((r, k) => (
+                    <td key={k} className={owner && st!.level === k ? 'is-now' : ''}>
+                      {r}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          ) : (
+            owner && (
+              <p className="center-rent">
+                {pay?.label ?? 'Tiền thuê'}: <b>{pay?.text ?? rentText(game, tile)}</b>
+              </p>
+            )
           ))}
         {!arrivalOnly && t.kind === 'property' && pay && (
           <p className="center-rent">
@@ -790,23 +790,23 @@ function CenterPanel({
         )}
         {!arrivalOnly && (
           <div className="center-row">
-          {dice && !viewing && (
-            <Dice values={dice} color={diceColor} size={26} rolling={rolling} key={rollKey} />
-          )}
-          {after !== null && (
-            <span className="center-after">
-              Tiền {you.name}: {money(me.cash)} →{' '}
-              <b className={after < me.cash ? 'down' : 'up'}>
-                {after < 0 ? `thiếu ${money(-after)}` : money(after)}
-              </b>
-            </span>
-          )}
+            {dice && !viewing && (
+              <Dice values={dice} color={diceColor} size={26} rolling={rolling} key={rollKey} />
+            )}
+            {after !== null && (
+              <span className="center-after">
+                Tiền {you.name}: {money(me.cash)} →{' '}
+                <b className={after < me.cash ? 'down' : 'up'}>
+                  {after < 0 ? `thiếu ${money(-after)}` : money(after)}
+                </b>
+              </span>
+            )}
           </div>
         )}
         <p className={arrivalOnly ? 'center-wait arrival-name-hold' : 'center-wait'}>
           {arrivalOnly
             ? t.name
-            : (notice ?? (mine ? capitalize(waitingText(game, you)) : waitingText(game, me)))}
+            : notice ?? (mine ? capitalize(waitingText(game, you)) : waitingText(game, me))}
         </p>
         {!arrivalOnly && children}
       </div>
