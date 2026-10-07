@@ -1063,3 +1063,29 @@
   min-height: 52px;
   pointer-events: none;
 }
+
+/* v11: thu gọn panel trung tâm và dịch lên/xuống để chừa nút hành động. */
+.land .center {
+  width: min(430px, 54cqw);
+  min-height: 0;
+  max-height: 58cqh;
+  overflow: auto;
+}
+
+.land .center.hero-top {
+  top: 35%;
+}
+
+.land .center.hero-bottom {
+  top: 65%;
+}
+
+.land .center-body {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.land .center.hero-top .turn-hero,
+.land .center.hero-bottom .turn-hero {
+  flex: none;
+}
