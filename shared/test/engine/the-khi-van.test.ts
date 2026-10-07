@@ -791,11 +791,10 @@ describe('Khí Vận: Thẻ ra tù miễn phí (mục 9, thẻ 13; mục 6)', ()
     let s = newGame(2);
     giuThe(s, 'a', 'community-jail-free', 'jailFree');
     s = rut(s, 'community-jail');
+    s = luotNhanh(s); // b, tới lượt a trong tù
     for (let k = 0; k < 2; k++) {
-      s = luotNhanh(s); // b
-      s = roll(s, 1, 2); // a trượt
+      s = roll(s, 1, 2); // a trượt liên tiếp, không xen lượt b
     }
-    s = luotNhanh(s); // b
     topCard(s, 'community-singing');
     s = roll(s, 3, 4); // lần 3 trượt: chọn bảo lãnh hoặc thẻ
     expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 7 });
@@ -810,12 +809,12 @@ describe('Khí Vận: Thẻ ra tù miễn phí (mục 9, thẻ 13; mục 6)', ()
     let s = newGame(2);
     giuThe(s, 'a', 'community-jail-free', 'jailFree');
     s = rut(s, 'community-jail');
+    s = luotNhanh(s); // b, tới lượt a trong tù
     for (let k = 0; k < 2; k++) {
-      s = luotNhanh(s);
       s = roll(s, 1, 2);
     }
-    s = luotNhanh(s);
     s = roll(s, 2, 3);
+    expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 5 });
     s = act(s, { type: 'timeout' });
     expect(player(s, 'a').position).toBe(15);
     expect(player(s, 'a').inJail).toBe(false);
