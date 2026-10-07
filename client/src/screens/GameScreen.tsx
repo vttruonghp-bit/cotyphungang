@@ -520,12 +520,6 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
   return (
     <aside className="player-rail" aria-label="Người chơi">
       {game.players.map((p) => {
-            const c = colorOf(p.color);
-            const props = game.tiles.filter(
-              (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
-            );
-            const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
-            const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
         const c = colorOf(p.color);
         const props = game.tiles.filter(
           (t, k) => t?.owner === p.id && BOARD[k]!.kind === 'property',
@@ -533,36 +527,36 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
         const houses = props.reduce((n, t) => n + (t!.level < HOTEL_LEVEL ? t!.level : 0), 0);
         const hotels = props.filter((t) => t!.level >= HOTEL_LEVEL).length;
         return (
-              <div
-                key={p.id}
-                className={`frame${p.id === cur.id ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
-                style={{ ['--pc' as string]: c.main }}
-              >
-                <span className="frame-avatar">
-                  <img
-                    src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`}
-                    alt=""
-                  />
-                  <span className="frame-token">
-                    <TokenIcon icon={p.icon} color={p.color} size={16} />
-                  </span>
-                  {offline.has(p.id) && <span className="offline-dot" />}
-                </span>
-                <span className="frame-text">
-                  <b className="frame-name">
-                    {p.name}
-                    {p.id === meId ? ' (bạn)' : ''}
-                  </b>
-                  <span className="frame-cash">{money(p.cash)}</span>
-                  <span className="frame-stats">
-                    <span title="Tài sản">🏠{assetCount(game, p.id)}</span>
-                    <span title="Nhà">🏘{houses}</span>
-                    <span title="Khách sạn">🏨{hotels}</span>
-                    <span title="Thẻ">🃏{p.heldCards.length}</span>
-                  </span>
-                </span>
-              </div>
-            );
+          <div
+            key={p.id}
+            className={`frame${p.id === cur.id ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
+            style={{ ['--pc' as string]: c.main }}
+          >
+            <span className="frame-avatar">
+              <img
+                src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`}
+                alt=""
+              />
+              <span className="frame-token">
+                <TokenIcon icon={p.icon} color={p.color} size={16} />
+              </span>
+              {offline.has(p.id) && <span className="offline-dot" />}
+            </span>
+            <span className="frame-text">
+              <b className="frame-name">
+                {p.name}
+                {p.id === meId ? ' (bạn)' : ''}
+              </b>
+              <span className="frame-cash">{money(p.cash)}</span>
+              <span className="frame-stats">
+                <span title="Tài sản">🏠{assetCount(game, p.id)}</span>
+                <span title="Nhà">🏘{houses}</span>
+                <span title="Khách sạn">🏨{hotels}</span>
+                <span title="Thẻ">🃏{p.heldCards.length}</span>
+              </span>
+            </span>
+          </div>
+        );
       })}
     </aside>
   );
