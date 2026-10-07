@@ -104,7 +104,7 @@ export function chooseAction(s: GameState, rng: Rng): Action {
       return { type: 'roll', playerId: id };
     }
     case 'jailRelease': {
-      const hasJailCard = me.heldCards.some((c) => c.effect === 'jailFree');
+      const hasJailCard = me.heldCards.some((c) => c.kind === 'jailFree');
       if (!hasJailCard) return { type: 'payBail', playerId: id };
       return rng.int(0, 1)
         ? { type: 'payBail', playerId: id }
