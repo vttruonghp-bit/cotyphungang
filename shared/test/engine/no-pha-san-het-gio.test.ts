@@ -494,7 +494,7 @@ describe('Xử lý nợ (mục 10)', () => {
     const s3 = pay(s2, 'a');
     expect(cash(s3, 'a')).toBe(25);
     expect(cash(s3, 'b')).toBe(1100);
-    expect(s3.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
+    expect(s3.pending).toEqual({ type: 'roll', playerId: 'b' });
   });
 
   it('Chỉ thanh toán khi đủ toàn bộ: gom từng phần, chưa đủ thì Trả tiền bị từ chối', () => {
@@ -656,7 +656,7 @@ describe('Xử lý nợ (mục 10)', () => {
     expect(cash(s2, 'a')).toBe(50);
     const s3 = pay(s2, 'a');
     expect(player(s3, 'a')).toMatchObject({ position: 13, inJail: false, cash: 0 });
-    expect(s3.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s3.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
   });
 
   it('Bảo lãnh bắt buộc ở lần thử thứ 3 không trả nổi: phá sản', () => {
