@@ -362,6 +362,16 @@ function handle(s: GameState, a: Action, rng: Rng): void {
     case 'declineBuy':
       expectPending(s, a.playerId, 'buy');
       return advance(s, rng);
+    case 'cancelPurchase': {
+      const pd = expectPending(s, a.playerId, 'pay');
+      if (pd.reason !== 'purchase' || pd.grantTile === undefined) {
+        throw new RuleError('Không có giao dịch mua để hoàn tác');
+      }
+      // Các thay đổi Ụp/Mở trên màn xử lý nợ mới chỉ là dự thảo ở client,
+      // nên hủy tại đây trả toàn bộ tài sản/tiền về đúng trạng thái trước khi chọn Mua.
+      addLog(s, a.playerId, `Hủy mua ${BOARD[pd.grantTile]!.name}`);
+      return advance(s, rng);
+    }
     case 'upgrade': {
       const pd = expectPending(s, a.playerId, 'upgrade');
       const p = getPlayer(s, a.playerId);

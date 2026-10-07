@@ -174,6 +174,7 @@ export type Action =
   | { type: 'useJailCard'; playerId: string }
   | { type: 'buy'; playerId: string }
   | { type: 'declineBuy'; playerId: string }
+  | { type: 'cancelPurchase'; playerId: string }
   | { type: 'upgrade'; playerId: string }
   | { type: 'skipUpgrade'; playerId: string }
   /** null = ở lại ô 10. */
