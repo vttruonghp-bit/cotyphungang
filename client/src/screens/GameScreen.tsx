@@ -389,6 +389,7 @@ export function GameScreen({
               formula={formula}
               notice={arrivalHold && arrivalTile !== null ? 'Đã đến nơi' : notice}
               arrivalOnly={arrivalHold}
+              heroBottom={waiter.position >= 11 && waiter.position <= 30}
             >
               <div className="btn-row action-bar">
                 {main ? (
@@ -563,14 +564,15 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
                 <b className="frame-cash">{money(p.cash)}</b>
               </span>
               {!active ? (
-                <span className="frame-stats">
-                  <span title="Ô đất">🏠{properties.length}</span>
-                  <span title="Nhà ga">🚉{stations.length}</span>
-                  <span title="Nhà máy">🏭{utilities.length}</span>
-                  <span title="Thẻ">🃏{p.heldCards.length}</span>
+                <span className="frame-assets frame-assets-compact">
+                  {properties.map(({ st, tile }) => <span key={tile.name}>🏠 {tile.name}{st!.level > 0 ? ` · ${st!.level}` : ''}</span>)}
+                  {stations.map(({ tile }) => <span key={tile.name}>🚉 {tile.name}</span>)}
+                  {utilities.map(({ tile }) => <span key={tile.name}>🏭 {tile.name}</span>)}
+                  {p.heldCards.map((card) => <span key={card.cardId}>🃏 {getCard(card.cardId).title}</span>)}
+                  {properties.length + stations.length + utilities.length + p.heldCards.length === 0 && <span>Chưa có tài sản</span>}
                 </span>
               ) : (
-                <span className="frame-assets">
+                <span className="frame-assets frame-assets-active">
                   {built.length > 0 && (
                     <span><b>Nhà:</b> {built.map(({ st, tile }) => `${tile.name} ${st!.level >= HOTEL_LEVEL ? '🏨' : '🏠'.repeat(st!.level)}`).join(' · ')}</span>
                   )}
@@ -609,6 +611,8 @@ interface CenterPanelProps {
   children: ReactNode;
   /** Trong 1 giây sau khi dừng chỉ hiện tên ô. */
   arrivalOnly?: boolean;
+  /** Quân ở nửa trên bàn cờ: đẩy tên/tiền/xúc xắc xuống đáy trung tâm. */
+  heroBottom?: boolean;
 }
 
 interface PayFormula {
@@ -731,6 +735,7 @@ function CenterPanel({
   notice,
   children,
   arrivalOnly = false,
+  heroBottom = false,
 }: CenterPanelProps) {
   const t = BOARD[tile]!;
   const you = mine ? { ...me, name: 'bạn' } : me;
@@ -748,11 +753,12 @@ function CenterPanel({
   }, [rollKey, game.events]);
 
   return (
-    <div className="center">
+    <div className={`center${heroBottom ? ' hero-bottom' : ' hero-top'}`}>
       <div className="turn-hero">
         <div className="turn-hero-name">
           <span>{isTurn ? 'LƯỢT CỦA' : 'ĐANG CHỜ'}</span>
           <strong>{me.name}</strong>
+          <span className="turn-hero-stats"><b>{money(me.cash)}</b><span>🏠 {assetCount(game, me.id)} tài sản</span></span>
           {away && <small>mất kết nối</small>}
         </div>
         <div className="turn-hero-dice">
