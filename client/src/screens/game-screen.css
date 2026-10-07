@@ -1089,3 +1089,20 @@
 .land .center.hero-bottom .turn-hero {
   flex: none;
 }
+
+/* v11b: giữ panel trung tâm hoàn toàn trong vùng giữa, tạo hành lang trống quanh mép bàn. */
+.land .center {
+  width: min(390px, 48cqw);
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 46cqh;
+  overflow-y: auto;
+}
+
+.land .center.hero-top {
+  top: 31%;
+}
+
+.land .center.hero-bottom {
+  top: 69%;
+}
