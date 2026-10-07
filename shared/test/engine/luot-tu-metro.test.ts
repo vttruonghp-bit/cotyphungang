@@ -872,11 +872,11 @@ describe('ở tù: thử đổ đôi (mục 6)', () => {
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 0 });
   });
 
-  it('lần 3 thiếu tiền nhưng có tài sản: chưa đủ 50Đ thì không thể chọn trả bảo lãnh', () => {
+  it('lần 3 thiếu tiền nhưng có tài sản: được chọn trả và chuyển sang xử lý nợ', () => {
     const s0 = own(setPlayer(truot(aTrongTu(), 2), 'a', { cash: 30 }), 'a', 39);
-    const s = roll(s0, 1, 2);
-    reject(s, { type: 'payBail', playerId: 'a' });
-    expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
+    let s = roll(s0, 1, 2);
+    s = act(s, { type: 'payBail', playerId: 'a' });
+    expect(s.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 50, reason: 'jailBail' });
   });
 
   it('lần 3 chọn trả 50Đ khi thiếu tiền: vào xử lý nợ rồi thanh lý tài sản', () => {
