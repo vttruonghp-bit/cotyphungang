@@ -648,7 +648,9 @@ describe('Xử lý nợ (mục 10)', () => {
 
   it('Bảo lãnh bắt buộc ở lần thử thứ 3 thiếu tiền: Xử lý nợ, trả 50Đ rồi đi theo tổng', () => {
     const s0 = oTu(own(newGame(), 'a', 1), 'a', { jailAttempts: 2, cash: 20 });
-    const s1 = roll(s0, 1, 2);
+    let s1 = roll(s0, 1, 2);
+    expect(s1.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
+    s1 = act(s1, { type: 'payBail', playerId: 'a' });
     expect(s1.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 50 });
     const s2 = manage(s1, 'a', op('mortgage', 1));
     expect(cash(s2, 'a')).toBe(50);
@@ -658,7 +660,9 @@ describe('Xử lý nợ (mục 10)', () => {
   });
 
   it('Bảo lãnh bắt buộc ở lần thử thứ 3 không trả nổi: phá sản', () => {
-    const s = roll(oTu(newGame(), 'a', { jailAttempts: 2, cash: 20 }), 1, 2);
+    let s = roll(oTu(newGame(), 'a', { jailAttempts: 2, cash: 20 }), 1, 2);
+    expect(s.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
+    s = act(s, { type: 'payBail', playerId: 'a' });
     expect(isGameOver(s)).toBe(true);
     expect(player(s, 'a').status).toBe('bankrupt');
   });
@@ -1080,7 +1084,7 @@ describe('Hết giờ: gieo và xác nhận bắt buộc được làm thay, l�
       cash: 500,
       jailAttempts: 1,
     });
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
   });
 
   it('Hết giờ ở tù, đổ ra đôi: ra tù, đi theo số đó, không có lượt thêm', () => {
@@ -1104,8 +1108,10 @@ describe('Hết giờ: gieo và xác nhận bắt buộc được làm thay, l�
     expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
   });
 
-  it('Hết giờ lần thử thứ 3 thất bại, không có thẻ: trả 50Đ rồi đi theo tổng', () => {
-    const s = timeout(oTu(newGame(), 'a', { jailAttempts: 2 }), [1, 2]);
+  it('Hết giờ lần thử thứ 3 thất bại: dừng ở lựa chọn bắt buộc; hết giờ lần nữa mới tự trả 50Đ', () => {
+    const s1 = timeout(oTu(newGame(), 'a', { jailAttempts: 2 }), [1, 2]);
+    expect(s1.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
+    const s = timeout(s1);
     expect(player(s, 'a')).toMatchObject({ inJail: false, position: 13, cash: 450 });
     expect(s.pending).toEqual({ type: 'buy', playerId: 'a', tile: 13 });
   });
@@ -1299,7 +1305,9 @@ describe('Hết giờ khi đang nợ: máy chủ thanh lý theo thứ tự mặc
 
   it('Hết giờ khi nợ bảo lãnh lần thử thứ 3: thanh lý, trả 50Đ rồi đi theo tổng', () => {
     const s0 = oTu(own(newGame(), 'a', 1), 'a', { jailAttempts: 2, cash: 20 });
-    const s1 = timeout(s0, [1, 2]);
+    let s1 = timeout(s0, [1, 2]);
+    expect(s1.pending).toEqual({ type: 'jailRelease', playerId: 'a', steps: 3 });
+    s1 = timeout(s1);
     expect(s1.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 50 });
     const s = timeout(s1);
     expect(tile(s, 1).mortgaged).toBe(true);
