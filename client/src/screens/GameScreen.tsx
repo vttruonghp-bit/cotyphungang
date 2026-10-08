@@ -587,12 +587,12 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
             className={`frame${active ? ' is-turn is-expanded' : ' is-waiting'}${p.status !== 'active' ? ' is-out' : ''}`}
             style={{ ['--pc' as string]: colorOf(p.color).main }}
           >
-            <span className="frame-player-token">
-              <TokenIcon icon={p.icon} color={p.color} size={active ? 28 : 24} />
-              {offline.has(p.id) && <span className="offline-dot" />}
-            </span>
             <span className="frame-text">
               <span className="frame-topline">
+                <span className="frame-player-token">
+                  <TokenIcon icon={p.icon} color={p.color} size={active ? 36 : 30} />
+                  {offline.has(p.id) && <span className="offline-dot" />}
+                </span>
                 <b className="frame-name">{p.name}{p.id === meId ? ' (bạn)' : ''}</b>
                 <b className="frame-cash">{money(p.cash)}</b>
               </span>
@@ -601,7 +601,7 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
                   <span key={tile.index} className="frame-asset-line">
                     <span>{tile.name}</span>
                     <span className="frame-asset-level">
-                      {level >= HOTEL_LEVEL ? '🏨' : active ? '🏠'.repeat(level) || '0' : String(level)}
+                      {level >= HOTEL_LEVEL ? '🏨' : level === 0 ? '0' : '🏠'.repeat(level)}
                     </span>
                   </span>
                 ))}
