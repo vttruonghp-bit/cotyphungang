@@ -92,6 +92,16 @@ describe('thao tác trong ván', () => {
     });
   });
 
+  it('cho phép hoàn tác mua tự nguyện qua máy chủ, không làm thay người khác', () => {
+    expect(parseAction({ type: 'cancelPurchase', playerId: 'p1' }, 'p1')).toEqual({
+      ok: true,
+      value: { type: 'cancelPurchase', playerId: 'p1' },
+    });
+    expect(error(parseAction({ type: 'cancelPurchase', playerId: 'p2' }, 'p1'))).toBe(
+      'Bạn chỉ được thao tác cho chính mình',
+    );
+  });
+
   it('không nhận hết giờ, không làm thay người khác', () => {
     expect(error(parseAction({ type: 'timeout' }, 'p1'))).toBe('Chỉ máy chủ được báo hết giờ');
     expect(error(parseAction({ type: 'pay', playerId: 'p2' }, 'p1'))).toBe(
