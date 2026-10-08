@@ -19,10 +19,11 @@ interface SheetProps {
   label?: string;
   /** Thay "Lượt X" ở đầu màn bằng người khác, ví dụ "Linh rút" khi lượt đã sang người sau. */
   who?: { playerId: string; text: string };
+  compactManage?: boolean;
 }
 
 /** Màn phụ phủ toàn bộ khung điện thoại, giống các hình mẫu trong bản 3.2. */
-export function Sheet({ game, icon, title, subtitle, footer, children, label, who }: SheetProps) {
+export function Sheet({ game, icon, title, subtitle, footer, children, label, who, compactManage }: SheetProps) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -31,7 +32,7 @@ export function Sheet({ game, icon, title, subtitle, footer, children, label, wh
     };
   }, []);
   return (
-    <div className="sheet-backdrop">
+    <div className={`sheet-backdrop${compactManage ? " sheet-backdrop-manage" : ""}`}>
       <section className="sheet" role="dialog" aria-modal="true" aria-label={label ?? title}>
         <header className="app-header">
           <h1 className="app-title">CỜ TỶ PHÚ</h1>
