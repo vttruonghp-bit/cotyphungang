@@ -407,3 +407,23 @@
 .move-dest .eyebrow {
   color: var(--blue);
 }
+
+/* Metro, destination picker and jail choices: reduce vertical card waste. */
+.land .sheet-backdrop .move-option {
+  min-height: 39px;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.land .sheet-backdrop .move-option-title {
+  font-size: clamp(12px, 2cqh, 17px);
+}
+.land .sheet-backdrop .move-option-text,
+.land .sheet-backdrop .move-option-foot,
+.land .sheet-backdrop .move-warn p,
+.land .sheet-backdrop .move-dest {
+  font-size: clamp(10px, 1.7cqh, 13px);
+  line-height: 1.2;
+}
+.land .sheet-backdrop .move-option.is-on {
+  padding: 3px 7px;
+}

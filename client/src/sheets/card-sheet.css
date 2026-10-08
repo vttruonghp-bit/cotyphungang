@@ -684,3 +684,38 @@
     animation: none;
   }
 }
+
+/* Cards: keep the result, interpretation and Continue together in one viewport. */
+.land .sheet-backdrop .draw-body,
+.land .sheet-backdrop .draw-stage,
+.land .sheet-backdrop .draw-footer {
+  gap: 5px;
+}
+.land .sheet-backdrop .draw-card {
+  padding: 6px 10px;
+}
+.land .sheet-backdrop .draw-card-title {
+  font-size: clamp(15px, 2.8cqh, 23px);
+}
+.land .sheet-backdrop .draw-card-text,
+.land .sheet-backdrop .draw-next {
+  font-size: clamp(10px, 1.8cqh, 13px);
+  line-height: 1.2;
+}
+.land .sheet-backdrop .draw-dice,
+.land .sheet-backdrop .draw-asset {
+  padding: 5px 8px;
+  gap: 3px;
+}
+.land .sheet-backdrop .draw-footer {
+  flex-direction: row;
+  align-items: center;
+}
+.land .sheet-backdrop .draw-footer .btn {
+  width: auto;
+  min-width: 120px;
+}
+.land .sheet-backdrop .draw-next {
+  flex: 1 1 auto;
+  min-width: 0;
+}
