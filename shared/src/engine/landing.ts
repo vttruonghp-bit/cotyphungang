@@ -470,6 +470,10 @@ function applyCard(
       }
       s.tiles[mine]!.owner = opp.id;
       s.tiles[theirs]!.owner = p.id;
+      // Đổi chủ không phải mua đất trong lượt này: không giữ cờ mua của chủ cũ.
+      // Trạng thái cắm và cấp nhà vẫn chuyển theo tài sản; chủ mới có quyền chuộc.
+      s.tiles[mine]!.boughtTurn = null;
+      s.tiles[theirs]!.boughtTurn = null;
       addLog(s, p.id, `Đổi ${BOARD[mine]!.name} lấy ${BOARD[theirs]!.name}`);
       expireTaxWaivers(s);
       return { steps: [], net: 0 };
