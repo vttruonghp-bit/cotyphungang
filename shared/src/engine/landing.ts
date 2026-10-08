@@ -136,7 +136,7 @@ function landOwnable(
           : none;
       }
       if (justBought) return none;
-      return t.level < HOTEL_LEVEL && p.cash >= tile.upgradeCost
+      return t.level < HOTEL_LEVEL
         ? { steps: [{ type: 'upgrade', playerId: p.id, tile: index, mode: 'build' }], net: 0 }
         : none;
     }
