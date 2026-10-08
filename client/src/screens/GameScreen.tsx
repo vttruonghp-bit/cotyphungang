@@ -346,8 +346,8 @@ export function GameScreen({
   const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
     position.col === 0 ? 'left' : 'right';
   const tileOffset = {
-    ['--tile-col' as string]: position.col + 0.5,
-    ['--tile-row' as string]: position.row + 0.5,
+    ['--tile-col' as string]: Math.max(1.8, Math.min(9.2, position.col + 0.5)),
+    ['--tile-row' as string]: Math.max(1.8, Math.min(9.2, position.row + 0.5)),
   };
 
   const accentStyle = {
