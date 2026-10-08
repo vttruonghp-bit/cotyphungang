@@ -354,7 +354,9 @@ function handle(s: GameState, a: Action, rng: Rng): void {
           dice.push(rollDie(rng), rollDie(rng));
         }
       } else if (effect.type === 'swapProperty') {
-        const opponentCount = s.players.filter((x) => x.status === 'active' && x.id !== pd.playerId).length;
+        const opponentCount = s.players.filter(
+          (x) => x.status === 'active' && x.id !== pd.playerId,
+        ).length;
         let d = rollDie(rng);
         dice.push(d);
         while (d > opponentCount) {
@@ -372,8 +374,21 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       const pd = expectPending(s, a.playerId, 'cardDice');
       if (pd.dice === null) throw new RuleError('Phải bấm Sục trước khi xác nhận');
       if (pd.highwayTile !== undefined) {
-        const fixedRng: Rng = { int: (min, max) => min === 1 && max === 6 ? pd.dice![0]! : rng.int(min, max) };
-        chooseTile(s, { type: 'chooseTile', playerId: pd.playerId, purpose: 'highway', options: [pd.highwayTile] }, pd.highwayTile, fixedRng, true);
+        const fixedRng: Rng = {
+          int: (min, max) => (min === 1 && max === 6 ? pd.dice![0]! : rng.int(min, max)),
+        };
+        chooseTile(
+          s,
+          {
+            type: 'chooseTile',
+            playerId: pd.playerId,
+            purpose: 'highway',
+            options: [pd.highwayTile],
+          },
+          pd.highwayTile,
+          fixedRng,
+          true,
+        );
       } else {
         const out = resolveCardDice(s, getPlayer(s, pd.playerId), pd.cardId, pd.dice, rng);
         prepend(s, out.steps);
@@ -615,7 +630,15 @@ function chooseTile(
     return;
   }
   if (s.stagedDiceCards && !alreadyRolled) {
-    prepend(s, [{ type: 'cardDice', playerId: p.id, cardId: 'community-highway', dice: null, highwayTile: tile }]);
+    prepend(s, [
+      {
+        type: 'cardDice',
+        playerId: p.id,
+        cardId: 'community-highway',
+        dice: null,
+        highwayTile: tile,
+      },
+    ]);
     return;
   }
   const d = rollDie(rng) as 1 | 2 | 3 | 4 | 5 | 6;
@@ -768,7 +791,11 @@ function timeout(s: GameState, rng: Rng): void {
     case 'metro':
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
     case 'cardDice':
-      return handle(s, { type: pd.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId: pd.playerId }, rng);
+      return handle(
+        s,
+        { type: pd.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId: pd.playerId },
+        rng,
+      );
     case 'pay': {
       if (pd.reason === 'upgrade')
         return handle(s, { type: 'cancelUpgrade', playerId: pd.playerId }, rng);

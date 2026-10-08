@@ -28,7 +28,9 @@ function interpretation(game: GameState, pd: CardDicePending): string {
     return `Ra ${dice[0]} → thưởng ${money(reward)}. Chỉ cộng tiền khi xác nhận.`;
   }
   if (effect.type === 'flyDice') {
-    return dice.map((d, i) => `Viên ${i + 1}: ${d} → ${d % 2 === 0 ? 'tiến' : 'lùi'} ${d} ô`).join(' · ');
+    return dice
+      .map((d, i) => `Viên ${i + 1}: ${d} → ${d % 2 === 0 ? 'tiến' : 'lùi'} ${d} ô`)
+      .join(' · ');
   }
   if (effect.type === 'advanceToNearest') {
     return `Gieo ${dice.join(' + ')} = ${dice.reduce((a, d) => a + d, 0)}; nếu ô thuộc người khác, trả ${effect.diceMultiplier} × tổng xúc xắc.`;
@@ -58,19 +60,46 @@ export function CardDiceSheet({ game, pending, enabled, onRoll, onConfirm }: Pro
       label={`Gieo xúc xắc cho thẻ ${card.title}`}
       footer={
         <div className="btn-row">
-          <button className="btn btn-outline" type="button" disabled={!enabled || rolled} onClick={onRoll}>🎲 Sục</button>
-          <button className="btn btn-grow btn-teal" type="button" disabled={!enabled || !rolled} onClick={onConfirm}>✓ Xác nhận kết quả</button>
+          <button
+            className="btn btn-outline"
+            type="button"
+            disabled={!enabled || rolled}
+            onClick={onRoll}
+          >
+            🎲 Sục
+          </button>
+          <button
+            className="btn btn-grow btn-teal"
+            type="button"
+            disabled={!enabled || !rolled}
+            onClick={onConfirm}
+          >
+            ✓ Xác nhận kết quả
+          </button>
         </div>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 8 }}>
         <strong style={{ fontSize: 22 }}>{card.title}</strong>
         <p>{card.description}</p>
-        {rolled && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Dice values={dice.length <= 2 ? dice : dice.slice(0, 2)} color={color} size={56} />
-          {dice.length > 2 && <strong>Tất cả xúc xắc: {dice.join(' · ')}</strong>}
-        </div>}
-        <div className="box" style={{ padding: 14, fontWeight: 800, fontSize: 15, lineHeight: 1.5 }}>
+        {rolled && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Dice values={dice.length <= 2 ? dice : dice.slice(0, 2)} color={color} size={56} />
+            {dice.length > 2 && <strong>Tất cả xúc xắc: {dice.join(' · ')}</strong>}
+          </div>
+        )}
+        <div
+          className="box"
+          style={{ padding: 14, fontWeight: 800, fontSize: 15, lineHeight: 1.5 }}
+        >
           {interpretation(game, pending)}
         </div>
         {!enabled && <p className="muted">Đang chờ {drawer.name} thực hiện thao tác.</p>}

@@ -53,7 +53,13 @@ export type Pending =
   | { type: 'jailRelease'; playerId: string; steps: number }
   | { type: 'buy'; playerId: string; tile: number }
   /** Card is drawn; player must roll and confirm before its effect changes game state. */
-  | { type: 'cardDice'; playerId: string; cardId: string; dice: number[] | null; highwayTile?: number }
+  | {
+      type: 'cardDice';
+      playerId: string;
+      cardId: string;
+      dice: number[] | null;
+      highwayTile?: number;
+    }
   /** Dừng ở đất của mình: nâng 1 cấp, hoặc chuộc (+ nâng lên 1 nhà nếu là đất màu). */
   | { type: 'upgrade'; playerId: string; tile: number; mode: 'build' | 'redeemBuild' | 'redeem' }
   | { type: 'metro'; playerId: string }

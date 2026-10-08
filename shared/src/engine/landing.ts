@@ -210,14 +210,18 @@ function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outco
   // Live sessions pause before any random effect. The actual effect is applied only
   // after the drawer rolls and explicitly confirms the server-generated dice.
   const e = card.effect;
-  const needsDice = e.type === 'lottery' || e.type === 'flyDice' ||
-    e.type === 'neighborFire' || e.type === 'swapProperty' ||
+  const needsDice =
+    e.type === 'lottery' ||
+    e.type === 'flyDice' ||
+    e.type === 'neighborFire' ||
+    e.type === 'swapProperty' ||
     (e.type === 'advanceToNearest' &&
       (() => {
         const target = nearestAhead(p.position, e.target).index;
         const owner = s.tiles[target]?.owner;
-        return owner !== null && owner !== undefined && owner !== p.id &&
-          !s.tiles[target]!.mortgaged;
+        return (
+          owner !== null && owner !== undefined && owner !== p.id && !s.tiles[target]!.mortgaged
+        );
       })());
   if (s.stagedDiceCards && needsDice) {
     return { steps: [{ type: 'cardDice', playerId: p.id, cardId: card.id, dice: null }], net: 0 };
@@ -253,7 +257,9 @@ export function resolveCardDice(
     },
   };
   const ev: Extract<GameEvent, { type: 'card' }> = {
-    type: 'card', playerId: p.id, cardId,
+    type: 'card',
+    playerId: p.id,
+    cardId,
   };
   s.events.push(ev);
   const out = applyCard(s, p, card, diceRng, ev);

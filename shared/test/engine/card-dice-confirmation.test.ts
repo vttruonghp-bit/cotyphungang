@@ -7,9 +7,16 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     s.stagedDiceCards = true;
     topCard(s, 'chance-lottery');
     s = roll(s, 3, 4);
-    expect(s.pending).toMatchObject({ type: 'cardDice', playerId: 'a', cardId: 'chance-lottery', dice: null });
+    expect(s.pending).toMatchObject({
+      type: 'cardDice',
+      playerId: 'a',
+      cardId: 'chance-lottery',
+      dice: null,
+    });
     expect(cash(s, 'a')).toBe(500);
-    expect(reject(s, { type: 'confirmCardDice', playerId: 'a' })).toBe('Phải bấm Sục trước khi xác nhận');
+    expect(reject(s, { type: 'confirmCardDice', playerId: 'a' })).toBe(
+      'Phải bấm Sục trước khi xác nhận',
+    );
     expect(reject(s, { type: 'rollCardDice', playerId: 'b' })).toBe('Không phải lượt của bạn');
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [3]);
     expect(s.pending).toMatchObject({ type: 'cardDice', dice: [3] });
@@ -43,7 +50,12 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     s = roll(s, 1, 2);
     expect(s.pending).toMatchObject({ type: 'chooseTile', purpose: 'highway' });
     s = act(s, { type: 'chooseTile', playerId: 'a', tile: 6 });
-    expect(s.pending).toMatchObject({ type: 'cardDice', cardId: 'community-highway', highwayTile: 6, dice: null });
+    expect(s.pending).toMatchObject({
+      type: 'cardDice',
+      cardId: 'community-highway',
+      highwayTile: 6,
+      dice: null,
+    });
     expect(s.players[0]!.position).toBe(17);
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [4]);
     expect(s.players[0]!.position).toBe(17);
