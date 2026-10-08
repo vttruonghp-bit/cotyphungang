@@ -39,6 +39,8 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     expect(cash(s, 'a')).toBe(500);
     s = act(s, { type: 'confirmCardDice', playerId: 'a' });
     expect(s.players[0]!.position).toBe(8);
+    expect(s.pending).toMatchObject({ type: 'pay', playerId: 'a', total: 50 });
+    s = act(s, { type: 'pay', playerId: 'a' });
     expect(cash(s, 'a')).toBe(450);
   });
 
