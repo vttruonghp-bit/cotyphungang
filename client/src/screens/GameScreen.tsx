@@ -29,6 +29,7 @@ import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
 import { CardFan } from '../sheets/CardFan';
 import { CardSheet } from '../sheets/CardSheet';
+import { CardDiceSheet } from '../sheets/CardDiceSheet';
 import { ChooseTileSheet } from '../sheets/ChooseTileSheet';
 import { GameOverSheet } from '../sheets/GameOverSheet';
 import { JailSheet } from '../sheets/JailSheet';
@@ -248,6 +249,8 @@ export function GameScreen({
         onContinue={() => setReveals((r) => r.filter((x) => x !== reveal))}
       />
     );
+  } else if (pd.type === 'cardDice') {
+    sheet = <CardDiceSheet game={game} pending={pd} enabled={myMove} onRoll={() => { void send({ type: 'rollCardDice', playerId: pd.playerId }); }} onConfirm={() => { void send({ type: 'confirmCardDice', playerId: pd.playerId }); }} />;
   } else if (pd.type === 'ended') {
     sheet = <GameOverSheet game={game} onNewGame={onNewGame} />;
   } else if (manual === 'appearance') {
