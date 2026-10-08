@@ -132,6 +132,7 @@ export function chooseAction(s: GameState, rng: Rng): Action {
       if (me.cash >= pd.total) return { type: 'pay', playerId: id };
       // Đang nợ: tự thanh lý một bước ngẫu nhiên hợp lệ, hoặc để máy chủ làm.
       const ops: ManageOp[] = mine.flatMap((i): ManageOp[] => {
+        if (pd.reason === 'upgrade' && pd.upgradeTile === i) return [];
         const t = s.tiles[i]!;
         if (t.level > 0) return [{ op: 'downgrade', tile: i }];
         return t.mortgaged

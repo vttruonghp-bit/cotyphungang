@@ -86,6 +86,7 @@ const SIMPLE_ACTIONS = new Set([
   'buy',
   'declineBuy',
   'cancelPurchase',
+  'cancelUpgrade',
   'upgrade',
   'skipUpgrade',
   'pay',

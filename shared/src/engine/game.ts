@@ -2,6 +2,7 @@ import { BOARD, nearestAhead } from '../board';
 import { CHANCE_CARDS, COMMUNITY_CARDS, FORTUNE_MIRROR_AMOUNT } from '../cards';
 import {
   BOARD_SIZE,
+  HOTEL_LEVEL,
   JAIL_BAIL,
   MAX_JAIL_TURNS,
   MAX_DOUBLES_BEFORE_JAIL,
@@ -229,7 +230,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
         executePay(s, step);
         return false;
       }
-      if (p.cash + maxLiquidationValue(s, p.id) < step.total) {
+      if (step.reason !== 'upgrade' && p.cash + maxLiquidationValue(s, p.id) < step.total) {
         addLog(s, p.id, `Không đủ khả năng trả ${step.total}Đ`);
         endGame(s, p, 'bankrupt');
         return true;
@@ -258,6 +259,12 @@ function executePay(s: GameState, step: Extract<Pending, { type: 'pay' }>) {
   p.cash -= step.total;
   for (const c of step.creditors) {
     if (c.playerId !== null) getPlayer(s, c.playerId).cash += c.amount;
+  }
+  if (step.upgradeTile !== undefined) {
+    const t = tileState(s, step.upgradeTile);
+    if (t.owner !== p.id || t.mortgaged || t.level >= HOTEL_LEVEL)
+      throw new RuleError('Không thể nâng nhà');
+    t.level += 1;
   }
   if (step.grantTile !== undefined) {
     const t = tileState(s, step.grantTile);
@@ -372,6 +379,13 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       addLog(s, a.playerId, `Hủy mua ${BOARD[pd.grantTile]!.name}`);
       return advance(s, rng);
     }
+    case 'cancelUpgrade': {
+      const pd = expectPending(s, a.playerId, 'pay');
+      if (pd.reason !== 'upgrade' || pd.upgradeTile === undefined)
+        throw new RuleError('Không có nâng nhà để hoàn tác');
+      addLog(s, a.playerId, `Hủy nâng nhà ${BOARD[pd.upgradeTile]!.name}`);
+      return advance(s, rng);
+    }
     case 'upgrade': {
       const pd = expectPending(s, a.playerId, 'upgrade');
       const p = getPlayer(s, a.playerId);
@@ -379,7 +393,21 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       const tile = ownableTile(pd.tile);
       if (pd.mode === 'build') {
         const prop = propertyTile(pd.tile);
-        if (p.cash < prop.upgradeCost) throw new RuleError('Không đủ tiền nâng cấp');
+        if (p.cash < prop.upgradeCost) {
+          prepend(s, [
+            {
+              type: 'pay',
+              playerId: p.id,
+              creditors: [{ playerId: null, amount: prop.upgradeCost }],
+              total: prop.upgradeCost,
+              reason: 'upgrade',
+              confirm: false,
+              label: `Nâng ${tile.name} lên cấp ${t.level + 1}`,
+              upgradeTile: pd.tile,
+            },
+          ]);
+          return advance(s, rng);
+        }
         p.cash -= prop.upgradeCost;
         t.level += 1;
         addLog(s, p.id, `Nâng ${tile.name} lên cấp ${t.level}`, -prop.upgradeCost);
@@ -571,6 +599,11 @@ function manage(s: GameState, playerId: string, ops: ManageOp[]) {
   // Cả bản nháp được xác nhận một lần: chỉ cần tiền sau toàn bộ thao tác không âm.
   const mortgagedHere = new Set<number>();
   for (const op of ops) {
+    if (inDebt && pd.type === 'pay' && pd.reason === 'upgrade' && pd.upgradeTile === op.tile) {
+      throw new RuleError(
+        'Không được thanh lý ô đất đang định nâng; hãy hoàn tác nâng hoặc dùng tài sản khác',
+      );
+    }
     if (op.op === 'redeem' && mortgagedHere.has(op.tile)) {
       throw new RuleError('Bản nháp vừa cắm rồi lại chuộc cùng một ô, hãy dùng nút + để hoàn lại');
     }
@@ -688,6 +721,8 @@ function timeout(s: GameState, rng: Rng): void {
     case 'metro':
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
     case 'pay': {
+      if (pd.reason === 'upgrade')
+        return handle(s, { type: 'cancelUpgrade', playerId: pd.playerId }, rng);
       const p = getPlayer(s, pd.playerId);
       autoLiquidate(s, p, pd.total);
       return handle(s, { type: 'pay', playerId: pd.playerId }, rng);

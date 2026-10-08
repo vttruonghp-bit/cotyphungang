@@ -39,7 +39,7 @@ export interface Creditor {
 }
 
 export type PayReason =
-  'rent' | 'tax' | 'card' | 'jailBail' | 'purchase' | 'fortuneMirror' | 'swapPenalty';
+  'rent' | 'tax' | 'card' | 'jailBail' | 'purchase' | 'upgrade' | 'fortuneMirror' | 'swapPenalty';
 
 /** Việc ván đang chờ một người chơi làm. */
 export type Pending =
@@ -63,6 +63,8 @@ export type Pending =
       confirm: boolean;
       /** Ô được nhận sau khi trả (thẻ bắt buộc mua). */
       grantTile?: number;
+      /** Voluntary house upgrade performed only after payment is completed. */
+      upgradeTile?: number;
       /** Dòng nhật ký khi trả, ví dụ "Trả thuê Hội An". */
       label?: string;
     }
@@ -175,6 +177,7 @@ export type Action =
   | { type: 'buy'; playerId: string }
   | { type: 'declineBuy'; playerId: string }
   | { type: 'cancelPurchase'; playerId: string }
+  | { type: 'cancelUpgrade'; playerId: string }
   | { type: 'upgrade'; playerId: string }
   | { type: 'skipUpgrade'; playerId: string }
   /** null = ở lại ô 10. */
