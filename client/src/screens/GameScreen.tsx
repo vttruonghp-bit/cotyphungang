@@ -376,15 +376,23 @@ export function GameScreen({
         <div className="land-main" inert={sheet !== null}>
           <div className="player-column">
             <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
-            <button
-              type="button"
-              className="history-toggle"
-              aria-expanded={historyOpen}
-              aria-controls="mobile-history"
-              onClick={() => setHistoryOpen((open) => !open)}
-            >
-              {historyOpen ? '× Đóng lịch sử' : '☷ Lịch sử'}
-            </button>
+            <div className="mobile-player-actions">
+              <button
+                type="button"
+                className="history-toggle"
+                aria-expanded={historyOpen}
+                aria-controls="mobile-history"
+                onClick={() => setHistoryOpen((open) => !open)}
+              >
+                ☷ Lịch sử
+              </button>
+              <button type="button" className="btn btn-surrender" onClick={() => setManual('surrender')}>
+                ⚠ Đầu hàng
+              </button>
+              <button type="button" className="btn btn-denvl" onClick={() => setManual('appearance')}>
+                Đen VL
+              </button>
+            </div>
             {historyOpen && (
               <div className="mobile-history" id="mobile-history">
                 <button type="button" className="mobile-history-close" onClick={() => setHistoryOpen(false)} aria-label="Đóng lịch sử">×</button>
