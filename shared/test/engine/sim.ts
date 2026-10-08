@@ -156,7 +156,7 @@ function ownablePrice(i: number): number {
 export function simulate(seed: number, maxActions = MAX_ACTIONS) {
   const rng = seededRng(seed);
   const n = 2 + (seed % 5);
-  let s = createGame(PLAYERS.slice(0, n), rng);
+  let s = createGame(PLAYERS.slice(0, n), rng, false);
   checkInvariants(s);
   let actions = 0;
   while (!isGameOver(s) && actions < maxActions) {
