@@ -1583,3 +1583,51 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Phone: fill the inner 9x9 space while leaving every perimeter tile uncovered. */
+@media (max-width: 600px) and (orientation: portrait),
+  (max-height: 550px) and (orientation: landscape) {
+  .land .center-position .center {
+    width: calc(var(--mobile-board-size) * 9 / 11 - 10px);
+    height: calc(var(--mobile-board-size) * 9 / 11 - 10px);
+    max-height: calc(var(--mobile-board-size) * 9 / 11 - 10px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .land .center-player-theme .turn-hero {
+    min-height: 0;
+    flex: 0 0 auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+  .land .center-player-theme .turn-hero-name {
+    min-width: 0;
+  }
+  .land .center-player-theme .turn-hero-name > strong {
+    font-size: clamp(18px, 3.2cqh, 31px);
+    line-height: 1.12;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+  .land .center-player-theme .turn-hero-dice {
+    padding: 3px;
+    border-width: 2px;
+    gap: 2px;
+  }
+  .land .center-player-theme .turn-hero-dice .die {
+    width: clamp(27px, 5cqh, 39px);
+    height: clamp(27px, 5cqh, 39px);
+  }
+  .land .center-player-theme .center-head {
+    flex: 0 0 auto;
+  }
+  .land .center-player-theme .center-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
