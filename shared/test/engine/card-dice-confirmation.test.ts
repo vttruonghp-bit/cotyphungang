@@ -64,4 +64,36 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     s = act(s, { type: 'confirmCardDice', playerId: 'a' });
     expect(s.players[0]!.position).toBe(6);
   });
+  it('Thằng Bờm leaves owners unchanged until dice are confirmed', () => {
+    let s = newGame();
+    s.stagedDiceCards = true;
+    own(s, 'a', 3);
+    own(s, 'a', 39);
+    own(s, 'b', 6);
+    own(s, 'b', 37);
+    topCard(s, 'community-swap');
+    setPlayer(s, 'a', { position: 14 });
+    s = roll(s, 1, 2);
+    expect(s.pending).toMatchObject({ type: 'cardDice', dice: null });
+    s = act(s, { type: 'rollCardDice', playerId: 'a' }, [1, 4]);
+    expect(s.tiles[3]!.owner).toBe('a');
+    expect(s.tiles[6]!.owner).toBe('b');
+    s = act(s, { type: 'confirmCardDice', playerId: 'a' });
+    expect(s.tiles[3]!.owner).toBe('b');
+    expect(s.tiles[6]!.owner).toBe('a');
+  });
+
+  it('fire cannot reduce a house before confirming the rolls of all players', () => {
+    let s = newGame();
+    s.stagedDiceCards = true;
+    own(s, 'b', 21, { level: 2 });
+    topCard(s, 'chance-neighbor-fire');
+    s = roll(s, 3, 4);
+    expect(s.pending).toMatchObject({ type: 'cardDice', dice: null });
+    s = act(s, { type: 'rollCardDice', playerId: 'a' }, [1, 1, 1, 1]);
+    expect(s.tiles[21]!.level).toBe(2);
+    s = act(s, { type: 'confirmCardDice', playerId: 'a' });
+    expect(s.tiles[21]!.level).toBe(1);
+  });
+
 });
