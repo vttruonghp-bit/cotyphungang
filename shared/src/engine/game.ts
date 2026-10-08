@@ -373,7 +373,7 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       if (pd.dice === null) throw new RuleError('Phải bấm Sục trước khi xác nhận');
       if (pd.highwayTile !== undefined) {
         const fixedRng: Rng = { int: (min, max) => min === 1 && max === 6 ? pd.dice![0]! : rng.int(min, max) };
-        chooseTile(s, { type: 'chooseTile', playerId: pd.playerId, purpose: 'highway', options: [pd.highwayTile] }, pd.highwayTile, fixedRng);
+        chooseTile(s, { type: 'chooseTile', playerId: pd.playerId, purpose: 'highway', options: [pd.highwayTile] }, pd.highwayTile, fixedRng, true);
       } else {
         const out = resolveCardDice(s, getPlayer(s, pd.playerId), pd.cardId, pd.dice, rng);
         prepend(s, out.steps);
@@ -600,6 +600,7 @@ function chooseTile(
   pd: Extract<Pending, { type: 'chooseTile' }>,
   tile: number,
   rng: Rng,
+  alreadyRolled = false,
 ) {
   const p = getPlayer(s, pd.playerId);
   const t = tileState(s, tile);
@@ -613,7 +614,7 @@ function chooseTile(
     addLog(s, p.id, `Canh bạc: hạ 1 cấp ${BOARD[tile]!.name}`);
     return;
   }
-  if (s.stagedDiceCards) {
+  if (s.stagedDiceCards && !alreadyRolled) {
     prepend(s, [{ type: 'cardDice', playerId: p.id, cardId: 'community-highway', dice: null, highwayTile: tile }]);
     return;
   }
@@ -766,6 +767,8 @@ function timeout(s: GameState, rng: Rng): void {
       return handle(s, { type: 'skipUpgrade', playerId: pd.playerId }, rng);
     case 'metro':
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
+    case 'cardDice':
+      return handle(s, { type: pd.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId: pd.playerId }, rng);
     case 'pay': {
       if (pd.reason === 'upgrade')
         return handle(s, { type: 'cancelUpgrade', playerId: pd.playerId }, rng);
