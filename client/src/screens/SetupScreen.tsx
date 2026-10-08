@@ -94,7 +94,7 @@ function saveSetup(s: Setup) {
 }
 
 /** Tạo ván mới (hình 5): chơi chung một máy nên không có mã phòng. */
-export function SetupScreen({ onStart, onBack }: SetupScreenProps) {
+export function SetupScreen({ onStart, onBack, onStartAi }: SetupScreenProps & { onStartAi?: (human: NewPlayer) => string | null }) {
   const [setup, setSetup] = useState(loadSetup);
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -223,6 +223,21 @@ export function SetupScreen({ onStart, onBack }: SetupScreenProps) {
             <button type="button" className="btn btn-grow btn-teal" onClick={start}>
               Bắt đầu ván {count} người
             </button>
+            {onStartAi && (
+              <button
+                type="button"
+                className="btn btn-grow"
+                onClick={() => {
+                  const human = shown[0]!;
+                  const name = human.name.trim().replace(/\\s+/g, ' ');
+                  if (!name) return setError('Nhập tên người chơi trước khi đấu AI.');
+                  const err = onStartAi({ id: 'p1', name, color: human.color, icon: human.icon });
+                  if (err) setError(err);
+                }}
+              >
+                🎲 Đấu với ChatGPT AI (1–1)
+              </button>
+            )
           </div>
         </div>
       </section>
