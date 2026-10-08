@@ -17,7 +17,7 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     expect(reject(s, { type: 'confirmCardDice', playerId: 'a' })).toBe(
       'Phải bấm Sục trước khi xác nhận',
     );
-    expect(reject(s, { type: 'rollCardDice', playerId: 'b' })).toBe('Không phải lượt của bạn');
+    expect(reject(s, { type: 'rollCardDice', playerId: 'b' })).toBe('Chưa tới lượt bạn');
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [3]);
     expect(s.pending).toMatchObject({ type: 'cardDice', dice: [3] });
     expect(cash(s, 'a')).toBe(500);
