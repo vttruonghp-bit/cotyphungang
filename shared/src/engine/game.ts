@@ -599,6 +599,9 @@ function manage(s: GameState, playerId: string, ops: ManageOp[]) {
   // Cả bản nháp được xác nhận một lần: chỉ cần tiền sau toàn bộ thao tác không âm.
   const mortgagedHere = new Set<number>();
   for (const op of ops) {
+    if (inDebt && pd.type === 'pay' && pd.reason === 'upgrade' && pd.upgradeTile === op.tile) {
+      throw new RuleError('Không được thanh lý ô đất đang định nâng; hãy hoàn tác nâng hoặc dùng tài sản khác');
+    }
     if (op.op === 'redeem' && mortgagedHere.has(op.tile)) {
       throw new RuleError('Bản nháp vừa cắm rồi lại chuộc cùng một ô, hãy dùng nút + để hoàn lại');
     }
@@ -716,6 +719,7 @@ function timeout(s: GameState, rng: Rng): void {
     case 'metro':
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
     case 'pay': {
+      if (pd.reason === 'upgrade') return handle(s, { type: 'cancelUpgrade', playerId: pd.playerId }, rng);
       const p = getPlayer(s, pd.playerId);
       autoLiquidate(s, p, pd.total);
       return handle(s, { type: 'pay', playerId: pd.playerId }, rng);
