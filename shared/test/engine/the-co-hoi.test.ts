@@ -315,6 +315,24 @@ describe('thẻ 03 Đất gần nhất: đất vô chủ bắt buộc mua (mục
     expect(s.pending).toEqual(LUOT_B);
   });
 
+  it('thẻ Đất gần nhất: không thể hoàn tác mua khi thiếu tiền', () => {
+    const s0 = newGame();
+    setPlayer(s0, 'a', { cash: 300 });
+    own(s0, 'a', 6);
+    const s = rut(s0, 'chance-nearest-property', 36);
+    reject(s, { type: 'cancelPurchase', playerId: 'a' });
+    expect(s.pending).toMatchObject({ type: 'pay', reason: 'purchase', grantTile: 37 });
+  });
+
+  it('thẻ Ga gần nhất: không thể hoàn tác mua khi thiếu tiền', () => {
+    const s0 = newGame();
+    setPlayer(s0, 'a', { cash: 150 });
+    own(s0, 'a', 9);
+    const s = rut(s0, 'chance-nearest-station', 36);
+    reject(s, { type: 'cancelPurchase', playerId: 'a' });
+    expect(s.pending).toMatchObject({ type: 'pay', reason: 'purchase', grantTile: 5 });
+  });
+
   it('đang nợ tiền mua thì chưa sở hữu ô đó nên không cắm được nó để trả', () => {
     const s0 = newGame();
     setPlayer(s0, 'a', { cash: 300 });
