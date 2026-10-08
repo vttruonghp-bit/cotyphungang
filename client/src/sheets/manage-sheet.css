@@ -589,3 +589,120 @@
     max-height: none;
   }
 }
+
+/* Finance dialogs: full viewport over board AND player rail; readable two-column rows. */
+.land .sheet-backdrop-manage {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  box-sizing: border-box;
+}
+.land .sheet-backdrop-manage .sheet {
+  position: relative;
+  inset: auto;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: min(1180px, 98%);
+  height: 98%;
+  max-width: none;
+  max-height: none;
+  padding: 3px;
+}
+.land .sheet-backdrop-manage .sheet-body {
+  min-height: 0;
+  overflow: hidden;
+  padding: 4px 9px;
+}
+.land .sheet-backdrop-manage .manage-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 5px;
+}
+.land .sheet-backdrop-manage .manage-assets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 2px;
+}
+.land .sheet-backdrop-manage .manage-asset {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 3px 5px;
+  border-radius: 7px;
+}
+.land .sheet-backdrop-manage .manage-asset-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(11px, 1.85cqh, 14px);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.land .sheet-backdrop-manage .manage-asset-delta {
+  flex: 0 0 auto;
+  min-width: 43px;
+  font-size: clamp(10px, 1.6cqh, 12px);
+  font-weight: 900;
+  text-align: right;
+}
+.land .sheet-backdrop-manage .manage-asset-actions {
+  flex: 0 0 auto;
+  gap: 3px;
+}
+.land .sheet-backdrop-manage .manage-mini-action {
+  min-width: 26px;
+  height: 28px;
+  padding: 0 4px;
+  font-size: 12px;
+}
+.land .sheet-backdrop-manage .manage-mini-sell,
+.land .sheet-backdrop-manage .manage-mini-mortgage {
+  min-width: 37px;
+}
+.land .sheet-backdrop-manage .sheet-footer {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+}
+@media (max-width: 600px) and (orientation: portrait),
+  (max-height: 550px) and (orientation: landscape) {
+  .land .sheet-backdrop-manage {
+    padding: 2px;
+  }
+  .land .sheet-backdrop-manage .sheet {
+    width: 100%;
+    height: 100%;
+  }
+  .land .sheet-backdrop-manage .manage-assets {
+    gap: 3px 5px;
+  }
+  .land .sheet-backdrop-manage .manage-asset {
+    gap: 3px;
+    min-height: 28px;
+    padding: 2px 3px;
+  }
+  .land .sheet-backdrop-manage .manage-asset-name {
+    font-size: clamp(9px, 1.6cqh, 12px);
+  }
+  .land .sheet-backdrop-manage .manage-mini-action {
+    min-width: 21px;
+    height: 24px;
+    padding: 0 2px;
+    font-size: 10px;
+  }
+  .land .sheet-backdrop-manage .manage-mini-sell,
+  .land .sheet-backdrop-manage .manage-mini-mortgage {
+    min-width: 30px;
+  }
+}
