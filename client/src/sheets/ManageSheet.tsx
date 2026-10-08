@@ -388,7 +388,7 @@ function AssetCard({ game, asset: a, view, onMinus, onPlus, onAction, onUndo }: 
           <button
             type="button"
             className="manage-mini-action"
-            disabled={!can(a.minus)}
+            disabled={!can(a.minus) || a.minus?.kind !== 'downgrade'}
             onClick={onMinus}
             title={`Hạ nhà ${name}`}
           >
@@ -397,7 +397,7 @@ function AssetCard({ game, asset: a, view, onMinus, onPlus, onAction, onUndo }: 
           <button
             type="button"
             className="manage-mini-action"
-            disabled={!can(a.plus)}
+            disabled={!can(a.plus) || a.plus?.kind !== 'redeem'}
             onClick={onPlus}
             title={`Chuộc ${name}`}
           >
