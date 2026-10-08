@@ -532,3 +532,37 @@
     font-size: 10px;
   }
 }
+
+/* Full-viewport compact overlay overrides the former inner-board constraint. */
+.land .sheet-backdrop-manage .sheet {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+}
+.land .sheet-backdrop-manage .manage-assets {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 6px;
+}
+.land .sheet-backdrop-manage .manage-asset {
+  min-height: 25px;
+  padding: 1px 3px;
+}
+.land .sheet-backdrop-manage .manage-asset-name {
+  font-size: clamp(9px, 1.8cqh, 13px);
+}
+.land .sheet-backdrop-manage .manage-mini-action {
+  height: 23px;
+  min-width: 21px;
+  font-size: 11px;
+}
+.land .sheet-backdrop-manage .manage-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 3px;
+}
+.land .sheet-backdrop-manage .manage-cash,
+.land .sheet-backdrop-manage .manage-debt,
+.land .sheet-backdrop-manage .manage-summary {
+  padding: 3px 6px;
+}
