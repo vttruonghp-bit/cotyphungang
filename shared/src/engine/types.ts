@@ -138,6 +138,8 @@ export type GameEvent =
   | { type: 'highway'; playerId: string; tile: number; die: number; to: number };
 
 export interface GameState {
+  /** Interactive sessions defer dice-card effects until explicit confirmation. */
+  stagedDiceCards?: boolean;
   players: PlayerState[];
   /** Chỉ số người đang chơi lượt trong `players`. */
   current: number;
