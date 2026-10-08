@@ -566,3 +566,26 @@
 .land .sheet-backdrop-manage .manage-summary {
   padding: 3px 6px;
 }
+
+/* Last-rule override: supersede the old phone 9x9 inset for finance dialogs. */
+@media (max-width: 600px) and (orientation: portrait),
+  (max-height: 550px) and (orientation: landscape) {
+  .land .sheet-backdrop-manage {
+    position: fixed;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+  }
+  .land .sheet-backdrop-manage .sheet {
+    position: relative;
+    inset: auto;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+  }
+}
