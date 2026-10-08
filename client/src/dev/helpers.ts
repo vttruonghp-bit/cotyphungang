@@ -61,6 +61,9 @@ export function autoplay(s: GameState, steps: number, seed: number): GameState {
       case 'pay':
         a = me.cash >= pd.total ? { type: 'pay', playerId: id } : { type: 'timeout' };
         break;
+      case 'cardDice':
+        a = { type: pd.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId: id };
+        break;
       case 'chooseTile':
         a = { type: 'chooseTile', playerId: id, tile: pd.options[0]! };
         break;
