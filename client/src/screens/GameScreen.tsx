@@ -354,6 +354,8 @@ export function GameScreen({
   const accentStyle = {
     ['--accent' as string]: accent.main,
     ['--accent-soft' as string]: accent.soft,
+    ['--turn-color' as string]: colorOf(cur.color).main,
+    ['--turn-soft' as string]: colorOf(cur.color).soft,
   };
   const playing = pd.type !== 'ended';
   // Online, khi ván chờ người khác: dòng "Đang chờ Minh …" thay cho "Chuyển máy cho …".
@@ -775,7 +777,7 @@ function CenterPanel({
   }, [rollKey, game.events]);
 
   return (
-    <div className="center">
+    <div className="center center-player-theme">
       <div className="turn-hero">
         <div className="turn-hero-name">
           <span>{isTurn ? 'LƯỢT CỦA' : 'ĐANG CHỜ'}</span>
