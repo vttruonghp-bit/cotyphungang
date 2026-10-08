@@ -1006,7 +1006,6 @@
   color: color-mix(in srgb, var(--pc) 85%, #111);
 }
 
-
 /* Cột tài sản: người đang chơi một dòng/tài sản; người chờ hai cột. */
 .land .player-rail {
   overflow-y: auto;
@@ -1110,7 +1109,9 @@
   inset: 0;
   z-index: 5;
   pointer-events: none;
-  transition: transform 250ms ease, scale 250ms ease;
+  transition:
+    transform 250ms ease,
+    scale 250ms ease;
 }
 .center-position .center {
   pointer-events: auto;
