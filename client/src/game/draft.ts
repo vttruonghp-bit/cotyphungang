@@ -163,7 +163,13 @@ function replay(
   for (const op of ops) {
     // Bộ luật không cho chuộc ô vừa cắm trong cùng bản nháp (phải dùng nút + để hoàn lại).
     if (op.op === 'redeem' && mortgagedHere.has(op.tile)) return null;
-    if (mode === 'debt' && game.pending.type === 'pay' && game.pending.reason === 'upgrade' && game.pending.upgradeTile === op.tile) return null;
+    if (
+      mode === 'debt' &&
+      game.pending.type === 'pay' &&
+      game.pending.reason === 'upgrade' &&
+      game.pending.upgradeTile === op.tile
+    )
+      return null;
     const st = states.get(op.tile) ?? startState(game, playerId, op.tile);
     const amount = stepAmount(op.tile, st, op.op, mode);
     if (amount === null) return null;
@@ -219,7 +225,11 @@ export function buildDraft(
     const now = run.states.get(tile) ?? start;
     const steps = run.steps.filter((s) => s.op.tile === tile);
     const last = steps.at(-1);
-    const protectedUpgrade = mode === 'debt' && game.pending.type === 'pay' && game.pending.reason === 'upgrade' && game.pending.upgradeTile === tile;
+    const protectedUpgrade =
+      mode === 'debt' &&
+      game.pending.type === 'pay' &&
+      game.pending.reason === 'upgrade' &&
+      game.pending.upgradeTile === tile;
     return {
       tile,
       start,
@@ -228,8 +238,18 @@ export function buildDraft(
       amount: steps.reduce((a, s) => a + s.amount, 0),
       minus: protectedUpgrade ? null : nextMinus(tile, now, last, mode),
       plus: protectedUpgrade ? null : nextPlus(tile, now, last, mode),
-      mortgage: protectedUpgrade ? null : (() => { const amount = stepAmount(tile, now, 'mortgage', mode); return amount === null ? null : { kind: 'mortgage' as const, amount }; })(),
-      sell: protectedUpgrade ? null : (() => { const amount = stepAmount(tile, now, 'sell', mode); return amount === null ? null : { kind: 'sell' as const, amount }; })(),
+      mortgage: protectedUpgrade
+        ? null
+        : (() => {
+            const amount = stepAmount(tile, now, 'mortgage', mode);
+            return amount === null ? null : { kind: 'mortgage' as const, amount };
+          })(),
+      sell: protectedUpgrade
+        ? null
+        : (() => {
+            const amount = stepAmount(tile, now, 'sell', mode);
+            return amount === null ? null : { kind: 'sell' as const, amount };
+          })(),
       undo: last ? { kind: 'undo', amount: -last.amount } : null,
     };
   });

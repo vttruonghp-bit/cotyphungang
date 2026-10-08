@@ -218,7 +218,12 @@ export function ManageSheet({
                 onMinus={() => setOps(pressMinus(draft, a.tile))}
                 onPlus={() => setOps(pressPlus(draft, a.tile))}
                 onAction={(kind) => setOps((current) => [...current, { op: kind, tile: a.tile }])}
-                onUndo={() => setOps((current) => { const i = current.map((op) => op.tile).lastIndexOf(a.tile); return i < 0 ? current : current.filter((_, j) => i !== j); })}
+                onUndo={() =>
+                  setOps((current) => {
+                    const i = current.map((op) => op.tile).lastIndexOf(a.tile);
+                    return i < 0 ? current : current.filter((_, j) => i !== j);
+                  })
+                }
               />
             ))}
           </ul>
@@ -359,25 +364,70 @@ function AssetCard({ game, asset: a, view, onMinus, onPlus, onAction, onUndo }: 
     changed && 'is-changed',
     a.now.mortgaged && 'is-mortgaged',
     !a.now.owned && 'is-sold',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
   const can = (move: DraftMove | null) => !view && move !== null;
   const change = a.steps.reduce((sum, step) => sum + step.amount, 0);
   const state = kind === 'property' ? ` (${a.now.level})` : '';
   return (
     <li className={cls}>
       <span className="manage-asset-name" title={name}>
-        {name}{state}
+        {name}
+        {state}
       </span>
       <span className={`manage-asset-delta ${change > 0 ? 'up' : change < 0 ? 'down' : ''}`}>
         {changed ? signed(change) : '—'}
       </span>
-      {view ? <span className="manage-asset-view">{a.now.mortgaged ? 'Đang cắm' : rentText(game, a.tile)}</span> : (
+      {view ? (
+        <span className="manage-asset-view">
+          {a.now.mortgaged ? 'Đang cắm' : rentText(game, a.tile)}
+        </span>
+      ) : (
         <span className="manage-asset-actions">
-          <button type="button" className="manage-mini-action" disabled={!can(a.minus)} onClick={onMinus} title={`Hạ nhà ${name}`}>−</button>
-          <button type="button" className="manage-mini-action" disabled={!can(a.plus)} onClick={onPlus} title={`Chuộc ${name}`}>+</button>
-          <button type="button" className="manage-mini-action" disabled={!can(a.undo)} onClick={onUndo} title={`Hoàn tác ${name}`}>↶</button>
-          <button type="button" className="manage-mini-action manage-mini-sell" disabled={!can(a.sell)} onClick={() => onAction('sell')}>Bán</button>
-          <button type="button" className="manage-mini-action manage-mini-mortgage" disabled={!can(a.mortgage)} onClick={() => onAction('mortgage')}>Cắm</button>
+          <button
+            type="button"
+            className="manage-mini-action"
+            disabled={!can(a.minus)}
+            onClick={onMinus}
+            title={`Hạ nhà ${name}`}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className="manage-mini-action"
+            disabled={!can(a.plus)}
+            onClick={onPlus}
+            title={`Chuộc ${name}`}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="manage-mini-action"
+            disabled={!can(a.undo)}
+            onClick={onUndo}
+            title={`Hoàn tác ${name}`}
+          >
+            ↶
+          </button>
+          <button
+            type="button"
+            className="manage-mini-action manage-mini-sell"
+            disabled={!can(a.sell)}
+            onClick={() => onAction('sell')}
+          >
+            Bán
+          </button>
+          <button
+            type="button"
+            className="manage-mini-action manage-mini-mortgage"
+            disabled={!can(a.mortgage)}
+            onClick={() => onAction('mortgage')}
+          >
+            Cắm
+          </button>
         </span>
       )}
     </li>
