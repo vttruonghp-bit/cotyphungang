@@ -1,0 +1,29 @@
+name: Format upgrade changes
+on:
+  push:
+    branches:
+      - feature-upgrade-with-manage-undo
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature-upgrade-with-manage-undo
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write shared/src/engine/game.ts shared/src/engine/landing.ts shared/src/engine/types.ts client/src/sheets/ManageSheet.tsx shared/test/engine/dat-thue-nang-cap.test.ts server/src/validate.ts
+      - name: Commit formatter output
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add shared/src/engine/game.ts shared/src/engine/landing.ts shared/src/engine/types.ts client/src/sheets/ManageSheet.tsx shared/test/engine/dat-thue-nang-cap.test.ts server/src/validate.ts
+            git commit -m "Format upgrade financing changes"
+            git push origin HEAD:feature-upgrade-with-manage-undo
+          fi
