@@ -692,14 +692,18 @@ describe('nâng cấp đất của mình (mục 4)', () => {
     t = roll(t, 3, 4);
     t = act(t, { type: 'metro', playerId: 'a', destination: 3 }); // phí 49Đ, còn 49Đ
     expect(cash(t, 'a')).toBe(49);
-    expect(t.pending).toEqual({ type: 'roll', playerId: 'b' });
+    expect(t.pending).toEqual({ type: 'upgrade', playerId: 'a', tile: 3, mode: 'build' });
   });
 
-  it('thiếu 1Đ so với giá xây thì không được hỏi nâng', () => {
+  it('thiếu 1Đ so với giá xây vẫn hỏi nâng, sau đó cho hủy', () => {
     let s = newGame();
     setPlayer(s, 'a', { cash: 49 });
     own(s, 'a', 3);
     s = roll(s, 1, 2);
+    expect(s.pending).toEqual({ type: 'upgrade', playerId: 'a', tile: 3, mode: 'build' });
+    s = upgrade(s);
+    expect(s.pending).toMatchObject({ type: 'pay', reason: 'upgrade', total: 50, upgradeTile: 3 });
+    s = act(s, { type: 'cancelUpgrade', playerId: 'a' });
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
     expect(s.tiles[3]!.level).toBe(0);
     expect(cash(s, 'a')).toBe(49);
@@ -716,12 +720,18 @@ describe('nâng cấp đất của mình (mục 4)', () => {
     expect(cash(s, 'a')).toBe(0);
   });
 
-  it('không được Ụp/Mở giữa lượt để lấy tiền nâng: thiếu tiền mặt thì không được hỏi dù còn tài sản', () => {
+  it('thiếu tiền mặt vẫn được xử lý Ụp/Mở để lấy tiền nâng nhà', () => {
     let s = newGame();
     setPlayer(s, 'a', { cash: 49 });
     own(s, 'a', 39);
     own(s, 'a', 3);
     s = roll(s, 1, 2);
+    expect(s.pending).toEqual({ type: 'upgrade', playerId: 'a', tile: 3, mode: 'build' });
+    s = upgrade(s);
+    expect(s.pending).toMatchObject({ type: 'pay', reason: 'upgrade', total: 50 });
+    s = act(s, { type: 'manage', playerId: 'a', ops: [{ op: 'mortgage', tile: 39 }] });
+    s = act(s, { type: 'pay', playerId: 'a' });
+    expect(s.tiles[3]!.level).toBe(1);
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
   });
 
