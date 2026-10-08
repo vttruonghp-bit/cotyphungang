@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useHotSeat } from './game/useHotSeat';
+import { AI_PLAYER_ID, chooseAiAction } from './game/aiOpponent';
+import type { NewPlayer } from '@cotiphu/shared';
 import { ConnectionBanner, ResumeScreen } from './online/Connection';
 import { codeFromUrl, dropCodeFromUrl } from './online/storage';
 import { useOnline } from './online/useOnline';
@@ -15,6 +17,31 @@ export function App() {
   const hotSeat = useHotSeat();
   const online = useOnline();
   const { load } = hotSeat;
+  const aiPending = hotSeat.current?.game.pending;
+  const aiGame = hotSeat.current?.game;
+  const aiActions = hotSeat.current?.actions;
+  // Play only the bot's turns. Each step is delayed so the player can follow along.
+  useEffect(() => {
+    if (!aiGame || !aiPending || aiPending.type === 'ended' ||
+        !aiGame.players.some((p) => p.id === AI_PLAYER_ID)) return;
+    const action = chooseAiAction(aiGame);
+    if (!action) return;
+    const timer = window.setTimeout(() => {
+      hotSeat.dispatch(action);
+    }, aiPending.type === 'roll' ? 1100 : 800);
+    return () => window.clearTimeout(timer);
+    // Pending and action count change after every game action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiActions, aiPending?.type, aiGame]);
+  const startAiGame = (human: NewPlayer): string | null => {
+    const taken = [human.color];
+    const botColor = [1, 2, 3, 4, 5, 6, 7, 0].find((c) => !taken.includes(c)) ?? 1;
+    return hotSeat.start([
+      { ...human, id: 'p1' },
+      { id: AI_PLAYER_ID, name: 'ChatGPT AI', color: botColor, icon: human.icon === 18 ? 19 : 18 },
+    ]);
+  };
+
   // Mã phòng trong đường dẫn mời (?phong=CODE), bỏ đi khi đã vào phòng đó.
   const [invite, setInvite] = useState(codeFromUrl);
   // Tải lại trang giữa ván chơi chung thì vào thẳng ván đó như trước.
@@ -101,7 +128,7 @@ export function App() {
         onHome={home}
       />
     ) : (
-      <SetupScreen onStart={hotSeat.start} onBack={home} />
+      <SetupScreen onStart={hotSeat.start} onStartAi={startAiGame} onBack={home} />
     );
   } else {
     page = (
