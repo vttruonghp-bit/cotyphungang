@@ -607,9 +607,6 @@
   filter: grayscale(1);
 }
 
-
-
-
 .frame-text {
   display: flex;
   flex-direction: column;
