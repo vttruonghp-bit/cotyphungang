@@ -502,94 +502,6 @@
   font-size: 10px;
   margin: 2px 0;
 }
-/* Rotated phone: center the panel in the 9x9 inner board instead of over perimeter tiles. */
-@media (max-width: 600px) and (orientation: portrait),
-  (max-height: 550px) and (orientation: landscape) {
-  .land .sheet-backdrop-manage {
-    --manage-board: min(100cqw, 98cqh);
-    align-items: center;
-    justify-content: flex-start;
-  }
-  .land .sheet-backdrop-manage .sheet {
-    position: absolute;
-    left: calc(100% - 3px - var(--manage-board) / 2);
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(var(--manage-board) * 0.79);
-    height: calc(var(--manage-board) * 0.79);
-    max-height: 95%;
-  }
-  .sheet-backdrop-manage .manage-asset-name {
-    font-size: clamp(8px, 1.45cqh, 11px);
-  }
-  .sheet-backdrop-manage .manage-asset-delta {
-    font-size: 9px;
-  }
-  .sheet-backdrop-manage .manage-mini-action {
-    min-width: 17px;
-    height: 21px;
-    padding: 0 2px;
-    font-size: 10px;
-  }
-}
-
-/* Full-viewport compact overlay overrides the former inner-board constraint. */
-.land .sheet-backdrop-manage .sheet {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-}
-.land .sheet-backdrop-manage .manage-assets {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 6px;
-}
-.land .sheet-backdrop-manage .manage-asset {
-  min-height: 25px;
-  padding: 1px 3px;
-}
-.land .sheet-backdrop-manage .manage-asset-name {
-  font-size: clamp(9px, 1.8cqh, 13px);
-}
-.land .sheet-backdrop-manage .manage-mini-action {
-  height: 23px;
-  min-width: 21px;
-  font-size: 11px;
-}
-.land .sheet-backdrop-manage .manage-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  gap: 3px;
-}
-.land .sheet-backdrop-manage .manage-cash,
-.land .sheet-backdrop-manage .manage-debt,
-.land .sheet-backdrop-manage .manage-summary {
-  padding: 3px 6px;
-}
-
-/* Last-rule override: supersede the old phone 9x9 inset for finance dialogs. */
-@media (max-width: 600px) and (orientation: portrait),
-  (max-height: 550px) and (orientation: landscape) {
-  .land .sheet-backdrop-manage {
-    position: fixed;
-    inset: 0;
-    align-items: center;
-    justify-content: center;
-    padding: 2px;
-  }
-  .land .sheet-backdrop-manage .sheet {
-    position: relative;
-    inset: auto;
-    top: auto;
-    left: auto;
-    transform: none;
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
-  }
-}
-
 /* Finance dialogs: full viewport over board AND player rail; readable two-column rows. */
 .land .sheet-backdrop-manage {
   position: fixed;
@@ -680,10 +592,6 @@
   .land .sheet-backdrop-manage {
     padding: 2px;
   }
-  .land .sheet-backdrop-manage .sheet {
-    width: 100%;
-    height: 100%;
-  }
   .land .sheet-backdrop-manage .manage-assets {
     gap: 3px 5px;
   }
@@ -704,38 +612,5 @@
   .land .sheet-backdrop-manage .manage-mini-sell,
   .land .sheet-backdrop-manage .manage-mini-mortgage {
     min-width: 30px;
-  }
-}
-
-/* Finance sheet: 90% of the entire visible game viewport, including player rail. */
-.land .sheet-backdrop-manage {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-}
-.land .sheet-backdrop-manage .sheet {
-  box-sizing: border-box;
-  position: relative;
-  inset: auto;
-  top: auto;
-  left: auto;
-  transform: none;
-  flex: 0 0 90%;
-  width: 90%;
-  max-width: none;
-  min-width: 0;
-  height: 98%;
-}
-.land .sheet-backdrop-manage .manage-assets {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-@media (max-width: 600px) and (orientation: portrait),
-  (max-height: 550px) and (orientation: landscape) {
-  .land .sheet-backdrop-manage .sheet {
-    flex-basis: 90%;
-    width: 90%;
-    max-width: none;
   }
 }

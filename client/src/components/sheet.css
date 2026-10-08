@@ -127,9 +127,9 @@
 }
 .land .sheet-backdrop .sheet {
   box-sizing: border-box;
-  width: min(100%, 1100px);
+  width: 94%;
   max-width: none;
-  height: min(100%, 790px);
+  height: 96%;
   padding: 3px;
   background: transparent;
 }
@@ -189,21 +189,6 @@
 @media (max-width: 600px) and (orientation: portrait),
   (max-height: 550px) and (orientation: landscape) {
   .land .sheet-backdrop {
-    position: fixed;
-    inset: 0;
-    padding: 2px;
-  }
-  .land .sheet-backdrop .sheet,
-  .land .sheet-backdrop-manage .sheet {
-    position: relative;
-    inset: auto;
-    left: auto;
-    top: auto;
-    transform: none;
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    max-height: none;
     padding: 2px;
   }
   .land .sheet-backdrop .sheet-body {
