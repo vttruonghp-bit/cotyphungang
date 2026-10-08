@@ -49,7 +49,7 @@ import type {
 // Tạo ván
 // ---------------------------------------------------------------------------
 
-export function createGame(newPlayers: NewPlayer[], rng: Rng): GameState {
+export function createGame(newPlayers: NewPlayer[], rng: Rng, stagedDiceCards = true): GameState {
   if (newPlayers.length < MIN_PLAYERS || newPlayers.length > MAX_PLAYERS) {
     throw new RuleError(`Cần ${MIN_PLAYERS}–${MAX_PLAYERS} người chơi`);
   }
@@ -91,6 +91,7 @@ export function createGame(newPlayers: NewPlayer[], rng: Rng): GameState {
         rng,
       ),
     },
+    stagedDiceCards,
     pending: { type: 'roll', playerId: newPlayers[0]!.id },
     queue: [],
     log: [],
