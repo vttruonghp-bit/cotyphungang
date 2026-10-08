@@ -1588,9 +1588,10 @@
 @media (max-width: 600px) and (orientation: portrait),
   (max-height: 550px) and (orientation: landscape) {
   .land .center-position .center {
-    width: calc(var(--mobile-board-size) * 9 / 11 - 10px);
-    height: calc(var(--mobile-board-size) * 9 / 11 - 10px);
-    max-height: calc(var(--mobile-board-size) * 9 / 11 - 10px);
+    box-sizing: border-box;
+    width: calc(var(--mobile-board-size) * 0.76);
+    height: calc(var(--mobile-board-size) * 0.76);
+    max-height: calc(var(--mobile-board-size) * 0.76);
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -1619,8 +1620,8 @@
     gap: 2px;
   }
   .land .center-player-theme .turn-hero-dice .die {
-    width: clamp(27px, 5cqh, 39px);
-    height: clamp(27px, 5cqh, 39px);
+    width: clamp(38px, 6cqh, 48px);
+    height: clamp(38px, 6cqh, 48px);
   }
   .land .center-player-theme .center-head {
     flex: 0 0 auto;
