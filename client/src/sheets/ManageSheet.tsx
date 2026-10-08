@@ -163,6 +163,7 @@ export function ManageSheet({
 
   return (
     <Sheet
+      compactManage
       game={game}
       icon={<TokenIcon icon={p.icon} color={p.color} size={44} blink />}
       title={title}
