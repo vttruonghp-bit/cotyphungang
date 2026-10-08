@@ -29,6 +29,7 @@ import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
 import { CardFan } from '../sheets/CardFan';
 import { CardSheet } from '../sheets/CardSheet';
+import { CardDiceSheet } from '../sheets/CardDiceSheet';
 import { ChooseTileSheet } from '../sheets/ChooseTileSheet';
 import { GameOverSheet } from '../sheets/GameOverSheet';
 import { JailSheet } from '../sheets/JailSheet';
@@ -248,6 +249,8 @@ export function GameScreen({
         onContinue={() => setReveals((r) => r.filter((x) => x !== reveal))}
       />
     );
+  } else if (pd.type === 'cardDice') {
+    sheet = <CardDiceSheet game={game} pending={pd} enabled={myMove} onRoll={() => { void send({ type: 'rollCardDice', playerId: pd.playerId }); }} onConfirm={() => { void send({ type: 'confirmCardDice', playerId: pd.playerId }); }} />;
   } else if (pd.type === 'ended') {
     sheet = <GameOverSheet game={game} onNewGame={onNewGame} />;
   } else if (manual === 'appearance') {
@@ -504,6 +507,8 @@ export function waitingOther(s: GameState, p: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Đang chờ ${n} đổ xúc xắc…`;
+    case 'cardDice':
+      return pd.dice === null ? `Đang chờ ${n} sục xúc xắc thẻ…` : `Đang chờ ${n} xác nhận kết quả thẻ…`;
     case 'jail':
       return `Đang chờ ${n} chọn cách ra tù…`;
     case 'jailRelease':
@@ -538,6 +543,8 @@ export function waitingText(s: GameState, me: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Chờ ${me.name} nhấn “Sục”`;
+    case 'cardDice':
+      return pd.dice === null ? `Chờ ${me.name} nhấn “Sục” cho thẻ` : `Chờ ${me.name} xác nhận xúc xắc thẻ`;
     case 'jail':
       return `${me.name} đang ở tù: thử đổ đôi, trả 50Đ hoặc dùng thẻ`;
     case 'jailRelease':

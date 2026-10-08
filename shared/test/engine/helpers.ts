@@ -18,7 +18,7 @@ export { PLAYERS };
  * Chồng thẻ giữ thứ tự xáo của hạt giống 1; test cần thẻ cụ thể thì gán `s.decks`.
  */
 export function newGame(n = 2): GameState {
-  const s = createGame(PLAYERS.slice(0, n), seededRng(1));
+  const s = createGame(PLAYERS.slice(0, n), seededRng(1), false);
   s.current = 0;
   s.pending = { type: 'roll', playerId: 'a' };
   s.log = [];

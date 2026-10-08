@@ -126,6 +126,8 @@ export function chooseAction(s: GameState, rng: Rng): Action {
                 [...Array(40).keys()].filter((i) => i !== 10),
               ),
       };
+    case 'cardDice':
+      return { type: pd.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId: id };
     case 'chooseTile':
       return { type: 'chooseTile', playerId: id, tile: pick(rng, pd.options) };
     case 'pay': {
@@ -156,7 +158,7 @@ function ownablePrice(i: number): number {
 export function simulate(seed: number, maxActions = MAX_ACTIONS) {
   const rng = seededRng(seed);
   const n = 2 + (seed % 5);
-  let s = createGame(PLAYERS.slice(0, n), rng);
+  let s = createGame(PLAYERS.slice(0, n), rng, false);
   checkInvariants(s);
   let actions = 0;
   while (!isGameOver(s) && actions < maxActions) {
