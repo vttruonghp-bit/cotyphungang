@@ -1219,7 +1219,8 @@
 }
 
 /* Compact iPhone landscape layout; portrait browser rotates .land internally. */
-@media (max-width: 600px) and (orientation: portrait), (max-height: 550px) and (orientation: landscape) {
+@media (max-width: 600px) and (orientation: portrait),
+  (max-height: 550px) and (orientation: landscape) {
   .land {
     --players: clamp(175px, 28%, 255px);
     --side: 0px;
