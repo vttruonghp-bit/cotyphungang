@@ -1,0 +1,28 @@
+name: Temporary format compact UI
+on:
+  push:
+    branches: [feature-compact-five-button-assets]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature-compact-five-button-assets
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write client/src/components/Sheet.tsx client/src/game/draft.ts client/src/sheets/ManageSheet.tsx client/src/sheets/manage-sheet.css
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add client/src
+            git commit -m "Format compact asset UI"
+            git push origin HEAD:feature-compact-five-button-assets
+          fi
