@@ -346,8 +346,8 @@ export function GameScreen({
   const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
     position.col === 0 ? 'left' : 'right';
   const tileOffset = {
-    ['--tile-x' as string]: `${((position.col + 0.5) / 11) * 100}%`,
-    ['--tile-y' as string]: `${((position.row + 0.5) / 11) * 100}%`,
+    ['--tile-col' as string]: position.col + 0.5,
+    ['--tile-row' as string]: position.row + 0.5,
   };
 
   const accentStyle = {
@@ -412,7 +412,7 @@ export function GameScreen({
               arrivalOnly={arrivalHold}
             >
               <div className="btn-row action-bar">
-                {!tileActions && main ? (
+                {tileActions ? null : main ? (
                   <button
                     type="button"
                     className={`btn btn-grow ${main.tone}`}
