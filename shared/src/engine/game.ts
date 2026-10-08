@@ -229,7 +229,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
         executePay(s, step);
         return false;
       }
-      if (p.cash + maxLiquidationValue(s, p.id) < step.total) {
+      if (step.reason !== 'upgrade' && p.cash + maxLiquidationValue(s, p.id) < step.total) {
         addLog(s, p.id, `Không đủ khả năng trả ${step.total}Đ`);
         endGame(s, p, 'bankrupt');
         return true;
@@ -258,6 +258,11 @@ function executePay(s: GameState, step: Extract<Pending, { type: 'pay' }>) {
   p.cash -= step.total;
   for (const c of step.creditors) {
     if (c.playerId !== null) getPlayer(s, c.playerId).cash += c.amount;
+  }
+  if (step.upgradeTile !== undefined) {
+    const t = tileState(s, step.upgradeTile);
+    if (t.owner !== p.id || t.mortgaged || t.level >= HOTEL_LEVEL) throw new RuleError('Không thể nâng nhà');
+    t.level += 1;
   }
   if (step.grantTile !== undefined) {
     const t = tileState(s, step.grantTile);
@@ -372,6 +377,12 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       addLog(s, a.playerId, `Hủy mua ${BOARD[pd.grantTile]!.name}`);
       return advance(s, rng);
     }
+    case 'cancelUpgrade': {
+      const pd = expectPending(s, a.playerId, 'pay');
+      if (pd.reason !== 'upgrade' || pd.upgradeTile === undefined) throw new RuleError('Không có nâng nhà để hoàn tác');
+      addLog(s, a.playerId, `Hủy nâng nhà ${BOARD[pd.upgradeTile]!.name}`);
+      return advance(s, rng);
+    }
     case 'upgrade': {
       const pd = expectPending(s, a.playerId, 'upgrade');
       const p = getPlayer(s, a.playerId);
@@ -379,7 +390,16 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       const tile = ownableTile(pd.tile);
       if (pd.mode === 'build') {
         const prop = propertyTile(pd.tile);
-        if (p.cash < prop.upgradeCost) throw new RuleError('Không đủ tiền nâng cấp');
+        if (p.cash < prop.upgradeCost) {
+          prepend(s, [{
+            type: 'pay', playerId: p.id,
+            creditors: [{ playerId: null, amount: prop.upgradeCost }],
+            total: prop.upgradeCost, reason: 'upgrade', confirm: false,
+            label: `Nâng ${tile.name} lên cấp ${t.level + 1}`,
+            upgradeTile: pd.tile,
+          }]);
+          return advance(s, rng);
+        }
         p.cash -= prop.upgradeCost;
         t.level += 1;
         addLog(s, p.id, `Nâng ${tile.name} lên cấp ${t.level}`, -prop.upgradeCost);
