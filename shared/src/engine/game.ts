@@ -32,7 +32,7 @@ import {
   takeCard,
   tileState,
 } from './core';
-import { land } from './landing';
+import { getCard, land, resolveCardDice } from './landing';
 import { rollDie, shuffle, type Rng } from './rng';
 import type {
   Action,
@@ -240,6 +240,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
       return true;
     }
     case 'buy':
+    case 'cardDice':
     case 'upgrade':
     case 'metro':
     case 'chooseTile':
@@ -337,6 +338,46 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       // bailStep sẽ đưa người chơi vào luồng xử lý nợ/thanh lý tài sản hiện có.
       const after: Step = { type: 'moveAfterJail', playerId: p.id, steps: pd.steps };
       prepend(s, a.type === 'payBail' ? [bailStep(p), after] : [after]);
+      return advance(s, rng);
+    }
+    case 'rollCardDice': {
+      const pd = expectPending(s, a.playerId, 'cardDice');
+      if (pd.dice !== null) throw new RuleError('Đã gieo, hãy xác nhận kết quả');
+      const effect = getCard(pd.cardId).effect;
+      const dice: number[] = [];
+      if (pd.highwayTile !== undefined || effect.type === 'lottery') {
+        dice.push(rollDie(rng));
+      } else if (effect.type === 'flyDice' || effect.type === 'advanceToNearest') {
+        dice.push(rollDie(rng), rollDie(rng));
+      } else if (effect.type === 'neighborFire') {
+        for (const p of s.players.filter((x) => x.status === 'active')) {
+          dice.push(rollDie(rng), rollDie(rng));
+        }
+      } else if (effect.type === 'swapProperty') {
+        const opponentCount = s.players.filter((x) => x.status === 'active' && x.id !== pd.playerId).length;
+        let d = rollDie(rng);
+        dice.push(d);
+        while (d > opponentCount) {
+          d = rollDie(rng);
+          dice.push(d);
+        }
+        dice.push(rollDie(rng));
+      } else {
+        throw new RuleError('Thẻ này không dùng xúc xắc');
+      }
+      s.pending = { ...pd, dice };
+      return;
+    }
+    case 'confirmCardDice': {
+      const pd = expectPending(s, a.playerId, 'cardDice');
+      if (pd.dice === null) throw new RuleError('Phải bấm Sục trước khi xác nhận');
+      if (pd.highwayTile !== undefined) {
+        const fixedRng: Rng = { int: (min, max) => min === 1 && max === 6 ? pd.dice![0]! : rng.int(min, max) };
+        chooseTile(s, { type: 'chooseTile', playerId: pd.playerId, purpose: 'highway', options: [pd.highwayTile] }, pd.highwayTile, fixedRng);
+      } else {
+        const out = resolveCardDice(s, getPlayer(s, pd.playerId), pd.cardId, pd.dice, rng);
+        prepend(s, out.steps);
+      }
       return advance(s, rng);
     }
     case 'buy': {
@@ -570,6 +611,10 @@ function chooseTile(
   if (pd.purpose === 'gambleDown') {
     t.level -= 1;
     addLog(s, p.id, `Canh bạc: hạ 1 cấp ${BOARD[tile]!.name}`);
+    return;
+  }
+  if (s.stagedDiceCards) {
+    prepend(s, [{ type: 'cardDice', playerId: p.id, cardId: 'community-highway', dice: null, highwayTile: tile }]);
     return;
   }
   const d = rollDie(rng) as 1 | 2 | 3 | 4 | 5 | 6;
