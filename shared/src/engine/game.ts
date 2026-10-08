@@ -261,7 +261,8 @@ function executePay(s: GameState, step: Extract<Pending, { type: 'pay' }>) {
   }
   if (step.upgradeTile !== undefined) {
     const t = tileState(s, step.upgradeTile);
-    if (t.owner !== p.id || t.mortgaged || t.level >= HOTEL_LEVEL) throw new RuleError('Không thể nâng nhà');
+    if (t.owner !== p.id || t.mortgaged || t.level >= HOTEL_LEVEL)
+      throw new RuleError('Không thể nâng nhà');
     t.level += 1;
   }
   if (step.grantTile !== undefined) {
@@ -379,7 +380,8 @@ function handle(s: GameState, a: Action, rng: Rng): void {
     }
     case 'cancelUpgrade': {
       const pd = expectPending(s, a.playerId, 'pay');
-      if (pd.reason !== 'upgrade' || pd.upgradeTile === undefined) throw new RuleError('Không có nâng nhà để hoàn tác');
+      if (pd.reason !== 'upgrade' || pd.upgradeTile === undefined)
+        throw new RuleError('Không có nâng nhà để hoàn tác');
       addLog(s, a.playerId, `Hủy nâng nhà ${BOARD[pd.upgradeTile]!.name}`);
       return advance(s, rng);
     }
@@ -391,13 +393,18 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       if (pd.mode === 'build') {
         const prop = propertyTile(pd.tile);
         if (p.cash < prop.upgradeCost) {
-          prepend(s, [{
-            type: 'pay', playerId: p.id,
-            creditors: [{ playerId: null, amount: prop.upgradeCost }],
-            total: prop.upgradeCost, reason: 'upgrade', confirm: false,
-            label: `Nâng ${tile.name} lên cấp ${t.level + 1}`,
-            upgradeTile: pd.tile,
-          }]);
+          prepend(s, [
+            {
+              type: 'pay',
+              playerId: p.id,
+              creditors: [{ playerId: null, amount: prop.upgradeCost }],
+              total: prop.upgradeCost,
+              reason: 'upgrade',
+              confirm: false,
+              label: `Nâng ${tile.name} lên cấp ${t.level + 1}`,
+              upgradeTile: pd.tile,
+            },
+          ]);
           return advance(s, rng);
         }
         p.cash -= prop.upgradeCost;
