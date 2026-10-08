@@ -93,6 +93,6 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [1, 1, 1, 1]);
     expect(s.tiles[11]!.level).toBe(2);
     s = act(s, { type: 'confirmCardDice', playerId: 'a' });
-    expect(s.tiles[21]!.level).toBe(1);
+    expect(s.tiles[11]!.level).toBe(1);
   });
 });
