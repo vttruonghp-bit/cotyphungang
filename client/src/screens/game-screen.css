@@ -1005,3 +1005,137 @@
 .frame-assets b {
   color: color-mix(in srgb, var(--pc) 85%, #111);
 }
+
+/* Cột tài sản: người đang chơi một dòng/tài sản; người chờ hai cột. */
+.land .player-rail {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+.player-rail .frame {
+  width: 100%;
+  box-sizing: border-box;
+  align-items: flex-start;
+  flex: none;
+}
+.player-rail .frame-text {
+  flex: 1;
+  min-width: 0;
+}
+.player-rail .frame-assets {
+  display: grid;
+  align-content: start;
+  gap: 3px 6px;
+  margin-top: 6px;
+  max-height: none;
+  overflow: visible;
+}
+.player-rail .frame.is-waiting .frame-assets {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  font-size: 10px;
+}
+.player-rail .frame.is-expanded .frame-assets {
+  grid-template-columns: minmax(0, 1fr);
+  overflow-y: auto;
+  max-height: calc(100% - 25px);
+  font-size: 11px;
+}
+.player-rail .frame-asset-line {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.player-rail .frame-asset-level {
+  white-space: nowrap;
+  font-weight: 900;
+  color: var(--pc);
+}
+
+/* Floating controls anchored to the actual board cell, inset into the board.
+   Board tiles remain unchanged; only overlay and central information panel move. */
+.land-stage {
+  --board-s: min(94cqw, 96cqh);
+}
+.tile-action-pop {
+  position: absolute;
+  left: calc(50% - var(--board-s) / 2 + var(--board-s) * var(--tile-col) / 11);
+  top: calc(50% - var(--board-s) / 2 + var(--board-s) * var(--tile-row) / 11);
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: max-content;
+  max-width: min(190px, 35cqw);
+  padding: 7px;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-soft) 90%, white);
+  box-shadow: 0 5px 18px rgb(0 0 0 / 40%);
+  animation: pop-tile-action 220ms ease-out both;
+}
+.tile-action-pop .btn {
+  font-size: 12px;
+  min-height: 34px;
+  white-space: normal;
+}
+.tile-action-bottom {
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+}
+.tile-action-top {
+  transform: translate(-50%, 12px);
+}
+.tile-action-left {
+  transform: translate(12px, -50%);
+}
+.tile-action-right {
+  transform: translate(calc(-100% - 12px), -50%);
+}
+@keyframes pop-tile-action {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+.center-position {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  transition:
+    transform 250ms ease,
+    scale 250ms ease;
+}
+.center-position .center {
+  pointer-events: auto;
+}
+.center-position.center-shift {
+  scale: 0.78;
+}
+.center-shift-bottom {
+  transform: translateY(-17%);
+}
+.center-shift-top {
+  transform: translateY(17%);
+}
+.center-shift-left {
+  transform: translateX(16%);
+}
+.center-shift-right {
+  transform: translateX(-16%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-action-pop {
+    animation: none;
+  }
+  .center-position {
+    transition: none;
+  }
+}
