@@ -355,3 +355,180 @@
   font-size: 12.5px;
   line-height: 1.35;
 }
+
+/* Dense 9x9 board-inset asset sheet. The sheet body owns scrolling; footer never scrolls. */
+.sheet-backdrop-manage {
+  align-items: center;
+  justify-content: center;
+}
+.sheet-backdrop-manage .sheet {
+  width: min(900px, 90vw);
+  max-width: none;
+  height: min(750px, 90vh);
+  min-height: 0;
+  padding: 4px;
+  background: transparent;
+}
+.sheet-backdrop-manage .app-header {
+  display: none;
+}
+.sheet-backdrop-manage .sheet-card {
+  border: 3px solid var(--accent);
+  border-radius: 13px;
+}
+.sheet-backdrop-manage .sheet-head {
+  flex: none;
+  padding: 5px 9px 3px;
+  gap: 5px;
+}
+.sheet-backdrop-manage .sheet-icon {
+  display: none;
+}
+.sheet-backdrop-manage .sheet-title {
+  font-size: 15px;
+}
+.sheet-backdrop-manage .sheet-subtitle {
+  margin: 0;
+  font-size: 10px;
+}
+.sheet-backdrop-manage .sheet-body {
+  padding: 3px 7px 4px;
+  gap: 3px;
+}
+.sheet-backdrop-manage .sheet-footer {
+  flex: none;
+  padding: 4px 7px;
+}
+.sheet-backdrop-manage .manage-body {
+  min-height: 0;
+  margin: 0;
+  gap: 4px;
+}
+.sheet-backdrop-manage .manage-assets {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 5px;
+  flex: 1 0 auto;
+}
+.sheet-backdrop-manage .manage-asset {
+  container-type: normal;
+  min-height: 29px;
+  padding: 2px 3px;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  border-radius: 5px;
+  border-left-width: 2px;
+  overflow: hidden;
+}
+.sheet-backdrop-manage .manage-asset-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(8px, 0.85vw, 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sheet-backdrop-manage .manage-asset-delta {
+  flex: none;
+  min-width: 26px;
+  font-size: clamp(8px, 0.82vw, 11px);
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+.sheet-backdrop-manage .manage-asset-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+.sheet-backdrop-manage .manage-mini-action {
+  min-width: 18px;
+  height: 23px;
+  padding: 0 3px;
+  border: 1px solid #b9c6d7;
+  border-radius: 4px;
+  background: #ded3fa;
+  color: #4f2697;
+  font-size: clamp(9px, 0.9vw, 12px);
+  font-weight: 900;
+  cursor: pointer;
+}
+.sheet-backdrop-manage .manage-mini-sell {
+  background: #c83446;
+  color: white;
+}
+.sheet-backdrop-manage .manage-mini-mortgage {
+  background: #1987bd;
+  color: white;
+}
+.sheet-backdrop-manage .manage-mini-action:disabled {
+  background: #343a49;
+  border-color: #343a49;
+  color: #84909d;
+  cursor: not-allowed;
+}
+.sheet-backdrop-manage .manage-cash,
+.sheet-backdrop-manage .manage-debt,
+.sheet-backdrop-manage .manage-summary {
+  padding: 3px 6px;
+  gap: 2px 6px;
+  border-radius: 5px;
+}
+.sheet-backdrop-manage .manage-summary-list,
+.sheet-backdrop-manage .manage-summary-note,
+.sheet-backdrop-manage .manage-summary-empty {
+  display: none;
+}
+.sheet-backdrop-manage .manage-debt-total,
+.sheet-backdrop-manage .money-big {
+  font-size: 14px;
+}
+.sheet-backdrop-manage .manage-debt-label,
+.sheet-backdrop-manage .manage-debt-side,
+.sheet-backdrop-manage .eyebrow,
+.sheet-backdrop-manage .manage-footer-cash {
+  font-size: 10px;
+}
+.sheet-backdrop-manage .manage-footer-cash {
+  margin-bottom: 3px;
+}
+.sheet-backdrop-manage .sheet-footer .btn {
+  min-height: 26px;
+  padding: 3px 5px;
+  font-size: 10px;
+}
+.sheet-backdrop-manage .manage-warn {
+  font-size: 10px;
+  margin: 2px 0;
+}
+/* Rotated phone: center the panel in the 9x9 inner board instead of over perimeter tiles. */
+@media (max-width: 600px) and (orientation: portrait),
+  (max-height: 550px) and (orientation: landscape) {
+  .land .sheet-backdrop-manage {
+    --manage-board: min(100cqw, 98cqh);
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .land .sheet-backdrop-manage .sheet {
+    position: absolute;
+    left: calc(100% - 3px - var(--manage-board) / 2);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(var(--manage-board) * 0.79);
+    height: calc(var(--manage-board) * 0.79);
+    max-height: 95%;
+  }
+  .sheet-backdrop-manage .manage-asset-name {
+    font-size: clamp(8px, 1.45cqh, 11px);
+  }
+  .sheet-backdrop-manage .manage-asset-delta {
+    font-size: 9px;
+  }
+  .sheet-backdrop-manage .manage-mini-action {
+    min-width: 17px;
+    height: 21px;
+    padding: 0 2px;
+    font-size: 10px;
+  }
+}
