@@ -187,7 +187,7 @@ export function ManageSheet({
         />
       }
     >
-      <div className="manage-body">
+      <div className="manage-body compact-manage-body">
         {/* Nợ ngoài lượt khi chơi chung một máy: người giữ máy phải đưa máy cho người nợ. */}
         {debt && offTurn && !online && (
           <p
@@ -216,6 +216,8 @@ export function ManageSheet({
                 view={mode === 'view'}
                 onMinus={() => setOps(pressMinus(draft, a.tile))}
                 onPlus={() => setOps(pressPlus(draft, a.tile))}
+                onAction={(kind) => setOps((current) => [...current, { op: kind, tile: a.tile }])}
+                onUndo={() => setOps((current) => { const i = current.map((op) => op.tile).lastIndexOf(a.tile); return i < 0 ? current : current.filter((_, j) => i !== j); })}
               />
             ))}
           </ul>
@@ -341,79 +343,43 @@ interface AssetCardProps {
   view: boolean;
   onMinus: () => void;
   onPlus: () => void;
+  onAction: (kind: 'sell' | 'mortgage') => void;
+  onUndo: () => void;
 }
 
-/** Mỗi tài sản đúng 2 dòng: tên + cấp nhà; nút −/+ kèm số tiền (chỉ xem: tiền thuê). */
-function AssetCard({ game, asset: a, view, onMinus, onPlus }: AssetCardProps) {
+/** One horizontal line per owned property, with five separate explicit actions. */
+function AssetCard({ game, asset: a, view, onMinus, onPlus, onAction, onUndo }: AssetCardProps) {
   const name = assetName(a.tile);
-  const changed = a.steps.length > 0;
   const kind = BOARD[a.tile]!.kind;
+  const changed = a.steps.length > 0;
   const cls = [
     'manage-asset',
     `kind-${kind}`,
     changed && 'is-changed',
     a.now.mortgaged && 'is-mortgaged',
     !a.now.owned && 'is-sold',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].filter(Boolean).join(' ');
+  const can = (move: DraftMove | null) => !view && move !== null;
+  const change = a.steps.reduce((sum, step) => sum + step.amount, 0);
+  const state = kind === 'property' ? ` (${a.now.level})` : '';
   return (
     <li className={cls}>
-      <div className="manage-asset-head">
-        <b className="manage-asset-name">{name}</b>
-        <span className="manage-asset-state">{stateText(a.tile, a.now)}</span>
-      </div>
-      {view ? (
-        <div className="manage-asset-rent">
-          {a.now.mortgaged ? (
-            <span className="muted">Không thu tiền thuê</span>
-          ) : (
-            <>
-              <span className="muted">Thuê</span> <b>{rentText(game, a.tile)}</b>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="manage-asset-btns">
-          <StepButton sign="−" move={a.minus} name={name} onClick={onMinus} />
-          <StepButton sign="+" move={a.plus} name={name} onClick={onPlus} />
-        </div>
+      <span className="manage-asset-name" title={name}>
+        {name}{state}
+      </span>
+      <span className={`manage-asset-delta ${change > 0 ? 'up' : change < 0 ? 'down' : ''}`}>
+        {changed ? signed(change) : '—'}
+      </span>
+      {view ? <span className="manage-asset-view">{a.now.mortgaged ? 'Đang cắm' : rentText(game, a.tile)}</span> : (
+        <span className="manage-asset-actions">
+          <button type="button" className="manage-mini-action" disabled={!can(a.minus)} onClick={onMinus} title={`Hạ nhà ${name}`}>−</button>
+          <button type="button" className="manage-mini-action" disabled={!can(a.plus)} onClick={onPlus} title={`Chuộc ${name}`}>+</button>
+          <button type="button" className="manage-mini-action" disabled={!can(a.undo)} onClick={onUndo} title={`Hoàn tác ${name}`}>↶</button>
+          <button type="button" className="manage-mini-action manage-mini-sell" disabled={!can(a.sell)} onClick={() => onAction('sell')}>Bán</button>
+          <button type="button" className="manage-mini-action manage-mini-mortgage" disabled={!can(a.mortgage)} onClick={() => onAction('mortgage')}>Cắm</button>
+        </span>
       )}
     </li>
-  );
-}
-
-interface StepButtonProps {
-  sign: '−' | '+';
-  move: DraftMove | null;
-  name: string;
-  onClick: () => void;
-}
-
-function StepButton({ sign, move, name, onClick }: StepButtonProps) {
-  const side = sign === '−' ? 'is-minus' : 'is-plus';
-  if (!move) {
-    return (
-      <button
-        type="button"
-        className={`manage-step ${side}`}
-        disabled
-        aria-label={`${sign} ${name}`}
-      >
-        <span className="manage-step-verb">{sign}</span>
-      </button>
-    );
-  }
-  const help = `${MOVE_HELP[move.kind]} ${name}, ${move.amount >= 0 ? 'nhận' : 'trả'} ${money(Math.abs(move.amount))}`;
-  return (
-    <button type="button" className={`manage-step ${side}`} onClick={onClick} aria-label={help}>
-      <span className="manage-step-verb">
-        {sign} {MOVE_VERB[move.kind]}
-      </span>
-      <span className={`manage-step-amount ${move.amount >= 0 ? 'up' : 'down'}`}>
-        {signed(move.amount)}
-      </span>
-    </button>
   );
 }
 
