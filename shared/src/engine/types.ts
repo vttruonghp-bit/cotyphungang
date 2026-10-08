@@ -45,8 +45,6 @@ export type PayReason =
 export type Pending =
   /** Đầu lượt hoặc lượt thêm sau đổ đôi: nút Sục. */
   | { type: 'roll'; playerId: string }
-  | { type: 'rollCardDice'; playerId: string }
-  | { type: 'confirmCardDice'; playerId: string }
   /** Đầu lượt khi đang ở tù: thử đổ đôi, trả 50Đ, hoặc dùng thẻ. */
   | { type: 'jail'; playerId: string }
   /** Lần thử thứ 3 không ra đôi và có thẻ ra tù: chọn trả 50Đ hoặc dùng thẻ, rồi đi `steps`. */
@@ -184,6 +182,8 @@ export type ManageOp =
 
 export type Action =
   | { type: 'roll'; playerId: string }
+  | { type: 'rollCardDice'; playerId: string }
+  | { type: 'confirmCardDice'; playerId: string }
   | { type: 'payBail'; playerId: string }
   | { type: 'useJailCard'; playerId: string }
   | { type: 'buy'; playerId: string }
