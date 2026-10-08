@@ -111,6 +111,7 @@ export function GameScreen({
   const { game, previous, actions } = view;
   const online = mode.kind === 'online' ? mode : null;
   const [manual, setManual] = useState<Manual>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [viewTile, setViewTile] = useState<number | null>(null);
   const [reveals, setReveals] = useState(() => revealsOf(view));
   const [error, setError] = useState<string | null>(null);
@@ -373,7 +374,24 @@ export function GameScreen({
       <main className="land game-screen" style={accentStyle}>
         {/* Khi màn phụ đang mở, màn chính phía sau không bấm hay đọc tới được. */}
         <div className="land-main" inert={sheet !== null}>
-          <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
+          <div className="player-column">
+            <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
+            <button
+              type="button"
+              className="history-toggle"
+              aria-expanded={historyOpen}
+              aria-controls="mobile-history"
+              onClick={() => setHistoryOpen((open) => !open)}
+            >
+              {historyOpen ? '× Đóng lịch sử' : '☷ Lịch sử'}
+            </button>
+            {historyOpen && (
+              <div className="mobile-history" id="mobile-history">
+                <button type="button" className="mobile-history-close" onClick={() => setHistoryOpen(false)} aria-label="Đóng lịch sử">×</button>
+                <LogPanel game={game} />
+              </div>
+            )}
+          </div>
           <div className="land-stage">
             <div className="iso">
               <Board
@@ -560,7 +578,7 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
             style={{ ['--pc' as string]: colorOf(p.color).main }}
           >
             <span className="frame-player-token">
-              <TokenIcon icon={p.icon} color={p.color} size={active ? 42 : 34} />
+              <TokenIcon icon={p.icon} color={p.color} size={active ? 28 : 24} />
               {offline.has(p.id) && <span className="offline-dot" />}
             </span>
             <span className="frame-text">
@@ -874,7 +892,7 @@ function LogPanel({ game }: { game: GameState }) {
           const c = p ? colorOf(p.color) : null;
           return (
             <li key={`${e.turn}-${i}`} style={c ? { background: c.soft } : undefined}>
-              {p && <TokenIcon icon={p.icon} color={p.color} size={18} />}
+              {p && <TokenIcon icon={p.icon} color={p.color} size={16} />}
               <b style={c ? { color: c.main } : undefined}>{p?.name ?? 'Ngân hàng'}</b>
               <span className="log-text">{e.text}</span>
               {e.amount ? (
