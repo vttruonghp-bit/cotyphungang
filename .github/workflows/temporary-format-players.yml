@@ -1,0 +1,29 @@
+name: One-time player stylesheet format
+on:
+  push:
+    branches:
+      - feature-wide-players-two-column
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature-wide-players-two-column
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write client/src/screens/game-screen.css
+      - name: Commit formatter output
+        run: |
+          if ! git diff --quiet -- client/src/screens/game-screen.css; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add client/src/screens/game-screen.css
+            git commit -m "Format two-column player CSS"
+            git push origin HEAD:feature-wide-players-two-column
+          fi
