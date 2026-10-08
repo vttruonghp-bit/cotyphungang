@@ -191,7 +191,7 @@ function nextMinus(
   mode: DraftMode,
 ): DraftMove | null {
   if (last?.op.op === 'redeem') return { kind: 'undo', amount: -last.amount };
-  for (const kind of ['downgrade'] as const) {
+  for (const kind of ['downgrade', 'mortgage', 'sell'] as const) {
     const amount = stepAmount(tile, now, kind, mode);
     if (amount !== null) return { kind, amount };
   }
@@ -205,7 +205,7 @@ function nextPlus(
   last: DraftStep | undefined,
   mode: DraftMode,
 ): DraftMove | null {
-  if (last) return null;
+  if (last) return last.op.op === 'redeem' ? null : { kind: 'undo', amount: -last.amount };
   const amount = stepAmount(tile, now, 'redeem', mode);
   return amount === null ? null : { kind: 'redeem', amount };
 }
