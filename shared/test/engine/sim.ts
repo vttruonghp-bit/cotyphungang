@@ -126,6 +126,8 @@ export function chooseAction(s: GameState, rng: Rng): Action {
                 [...Array(40).keys()].filter((i) => i !== 10),
               ),
       };
+    case 'cardDice':
+      return { type: pd.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId: id };
     case 'chooseTile':
       return { type: 'chooseTile', playerId: id, tile: pick(rng, pd.options) };
     case 'pay': {
