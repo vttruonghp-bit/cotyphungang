@@ -95,5 +95,4 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     s = act(s, { type: 'confirmCardDice', playerId: 'a' });
     expect(s.tiles[21]!.level).toBe(1);
   });
-
 });
