@@ -173,7 +173,11 @@ export function ManageSheet({
           onShowBoard={onShowBoard}
           onConfirm={confirm}
           onSettle={settle}
-          onCancelPurchase={debt?.reason === 'purchase' && !debt.label?.includes('(thẻ)') ? cancelPurchase : undefined}
+          onCancelPurchase={
+            debt?.reason === 'purchase' && !debt.label?.includes('(thẻ)')
+              ? cancelPurchase
+              : undefined
+          }
         />
       }
     >
