@@ -507,6 +507,8 @@ export function waitingOther(s: GameState, p: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Đang chờ ${n} đổ xúc xắc…`;
+    case 'cardDice':
+      return pd.dice === null ? `Đang chờ ${n} sục xúc xắc thẻ…` : `Đang chờ ${n} xác nhận kết quả thẻ…`;
     case 'jail':
       return `Đang chờ ${n} chọn cách ra tù…`;
     case 'jailRelease':
@@ -541,6 +543,8 @@ export function waitingText(s: GameState, me: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Chờ ${me.name} nhấn “Sục”`;
+    case 'cardDice':
+      return pd.dice === null ? `Chờ ${me.name} nhấn “Sục” cho thẻ` : `Chờ ${me.name} xác nhận xúc xắc thẻ`;
     case 'jail':
       return `${me.name} đang ở tù: thử đổ đôi, trả 50Đ hoặc dùng thẻ`;
     case 'jailRelease':
