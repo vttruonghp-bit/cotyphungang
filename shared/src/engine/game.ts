@@ -364,7 +364,7 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       return advance(s, rng);
     case 'cancelPurchase': {
       const pd = expectPending(s, a.playerId, 'pay');
-      if (pd.reason !== 'purchase' || pd.grantTile === undefined) {
+      if (pd.reason !== 'purchase' || pd.grantTile === undefined || pd.label?.includes('(thẻ)')) {
         throw new RuleError('Không có giao dịch mua để hoàn tác');
       }
       // Các thay đổi Ụp/Mở trên màn xử lý nợ mới chỉ là dự thảo ở client,
