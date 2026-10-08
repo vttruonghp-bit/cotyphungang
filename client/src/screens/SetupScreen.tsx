@@ -237,7 +237,7 @@ export function SetupScreen({ onStart, onBack, onStartAi }: SetupScreenProps & {
               >
                 🎲 Đấu với ChatGPT AI (1–1)
               </button>
-            )
+            )}
           </div>
         </div>
       </section>
