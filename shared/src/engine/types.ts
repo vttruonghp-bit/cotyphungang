@@ -45,11 +45,15 @@ export type PayReason =
 export type Pending =
   /** Đầu lượt hoặc lượt thêm sau đổ đôi: nút Sục. */
   | { type: 'roll'; playerId: string }
+  | { type: 'rollCardDice'; playerId: string }
+  | { type: 'confirmCardDice'; playerId: string }
   /** Đầu lượt khi đang ở tù: thử đổ đôi, trả 50Đ, hoặc dùng thẻ. */
   | { type: 'jail'; playerId: string }
   /** Lần thử thứ 3 không ra đôi và có thẻ ra tù: chọn trả 50Đ hoặc dùng thẻ, rồi đi `steps`. */
   | { type: 'jailRelease'; playerId: string; steps: number }
   | { type: 'buy'; playerId: string; tile: number }
+  /** Card is drawn; player must roll and confirm before its effect changes game state. */
+  | { type: 'cardDice'; playerId: string; cardId: string; dice: number[] | null; highwayTile?: number }
   /** Dừng ở đất của mình: nâng 1 cấp, hoặc chuộc (+ nâng lên 1 nhà nếu là đất màu). */
   | { type: 'upgrade'; playerId: string; tile: number; mode: 'build' | 'redeemBuild' | 'redeem' }
   | { type: 'metro'; playerId: string }
