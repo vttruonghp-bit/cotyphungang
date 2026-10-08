@@ -22,13 +22,21 @@ export function App() {
   const aiActions = hotSeat.current?.actions;
   // Play only the bot's turns. Each step is delayed so the player can follow along.
   useEffect(() => {
-    if (!aiGame || !aiPending || aiPending.type === 'ended' ||
-        !aiGame.players.some((p) => p.id === AI_PLAYER_ID)) return;
+    if (
+      !aiGame ||
+      !aiPending ||
+      aiPending.type === 'ended' ||
+      !aiGame.players.some((p) => p.id === AI_PLAYER_ID)
+    )
+      return;
     const action = chooseAiAction(aiGame);
     if (!action) return;
-    const timer = window.setTimeout(() => {
-      hotSeat.dispatch(action);
-    }, aiPending.type === 'roll' ? 1100 : 800);
+    const timer = window.setTimeout(
+      () => {
+        hotSeat.dispatch(action);
+      },
+      aiPending.type === 'roll' ? 1100 : 800,
+    );
     return () => window.clearTimeout(timer);
     // Pending and action count change after every game action.
     // eslint-disable-next-line react-hooks/exhaustive-deps

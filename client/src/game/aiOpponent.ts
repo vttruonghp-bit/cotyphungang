@@ -11,8 +11,7 @@ import {
 export const AI_PLAYER_ID = 'ai-chatgpt';
 
 const me = (s: GameState) => s.players.find((p) => p.id === AI_PLAYER_ID)!;
-const owned = (s: GameState) =>
-  s.tiles.flatMap((t, i) => (t?.owner === AI_PLAYER_ID ? [i] : []));
+const owned = (s: GameState) => s.tiles.flatMap((t, i) => (t?.owner === AI_PLAYER_ID ? [i] : []));
 const buyPrice = (i: number) => {
   const tile = BOARD[i];
   return tile && 'price' in tile ? tile.price : 0;
@@ -47,10 +46,13 @@ export function chooseAiAction(s: GameState): Action | null {
     }
     case 'upgrade': {
       const t = BOARD[pending.tile]!;
-      const cost = pending.mode === 'build'
-        ? (t.kind === 'property' ? t.upgradeCost : Infinity)
-        : redeemCost(buyPrice(pending.tile)) +
-          (pending.mode === 'redeemBuild' && t.kind === 'property' ? t.upgradeCost : 0);
+      const cost =
+        pending.mode === 'build'
+          ? t.kind === 'property'
+            ? t.upgradeCost
+            : Infinity
+          : redeemCost(buyPrice(pending.tile)) +
+            (pending.mode === 'redeemBuild' && t.kind === 'property' ? t.upgradeCost : 0);
       return {
         type: cash >= cost + spendReserve(cash) ? 'upgrade' : 'skipUpgrade',
         playerId: p.id,
@@ -63,8 +65,7 @@ export function chooseAiAction(s: GameState): Action | null {
       for (const i of owned(s)) {
         if (pending.upgradeTile === i) continue;
         const t = s.tiles[i]!;
-        const op: ManageOp['op'] =
-          t.level > 0 ? 'downgrade' : t.mortgaged ? 'sell' : 'mortgage';
+        const op: ManageOp['op'] = t.level > 0 ? 'downgrade' : t.mortgaged ? 'sell' : 'mortgage';
         return { type: 'manage', playerId: p.id, ops: [{ op, tile: i }] };
       }
       return { type: 'timeout' };

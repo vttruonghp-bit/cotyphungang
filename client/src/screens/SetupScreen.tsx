@@ -94,7 +94,11 @@ function saveSetup(s: Setup) {
 }
 
 /** Tạo ván mới (hình 5): chơi chung một máy nên không có mã phòng. */
-export function SetupScreen({ onStart, onBack, onStartAi }: SetupScreenProps & { onStartAi?: (human: NewPlayer) => string | null }) {
+export function SetupScreen({
+  onStart,
+  onBack,
+  onStartAi,
+}: SetupScreenProps & { onStartAi?: (human: NewPlayer) => string | null }) {
   const [setup, setSetup] = useState(loadSetup);
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
