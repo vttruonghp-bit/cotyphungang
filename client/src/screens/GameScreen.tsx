@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   BOARD,
+  gridPosition,
   HOTEL_LEVEL,
   LOG_VISIBLE_ENTRIES,
   UTILITY_MULTIPLIERS,
@@ -336,6 +337,19 @@ export function GameScreen({
           }
         : { label: 'Ụp / Mở', tone: 'btn-outline', run: () => setManual('manage') };
 
+  // Nút hành động theo vị trí ô đến; bốn ô góc không tạo cụm nút.
+  const actionTile = pd.type === 'buy' || pd.type === 'upgrade' ? pd.tile : waiter.position;
+  const position = gridPosition(actionTile);
+  const tileActions = myMove && !motionLocked && !sheet &&
+    (pd.type === 'buy' || pd.type === 'upgrade' || pd.type === 'pay') &&
+    actionTile % 10 !== 0;
+  const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
+    position.col === 0 ? 'left' : 'right';
+  const tileOffset = {
+    ['--tile-x' as string]: `${((position.col + 0.5) / 11) * 100}%`,
+    ['--tile-y' as string]: `${((position.row + 0.5) / 11) * 100}%`,
+  };
+
   const accentStyle = {
     ['--accent' as string]: accent.main,
     ['--accent-soft' as string]: accent.soft,
@@ -374,6 +388,13 @@ export function GameScreen({
                 }}
               />
             </div>
+            {tileActions && (
+              <div className={`tile-action-pop tile-action-${actionSide}`} style={tileOffset}>
+                {main && <button type="button" className={`btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>{pd.type === "pay" && me.cash >= pd.total ? `Trả ${money(pd.total)}` : main.label}</button>}
+                {(pd.type === "buy" || pd.type === "upgrade") && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
+              </div>
+            )}
+            <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
             <CenterPanel
               game={game}
               me={waiter}
@@ -391,7 +412,7 @@ export function GameScreen({
               arrivalOnly={arrivalHold}
             >
               <div className="btn-row action-bar">
-                {main ? (
+                {!tileActions && main ? (
                   <button
                     type="button"
                     className={`btn btn-grow ${main.tone}`}
@@ -406,7 +427,7 @@ export function GameScreen({
                     {othersText ? `Chờ ${waiter.name}…` : 'Đang chờ…'}
                   </button>
                 )}
-                <button
+                {!tileActions && <button
                   type="button"
                   className={`btn ${secondary.tone}`}
                   disabled={
@@ -416,9 +437,10 @@ export function GameScreen({
                   onClick={secondary.run}
                 >
                   {secondary.label}
-                </button>
+                </button>}
               </div>
             </CenterPanel>
+            </div>
           </div>
 
           <aside className="land-side">
@@ -519,68 +541,47 @@ interface PlayerFramesProps {
 function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
   const cur = game.players[game.current]!;
   const ordered = [cur, ...game.players.filter((p) => p.id !== cur.id)];
-
-  const owned = (p: PlayerState, kind: 'property' | 'station' | 'utility') =>
-    game.tiles
-      .map((st, i) => ({ st, tile: BOARD[i]! }))
-      .filter(({ st, tile }) => st?.owner === p.id && tile.kind === kind);
-
   return (
-    <aside
-      className="player-rail"
-      aria-label="Người chơi"
-      style={{ ['--turn-pc' as string]: colorOf(cur.color).main }}
-    >
+    <aside className="player-rail" aria-label="Người chơi" style={{ ['--turn-pc' as string]: colorOf(cur.color).main }}>
       {ordered.map((p) => {
-        const c = colorOf(p.color);
-        const properties = owned(p, 'property');
-        const stations = owned(p, 'station');
-        const utilities = owned(p, 'utility');
         const active = p.id === cur.id;
-        const bareLand = properties.filter(({ st }) => st!.level === 0);
-        const built = properties.filter(({ st }) => st!.level > 0);
+        const assets = game.tiles.flatMap((st, index) =>
+          st?.owner === p.id ? [{ tile: BOARD[index]!, level: st.level }] : [],
+        );
+        const land = assets.filter(({ tile }) => tile.kind === 'property');
+        const stations = assets.filter(({ tile }) => tile.kind === 'station');
+        const utilities = assets.filter(({ tile }) => tile.kind === 'utility');
+        const cards = p.heldCards.map((c) => getCard(c.cardId).title);
         return (
           <div
             key={p.id}
-            className={`frame${active ? ' is-turn is-expanded' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
-            style={{ ['--pc' as string]: c.main }}
+            className={`frame${active ? ' is-turn is-expanded' : ' is-waiting'}${p.status !== 'active' ? ' is-out' : ''}`}
+            style={{ ['--pc' as string]: colorOf(p.color).main }}
           >
             <span className="frame-avatar">
-              <img
-                src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`}
-                alt=""
-              />
-              <span className="frame-token">
-                <TokenIcon icon={p.icon} color={p.color} size={16} />
-              </span>
+              <img src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`} alt="" />
+              <span className="frame-token"><TokenIcon icon={p.icon} color={p.color} size={16} /></span>
               {offline.has(p.id) && <span className="offline-dot" />}
             </span>
             <span className="frame-text">
               <span className="frame-topline">
-                <b className="frame-name">
-                  {p.name}{p.id === meId ? ' (bạn)' : ''}
-                </b>
+                <b className="frame-name">{p.name}{p.id === meId ? ' (bạn)' : ''}</b>
                 <b className="frame-cash">{money(p.cash)}</b>
               </span>
-              {!active ? (
-                <span className="frame-stats">
-                  <span title="Ô đất">🏠{properties.length}</span>
-                  <span title="Nhà ga">🚉{stations.length}</span>
-                  <span title="Nhà máy">🏭{utilities.length}</span>
-                  <span title="Thẻ">🃏{p.heldCards.length}</span>
-                </span>
-              ) : (
-                <span className="frame-assets">
-                  {built.length > 0 && (
-                    <span><b>Nhà:</b> {built.map(({ st, tile }) => `${tile.name} ${st!.level >= HOTEL_LEVEL ? '🏨' : '🏠'.repeat(st!.level)}`).join(' · ')}</span>
-                  )}
-                  {bareLand.length > 0 && <span><b>Đất:</b> {bareLand.map(({ tile }) => tile.name).join(' · ')}</span>}
-                  {stations.length > 0 && <span><b>Ga:</b> {stations.map(({ tile }) => tile.name).join(' · ')}</span>}
-                  {utilities.length > 0 && <span><b>Nhà máy:</b> {utilities.map(({ tile }) => tile.name).join(' · ')}</span>}
-                  {p.heldCards.length > 0 && <span><b>Thẻ:</b> {p.heldCards.map((card) => getCard(card.cardId).title).join(' · ')}</span>}
-                  {properties.length + stations.length + utilities.length + p.heldCards.length === 0 && <span>Chưa có tài sản</span>}
-                </span>
-              )}
+              <span className="frame-assets" aria-label={`Tài sản của ${p.name}`}>
+                {land.map(({ tile, level }) => (
+                  <span key={tile.index} className="frame-asset-line">
+                    <span>{tile.name}</span>
+                    <span className="frame-asset-level">
+                      {level >= HOTEL_LEVEL ? '🏨' : active ? '🏠'.repeat(level) || '0' : String(level)}
+                    </span>
+                  </span>
+                ))}
+                {stations.map(({ tile }) => <span key={tile.index} className="frame-asset-line">🚉 {tile.name}</span>)}
+                {utilities.map(({ tile }) => <span key={tile.index} className="frame-asset-line">🏭 {tile.name}</span>)}
+                {cards.map((card, i) => <span key={i} className="frame-asset-line">🃏 {card}</span>)}
+                {assets.length === 0 && cards.length === 0 && <span>Chưa có tài sản</span>}
+              </span>
             </span>
           </div>
         );
