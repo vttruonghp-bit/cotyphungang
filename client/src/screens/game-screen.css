@@ -1632,3 +1632,57 @@
     overflow-y: auto;
   }
 }
+
+/*
+ * Finance overlays are NOT board-center dialogs.  The historical
+ * .land .sheet-backdrop rule bounds every modal to min(72cqh,68cqw).
+ * Override its containing block here (rather than just resizing .sheet).
+ */
+.land .sheet-backdrop.sheet-backdrop-manage {
+  position: absolute;
+  inset: 0;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  transform: none;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  z-index: 90;
+}
+.land .sheet-backdrop.sheet-backdrop-manage > .sheet {
+  position: relative;
+  inset: auto;
+  left: auto;
+  top: auto;
+  transform: none;
+  box-sizing: border-box;
+  flex: 0 0 90%;
+  width: 90%;
+  min-width: 0;
+  max-width: none;
+  height: 96%;
+  max-height: 96%;
+  padding: 3px;
+}
+.land .sheet-backdrop.sheet-backdrop-manage > .sheet > .sheet-card {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+.land .sheet-backdrop.sheet-backdrop-manage .manage-assets {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
