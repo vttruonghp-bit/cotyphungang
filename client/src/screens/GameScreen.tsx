@@ -346,8 +346,8 @@ export function GameScreen({
   const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
     position.col === 0 ? 'left' : 'right';
   const tileOffset = {
-    ['--tile-col' as string]: Math.max(3, Math.min(8, position.col + 0.5)),
-    ['--tile-row' as string]: Math.max(1.8, Math.min(9.2, position.row + 0.5)),
+    ['--tile-col' as string]: position.col === 0 ? 1.6 : position.col === 10 ? 9.4 : Math.max(2.4, Math.min(8.6, position.col + 0.5)),
+    ['--tile-row' as string]: position.row === 0 ? 1.6 : position.row === 10 ? 9.4 : Math.max(2.4, Math.min(8.6, position.row + 0.5)),
   };
 
   const accentStyle = {
@@ -390,6 +390,7 @@ export function GameScreen({
             </div>
             {tileActions && (
               <div className={`tile-action-pop tile-action-${actionSide}`} style={tileOffset}>
+                <div className="tile-action-player"><TokenIcon icon={me.icon} color={me.color} size={23} /> <strong>{me.name}</strong></div>
                 {main && <button type="button" className={`btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>{pd.type === "pay" && me.cash >= pd.total ? `Trả ${money(pd.total)}` : main.label}</button>}
                 {(pd.type === "buy" || pd.type === "upgrade") && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
               </div>
@@ -558,9 +559,8 @@ function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
             className={`frame${active ? ' is-turn is-expanded' : ' is-waiting'}${p.status !== 'active' ? ' is-out' : ''}`}
             style={{ ['--pc' as string]: colorOf(p.color).main }}
           >
-            <span className="frame-avatar">
-              <img src={`/assets/avatar-${String((p.icon % 10) + 1).padStart(2, '0')}.png`} alt="" />
-              <span className="frame-token"><TokenIcon icon={p.icon} color={p.color} size={16} /></span>
+            <span className="frame-player-token">
+              <TokenIcon icon={p.icon} color={p.color} size={active ? 42 : 34} />
               {offline.has(p.id) && <span className="offline-dot" />}
             </span>
             <span className="frame-text">
