@@ -85,6 +85,7 @@ const SIMPLE_ACTIONS = new Set([
   'useJailCard',
   'buy',
   'declineBuy',
+  'cancelPurchase',
   'upgrade',
   'skipUpgrade',
   'pay',
