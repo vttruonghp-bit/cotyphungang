@@ -356,7 +356,9 @@ function nextText(game: GameState, draws: Draw[], k: number, online: boolean): s
   const name = 'playerId' in pd ? (playerById(game, pd.playerId)?.name ?? '') : '';
   switch (pd.type) {
     case 'cardDice':
-      return pd.dice === null ? `${name} cần bấm Sục xúc xắc thẻ.` : `${name} cần xác nhận kết quả xúc xắc.`;
+      return pd.dice === null
+        ? `${name} cần bấm Sục xúc xắc thẻ.`
+        : `${name} cần xác nhận kết quả xúc xắc.`;
     case 'buy': {
       const t = BOARD[pd.tile]!;
       const price = 'price' in t ? ` (${money(t.price)})` : '';
