@@ -1244,6 +1244,32 @@ describe('Khí Vận: Thằng Bờm đổi quạt mo (mục 9, thẻ 21)', () =>
     expect(s.tiles[6]).toMatchObject({ owner: 'a', level: 0, mortgaged: true });
   });
 
+  it('đổi chủ: xóa khóa vừa mua, chủ mới có thể chuộc tài sản cắm và sau đó nâng', () => {
+    let s = newGame(2);
+    own(s, 'a', 3);
+    own(s, 'a', 39);
+    own(s, 'b', 6, { mortgaged: true });
+    own(s, 'b', 37);
+    s.tiles[6]!.boughtTurn = s.turnNumber;
+    s = rut(s, 'community-swap', [1, 4]);
+    expect(s.tiles[6]).toMatchObject({
+      owner: 'a',
+      mortgaged: true,
+      boughtTurn: null,
+      level: 0,
+    });
+    // Đầu lượt kế tiếp của chủ mới: Ụp/Mở cho phép chuộc đất đổi từ chủ cũ.
+    s.current = 0;
+    s.rolled = false;
+    s.pending = { type: 'roll', playerId: 'a' };
+    s = quanLy(s, 'a', [{ op: 'redeem', tile: 6 }]);
+    expect(s.tiles[6]).toMatchObject({ owner: 'a', mortgaged: false });
+    // Sau khi chuộc, tới đúng ô của mình thì được hỏi nâng cấp.
+    setPlayer(s, 'a', { position: 3 });
+    s = roll(s, 1, 2);
+    expect(s.pending).toMatchObject({ type: 'upgrade', playerId: 'a', tile: 6 });
+  });
+
   it('đất rẻ nhất đang cắm vẫn được tính', () => {
     let s = newGame(2);
     own(s, 'a', 1, { mortgaged: true });
