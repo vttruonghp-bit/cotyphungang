@@ -2,6 +2,7 @@ import { BOARD, nearestAhead } from '../board';
 import { CHANCE_CARDS, COMMUNITY_CARDS, FORTUNE_MIRROR_AMOUNT } from '../cards';
 import {
   BOARD_SIZE,
+  HOTEL_LEVEL,
   JAIL_BAIL,
   MAX_JAIL_TURNS,
   MAX_DOUBLES_BEFORE_JAIL,
