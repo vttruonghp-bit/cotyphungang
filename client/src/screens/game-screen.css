@@ -1139,3 +1139,51 @@
     transition: none;
   }
 }
+
+/* Token chosen by the player replaces decorative avatar photographs. */
+.frame-player-token {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-height: 42px;
+}
+.frame.is-expanded .frame-player-token {
+  width: 48px;
+  min-height: 48px;
+}
+.tile-action-player {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  max-width: 100%;
+  color: #1c344b;
+  font-size: 13px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.tile-action-player strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* Actions sit against the inner boundary of the arrived perimeter tile,
+   never over the 40 playable tiles. */
+.tile-action-bottom {
+  transform: translate(-50%, -100%);
+  margin-top: -3px;
+}
+.tile-action-top {
+  transform: translate(-50%, 0);
+  margin-top: 3px;
+}
+.tile-action-left {
+  transform: translate(0, -50%);
+  margin-left: 3px;
+}
+.tile-action-right {
+  transform: translate(-100%, -50%);
+  margin-left: -3px;
+}
