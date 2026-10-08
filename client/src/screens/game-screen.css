@@ -1132,9 +1132,9 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .tile-action-pop {
-  animation: none;
-}
+    animation: none;
+  }
   .center-position {
-  transition: none;
-}
+    transition: none;
+  }
 }
