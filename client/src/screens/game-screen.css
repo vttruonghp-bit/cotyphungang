@@ -1589,9 +1589,9 @@
   (max-height: 550px) and (orientation: landscape) {
   .land .center-position .center {
     box-sizing: border-box;
-    width: calc(var(--mobile-board-size) * 0.76);
-    height: calc(var(--mobile-board-size) * 0.76);
-    max-height: calc(var(--mobile-board-size) * 0.76);
+    width: calc(var(--mobile-board-size) * 0.73);
+    height: calc(var(--mobile-board-size) * 0.73);
+    max-height: calc(var(--mobile-board-size) * 0.73);
     min-height: 0;
     display: flex;
     flex-direction: column;
