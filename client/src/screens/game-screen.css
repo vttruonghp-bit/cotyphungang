@@ -1719,3 +1719,34 @@
   z-index: 1;
   pointer-events: auto;
 }
+
+/* Final contextual layout: reserve a clear inner-board lane for purchase controls. */
+.land-stage .tile-action-pop {
+  z-index: 100 !important;
+  pointer-events: auto;
+  min-width: 118px;
+  max-width: min(180px, 26cqw);
+  box-sizing: border-box;
+}
+.land-stage .center-position.center-shift {
+  z-index: 4;
+  scale: 0.62;
+}
+.land-stage .center-position.center-shift-bottom {
+  transform: translateY(-27%);
+}
+.land-stage .center-position.center-shift-top {
+  transform: translateY(27%);
+}
+.land-stage .center-position.center-shift-left {
+  transform: translateX(26%);
+}
+.land-stage .center-position.center-shift-right {
+  transform: translateX(-26%);
+}
+.land-stage .tile-action-pop .btn {
+  display: block;
+  width: 100%;
+  visibility: visible;
+  opacity: 1;
+}
