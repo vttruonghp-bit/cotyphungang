@@ -256,7 +256,8 @@ export function GameScreen({
     </div>
   );
 
-  const motionLocked = walking || arrivalHold;
+  // The engine resolves a purchase immediately, but its prompt must wait for the visual arrival.
+  const motionLocked = walking || arrivalHold || centerRollLocked;
 
   // Màn phụ: chỉ hiện sau khi quân dừng và tên ô đích đã được giữ 1 giây.
   // Online chỉ người đang nợ thấy Xử lý nợ, và chỉ người ván đang chờ thấy Metro, tù, chọn ô.
@@ -499,7 +500,13 @@ export function GameScreen({
                 previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
               )}
               formula={formula}
-              notice={arrivalHold && arrivalTile !== null ? 'Đã đến nơi' : notice}
+              notice={
+                centerRollLocked
+                  ? 'Đang gieo xúc xắc và di chuyển…'
+                  : arrivalHold && arrivalTile !== null
+                    ? 'Đã đến nơi'
+                    : notice
+              }
               arrivalOnly={arrivalHold}
             >
               <div className="btn-row action-bar">
