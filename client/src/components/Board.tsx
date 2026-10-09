@@ -25,29 +25,11 @@ interface BoardProps {
   onWalkChange?: (walking: boolean, destination: number | null) => void;
 }
 
-/** Nhịp đi thích ứng: hành trình ngắn nhanh, hành trình dài tối đa khoảng 4 giây. */
-const walkDuration = (steps: number) => {
-  if (steps <= 1) return 520;
-  if (steps <= 3) return 700 + (steps - 1) * 180;
-  if (steps <= 6) return 1200 + (steps - 4) * 190;
-  if (steps <= 9) return 1800 + (steps - 7) * 180;
-  return Math.min(2800, 2300 + (steps - 10) * 120);
-};
-
-/** Ba ô cuối chiếm nhiều thời gian hơn để tạo cảm giác giảm tốc. */
-function stepDelays(steps: number): number[] {
-  if (steps <= 0) return [];
-  const total = walkDuration(steps);
-  const weights = Array.from({ length: steps }, (_, i) => {
-    const left = steps - i;
-    if (left === 1) return 1.7;
-    if (left === 2) return 1.45;
-    if (left === 3) return 1.2;
-    return 0.88 + i * 0.02;
-  });
-  const sum = weights.reduce((a, b) => a + b, 0);
-  return weights.map((w) => Math.round((total * w) / sum));
-}
+/** Three-second roll, one-second token anticipation, 0.4s per crossed tile. */
+const ROLL_MS = 3000;
+const ANTICIPATION_MS = 1000;
+const STEP_MS = 400;
+const LAND_MS = 1000;
 
 function cornerSide(tile: Tile): string {
   const { row, col } = gridPosition(tile.index);
@@ -103,27 +85,40 @@ const reducedMotion = () =>
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
-/** Quân vừa đổ xúc xắc đi từng ô tới chỗ mới; trả về ô đang vẽ của quân đó trong lúc đi. */
+/** Render the complete roll → pulse → walk → landing sequence locally. */
 function useWalk(
   game: GameState,
   previous?: GameState | null,
   onWalkChange?: (walking: boolean, destination: number | null) => void,
-): { playerId: string; at: number; stomp: number } | null {
+): { playerId: string; at: number; stomp: number | null; anticipating: boolean; landing: boolean } | null {
   const walk = useMemo(() => (reducedMotion() ? null : walkOf(game, previous)), [game, previous]);
-  const [progress, setProgress] = useState({ game, step: 0 });
-  const step = progress.game === game ? progress.step : 0;
-  const walking = walk !== null && step < walk.steps;
-  const delays = useMemo(() => (walk ? stepDelays(walk.steps) : []), [walk]);
+  // -2 rolls dice, -1 pulses starting token, 0..steps enters each tile,
+  // steps waits on destination for one second.
+  const [progress, setProgress] = useState({ game, step: -2 });
+  const step = progress.game === game ? progress.step : -2;
+  const walking = walk !== null && step <= walk.steps;
   useEffect(() => {
     if (!walk) return;
-    onWalkChange?.(walking, (walk.from + walk.steps) % BOARD_SIZE);
+    const destination = (walk.from + walk.steps) % BOARD_SIZE;
+    onWalkChange?.(walking, destination);
     if (!walking) return;
-    const t = setTimeout(() => setProgress({ game, step: step + 1 }), delays[step] ?? 120);
-    return () => clearTimeout(t);
-  }, [walking, walk, game, step, delays, onWalkChange]);
+    const delay =
+      step === -2 ? ROLL_MS :
+      step === -1 ? ANTICIPATION_MS :
+      step === walk.steps ? LAND_MS : STEP_MS;
+    const timer = setTimeout(() => setProgress({ game, step: step + 1 }), delay);
+    return () => clearTimeout(timer);
+  }, [walking, walk, game, step, onWalkChange]);
   if (!walk || !walking) return null;
-  const at = (walk.from + step) % BOARD_SIZE;
-  return { playerId: walk.playerId, at, stomp: at };
+  const stepsMoved = Math.max(0, Math.min(step + 1, walk.steps));
+  const at = (walk.from + stepsMoved) % BOARD_SIZE;
+  return {
+    playerId: walk.playerId,
+    at,
+    stomp: step >= 0 ? at : null,
+    anticipating: step === -1,
+    landing: step === walk.steps,
+  };
 }
 
 /** Quân trên một ô ở cạnh dưới; đông người thì xếp chồng, ô góc chia 2 hàng. */
@@ -132,11 +127,13 @@ function Tokens({
   currentId,
   walkerId,
   corner,
+  anticipating,
 }: {
   players: PlayerState[];
   currentId: string | undefined;
   walkerId: string | undefined;
   corner: boolean;
+  anticipating: boolean;
 }) {
   const split = corner && players.length > 3 ? Math.ceil(players.length / 2) : players.length;
   const rows = [players.slice(0, split), players.slice(split)].filter((r) => r.length > 0);
@@ -151,6 +148,7 @@ function Tokens({
                 'token-slot',
                 p.id === currentId ? 'is-current' : '',
                 p.id === walkerId ? 'is-walking' : '',
+                p.id === walkerId && anticipating ? 'is-anticipating' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -197,6 +195,7 @@ export function Board({ game, previous, focus, onTileClick, children, onWalkChan
           st?.mortgaged ? 'tile-mortgaged' : '',
           focus === tile.index ? 'tile-focus' : '',
           walk?.stomp === tile.index ? 'tile-stomp' : '',
+          walk?.landing && walk.at === tile.index ? 'tile-landing' : '',
           `side-${cornerSide(tile)}`,
         ]
           .filter(Boolean)
@@ -248,6 +247,7 @@ export function Board({ game, previous, focus, onTileClick, children, onWalkChan
                   currentId={currentId}
                   walkerId={walk?.playerId}
                   corner={corner}
+                  anticipating={walk?.anticipating ?? false}
                 />
               )}
             </span>
