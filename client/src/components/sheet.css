@@ -202,3 +202,26 @@
     padding: 3px 7px;
   }
 }
+
+/* Expand dialogs from the square that triggered them. */
+.land .sheet-backdrop .sheet {
+  transform-origin: var(--sheet-origin-x, 50%) var(--sheet-origin-y, 50%);
+  animation: sheet-from-tile 450ms cubic-bezier(0.19, 0.8, 0.2, 1) both;
+}
+@keyframes sheet-from-tile {
+  from {
+    transform: scale(0.12);
+    opacity: 0;
+    filter: blur(7px);
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .land .sheet-backdrop .sheet {
+    animation: none;
+  }
+}

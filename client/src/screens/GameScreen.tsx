@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { playDiceSound, setGameSoundEnabled } from '../audio/gameAudio';
 import {
   BOARD,
   gridPosition,
@@ -120,6 +121,39 @@ export function GameScreen({
   const [walking, setWalking] = useState(false);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
+  const skipServerEcho = useRef(false);
+  const [rollSoundOn, setRollSoundOn] = useState(() => {
+    try {
+      return window.localStorage.getItem('dice-roll-sound') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+  const toggleRollSound = () => {
+    const next = !rollSoundOn;
+    setRollSoundOn(next);
+    setGameSoundEnabled(next);
+  };
+  // Includes AI and remote players; only react to a *new* roll, not other actions.
+  useEffect(() => {
+    if (!previous) return;
+    const previousRolls = previous.events.filter((event) => event.type === 'roll').length;
+    const currentRolls = game.events.filter((event) => event.type === 'roll').length;
+    const cardRoll =
+      previous.pending.type === 'cardDice' &&
+      previous.pending.dice === null &&
+      game.pending.type === 'cardDice' &&
+      game.pending.dice !== null;
+    if (currentRolls <= previousRolls && !cardRoll) return;
+    if (skipServerEcho.current) {
+      skipServerEcho.current = false;
+      return;
+    }
+    playDiceSound();
+    // The action counter changes when the game applies an action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions]);
+
 
   const cur = game.players[game.current]!;
   const waiter = waitingPlayer(game);
@@ -165,6 +199,10 @@ export function GameScreen({
   // Online: số thao tác đang chờ máy chủ; nút chính mờ đi trong lúc chờ để khỏi bấm lại.
   const [busy, setBusy] = useState(0);
   const send = async (a: Action) => {
+    if (a.type === 'roll' || a.type === 'rollCardDice') {
+      skipServerEcho.current = true;
+      playDiceSound();
+    }
     if (online) setBusy((n) => n + 1);
     try {
       const err = await dispatch(a);
@@ -417,6 +455,7 @@ export function GameScreen({
                 onWalkChange={(isWalking, destination) => {
                   setWalking(isWalking);
                   if (isWalking && destination !== null) setArrivalTile(destination);
+                  else if (!isWalking) setArrivalTile(null);
                 }}
               />
             </div>
@@ -428,6 +467,15 @@ export function GameScreen({
               </div>
             )}
             <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
+            <button
+              type="button"
+              className="dice-sound-toggle"
+              onClick={toggleRollSound}
+              aria-label={rollSoundOn ? 'Tắt tiếng xúc xắc' : 'Bật tiếng xúc xắc'}
+              title={rollSoundOn ? 'Tắt tiếng xúc xắc' : 'Bật tiếng xúc xắc'}
+            >
+              {rollSoundOn ? '🔊' : '🔇'}
+            </button>
             <CenterPanel
               game={game}
               me={waiter}
@@ -440,6 +488,9 @@ export function GameScreen({
               dice={dice}
               diceColor={rollerColor}
               rollKey={actions}
+              animateRoll={Boolean(
+                previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
+              )}
               formula={formula}
               notice={arrivalHold && arrivalTile !== null ? 'Đã đến nơi' : notice}
               arrivalOnly={arrivalHold}
@@ -639,6 +690,7 @@ interface CenterPanelProps {
   dice: readonly number[] | null;
   diceColor: string;
   rollKey: number;
+  animateRoll: boolean;
   formula: PayFormula | null;
   /** Lời nhắc chuyển máy / đang chờ người khác. */
   notice: string | null;
@@ -764,6 +816,7 @@ function CenterPanel({
   dice,
   diceColor,
   rollKey,
+  animateRoll,
   formula,
   notice,
   children,
@@ -778,11 +831,11 @@ function CenterPanel({
   const isTurn = game.players[game.current]?.id === me.id;
   const [rolling, setRolling] = useState(false);
   useEffect(() => {
-    if (!game.events.some((e) => e.type === 'roll')) return;
+    if (!animateRoll) return;
     setRolling(true);
-    const timer = setTimeout(() => setRolling(false), 650);
+    const timer = setTimeout(() => setRolling(false), 3000);
     return () => clearTimeout(timer);
-  }, [rollKey, game.events]);
+  }, [rollKey, animateRoll]);
 
   return (
     <div className="center center-player-theme">

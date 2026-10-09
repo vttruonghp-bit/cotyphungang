@@ -456,3 +456,32 @@
 .tokens .token-icon {
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 42%));
 }
+
+
+/* Cinematic square-by-square travel; keep focus above neighbouring tiles. */
+.tile-stomp {
+  z-index: 12;
+  animation: tile-travel-pulse 400ms ease-in-out both;
+  filter: brightness(1.08);
+}
+.tile-stomp.tile-landing {
+  animation-duration: 1000ms;
+}
+@keyframes tile-travel-pulse {
+  0%, 100% { transform: scale(1); }
+  48% { transform: scale(1.1); }
+}
+.token-slot.is-anticipating {
+  z-index: 20;
+  animation: token-anticipate 1000ms ease-in-out both;
+}
+@keyframes token-anticipate {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  20%, 60% { transform: scale(1.3); opacity: .45; }
+  40%, 80% { transform: scale(.9); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-stomp, .tile-stomp.tile-landing, .token-slot.is-anticipating {
+    animation: none;
+  }
+}

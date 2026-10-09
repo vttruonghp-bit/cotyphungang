@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useHotSeat } from './game/useHotSeat';
+import { startGameMusic, stopGameMusic } from './audio/gameAudio';
 import { AI_PLAYER_ID, chooseAiAction } from './game/aiOpponent';
 import type { NewPlayer } from '@cotiphu/shared';
 import { ConnectionBanner, ResumeScreen } from './online/Connection';
@@ -20,6 +21,15 @@ export function App() {
   const aiPending = hotSeat.current?.game.pending;
   const aiGame = hotSeat.current?.game;
   const aiActions = hotSeat.current?.actions;
+  const aiPrevious = hotSeat.current?.previous;
+  // The bot must not advance the state while the dice and walking sequence plays.
+  const newlyRolled = aiPrevious ? aiGame?.events.slice(aiPrevious.events.length) : undefined;
+  const lastAiMove = newlyRolled?.find((e) => e.type === 'move');
+  const lastAiRoll = newlyRolled?.find((e) => e.type === 'roll');
+  const aiAnimationDelay =
+    lastAiMove?.type === 'move' && lastAiRoll?.type === 'roll'
+      ? 3000 + 1000 + (lastAiRoll.dice[0] + lastAiRoll.dice[1] - 1) * 400 + 1000
+      : 0;
   // Play only the bot's turns. Each step is delayed so the player can follow along.
   useEffect(() => {
     if (
@@ -35,7 +45,7 @@ export function App() {
       () => {
         hotSeat.dispatch(action);
       },
-      aiPending.type === 'roll' ? 1100 : 800,
+      Math.max(aiPending.type === 'roll' ? 1100 : 800, aiAnimationDelay),
     );
     return () => window.clearTimeout(timer);
     // Pending and action count change after every game action.
@@ -151,6 +161,27 @@ export function App() {
       />
     );
   }
+
+  const gameActive =
+    (ticket && room?.phase !== 'lobby' && view && view.game.pending.type !== 'ended') ||
+    (!ticket && local === 'hotseat' && hotSeat.current?.game.pending.type !== 'ended');
+
+  // Start on an actual user tap for mobile autoplay restrictions. Reuse
+  // the same audio instance across game actions, screens and players.
+  useEffect(() => {
+    if (!gameActive) {
+      stopGameMusic();
+      return;
+    }
+    const unlock = () => startGameMusic();
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('keydown', unlock);
+    startGameMusic();
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [gameActive]);
 
   return (
     <>
