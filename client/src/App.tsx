@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useHotSeat } from './game/useHotSeat';
+import { startGameMusic, stopGameMusic } from './audio/gameAudio';
 import { AI_PLAYER_ID, chooseAiAction } from './game/aiOpponent';
 import type { NewPlayer } from '@cotiphu/shared';
 import { ConnectionBanner, ResumeScreen } from './online/Connection';
@@ -151,6 +152,27 @@ export function App() {
       />
     );
   }
+
+  const gameActive =
+    (ticket && room?.phase !== 'lobby' && view && view.game.pending.type !== 'ended') ||
+    (!ticket && local === 'hotseat' && hotSeat.current?.game.pending.type !== 'ended');
+
+  // Start on an actual user tap for mobile autoplay restrictions. Reuse
+  // the same audio instance across game actions, screens and players.
+  useEffect(() => {
+    if (!gameActive) {
+      stopGameMusic();
+      return;
+    }
+    const unlock = () => startGameMusic();
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('keydown', unlock);
+    startGameMusic();
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [gameActive]);
 
   return (
     <>
