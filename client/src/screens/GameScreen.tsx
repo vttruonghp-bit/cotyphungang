@@ -76,7 +76,7 @@ interface Reveal {
 const MAX_REVEALS = 6;
 
 const revealsOf = ({ game, previous }: GameView): Reveal[] =>
-  game.events
+  game.events.slice(previous?.events.length ?? game.events.length)
     .filter((e): e is CardEvent | HighwayEvent => e.type === 'card' || e.type === 'highway')
     .map((event) => ({ game, previous, event }));
 
@@ -409,6 +409,7 @@ export function GameScreen({
             <div className="iso">
               <Board
                 game={game}
+                previous={previous}
                 focus={viewTile ?? waiter.position}
                 onTileClick={
                   motionLocked ? undefined : (i) => setViewTile((v) => (v === i ? null : i))
