@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { playDiceSound, setGameSoundEnabled } from '../audio/gameAudio';
 import {
   BOARD,
   gridPosition,
@@ -120,8 +121,6 @@ export function GameScreen({
   const [walking, setWalking] = useState(false);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
-  // The MP3 is served as a static file to avoid restarting on React re-renders.
-  const rollAudio = useRef<HTMLAudioElement | null>(null);
   const skipServerEcho = useRef(false);
   const [rollSoundOn, setRollSoundOn] = useState(() => {
     try {
@@ -130,27 +129,10 @@ export function GameScreen({
       return true;
     }
   });
-  const playRollSound = () => {
-    if (!rollSoundOn) return;
-    const audio = rollAudio.current ?? new Audio('/dice-roll.mp3');
-    rollAudio.current = audio;
-    audio.volume = 0.35;
-    audio.pause();
-    audio.currentTime = 0;
-    void audio.play().catch(() => {
-      // Mobile browsers can block audio until the first user gesture.
-    });
-  };
   const toggleRollSound = () => {
-    setRollSoundOn((on) => {
-      if (on) rollAudio.current?.pause();
-      try {
-        window.localStorage.setItem('dice-roll-sound', on ? 'off' : 'on');
-      } catch {
-        // Private browsing may disable storage.
-      }
-      return !on;
-    });
+    const next = !rollSoundOn;
+    setRollSoundOn(next);
+    setGameSoundEnabled(next);
   };
   // Includes AI and remote players; only react to a *new* roll, not other actions.
   useEffect(() => {
@@ -167,7 +149,7 @@ export function GameScreen({
       skipServerEcho.current = false;
       return;
     }
-    playRollSound();
+    playDiceSound();
     // The action counter changes when the game applies an action.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions]);
@@ -219,7 +201,7 @@ export function GameScreen({
   const send = async (a: Action) => {
     if (a.type === 'roll' || a.type === 'rollCardDice') {
       skipServerEcho.current = true;
-      playRollSound();
+      playDiceSound();
     }
     if (online) setBusy((n) => n + 1);
     try {
