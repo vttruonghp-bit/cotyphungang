@@ -1625,3 +1625,17 @@
   height: 30px;
   cursor: pointer;
 }
+
+
+/* Context actions unfold from the landed square rather than popping abruptly. */
+.tile-action-pop {
+  animation: tile-action-emerge 380ms cubic-bezier(.18,.82,.23,1.12) both;
+  transform-origin: var(--tile-pop-origin, 50% 50%);
+}
+@keyframes tile-action-emerge {
+  from { opacity: 0; transform: translateY(16px) scale(.3); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-action-pop { animation: none; }
+}
