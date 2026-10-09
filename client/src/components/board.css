@@ -171,6 +171,11 @@
   background: #fbf0d2;
 }
 
+/* Owned land uses its player's light color; stations and utilities keep their distinct surfaces. */
+.tile-property.tile-owned {
+  background: var(--owner-soft);
+}
+
 /* Khách sạn: nền nhạt màu chủ, viền đậm, lấp lánh */
 .tile-hotel {
   background: var(--owner-soft);
