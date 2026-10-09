@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { playDiceSound, setGameSoundEnabled } from '../audio/gameAudio';
 import {
   BOARD,
@@ -121,6 +121,11 @@ export function GameScreen({
   const [walking, setWalking] = useState(false);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
+  // Stable callback: Board's effect must not restart the arrival hold on every render.
+  const onWalkChange = useCallback((isWalking: boolean, destination: number | null) => {
+    setWalking(isWalking);
+    if (destination !== null) setArrivalTile(destination);
+  }, []);
   const skipServerEcho = useRef(false);
   const [rollSoundOn, setRollSoundOn] = useState(() => {
     try {
@@ -458,11 +463,7 @@ export function GameScreen({
                 onTileClick={
                   motionLocked ? undefined : (i) => setViewTile((v) => (v === i ? null : i))
                 }
-                onWalkChange={(isWalking, destination) => {
-                  setWalking(isWalking);
-                  if (isWalking && destination !== null) setArrivalTile(destination);
-                  else if (!isWalking && destination !== null) setArrivalTile(destination);
-                }}
+                onWalkChange={onWalkChange}
               />
             </div>
             {tileActions && (
