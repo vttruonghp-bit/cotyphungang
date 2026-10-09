@@ -21,6 +21,17 @@ export function App() {
   const aiPending = hotSeat.current?.game.pending;
   const aiGame = hotSeat.current?.game;
   const aiActions = hotSeat.current?.actions;
+  const aiPrevious = hotSeat.current?.previous;
+  // The bot must not advance the state while the dice and walking sequence plays.
+  const newlyRolled = aiPrevious
+    ? aiGame?.events.slice(aiPrevious.events.length)
+    : undefined;
+  const lastAiMove = newlyRolled?.find((e) => e.type === 'move');
+  const lastAiRoll = newlyRolled?.find((e) => e.type === 'roll');
+  const aiAnimationDelay =
+    lastAiMove?.type === 'move' && lastAiRoll?.type === 'roll'
+      ? 3000 + 1000 + (lastAiRoll.dice[0] + lastAiRoll.dice[1] - 1) * 400 + 1000
+      : 0;
   // Play only the bot's turns. Each step is delayed so the player can follow along.
   useEffect(() => {
     if (
@@ -36,7 +47,7 @@ export function App() {
       () => {
         hotSeat.dispatch(action);
       },
-      aiPending.type === 'roll' ? 1100 : 800,
+      Math.max(aiPending.type === 'roll' ? 1100 : 800, aiAnimationDelay),
     );
     return () => window.clearTimeout(timer);
     // Pending and action count change after every game action.
