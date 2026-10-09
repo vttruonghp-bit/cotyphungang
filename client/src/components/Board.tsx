@@ -96,7 +96,7 @@ function useWalk(
   // steps waits on destination for one second.
   const [progress, setProgress] = useState({ game, step: -2 });
   const step = progress.game === game ? progress.step : -2;
-  const walking = walk !== null && step <= walk.steps;
+  const walking = walk !== null && step < walk.steps;
   useEffect(() => {
     if (!walk) return;
     const destination = (walk.from + walk.steps) % BOARD_SIZE;
@@ -105,7 +105,7 @@ function useWalk(
     const delay =
       step === -2 ? ROLL_MS :
       step === -1 ? ANTICIPATION_MS :
-      step === walk.steps ? LAND_MS : STEP_MS;
+      step === walk.steps - 1 ? LAND_MS : STEP_MS;
     const timer = setTimeout(() => setProgress({ game, step: step + 1 }), delay);
     return () => clearTimeout(timer);
   }, [walking, walk, game, step, onWalkChange]);
@@ -117,7 +117,7 @@ function useWalk(
     at,
     stomp: step >= 0 ? at : null,
     anticipating: step === -1,
-    landing: step === walk.steps,
+    landing: step === walk.steps - 1,
   };
 }
 
