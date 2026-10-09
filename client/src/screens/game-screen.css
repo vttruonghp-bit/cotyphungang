@@ -1787,3 +1787,56 @@
 .land-stage .tile-action-pop {
   z-index: 110 !important;
 }
+
+/* Keep the complete action stack INSIDE the inner 9x9 area, not on the perimeter. */
+.land-stage .tile-action-pop {
+  margin: 0;
+  width: clamp(126px, 17cqw, 170px);
+  max-width: min(170px, 23cqw);
+  max-height: calc(var(--board-s) * 0.36);
+  overflow-y: auto;
+  box-sizing: border-box;
+  animation: pop-tile-action 220ms ease-out both;
+}
+.land-stage .tile-action-bottom {
+  left: 50%;
+  top: calc(50% + var(--board-s) * 4.5 / 11 - 8px);
+  transform: translate(-50%, -100%);
+}
+.land-stage .tile-action-top {
+  left: 50%;
+  top: calc(50% - var(--board-s) * 4.5 / 11 + 8px);
+  transform: translate(-50%, 0);
+}
+.land-stage .tile-action-left {
+  left: calc(50% - var(--board-s) * 4.5 / 11 + 8px);
+  top: 50%;
+  transform: translate(0, -50%);
+}
+.land-stage .tile-action-right {
+  left: calc(50% + var(--board-s) * 4.5 / 11 - 8px);
+  top: 50%;
+  transform: translate(-100%, -50%);
+}
+/* Preserve readable central information while making a lane for the actions. */
+.land-stage .center-position.center-shift .center {
+  width: min(470px, 58cqw);
+  height: min(370px, 45cqh);
+  max-height: min(370px, 45cqh);
+}
+.land-stage .center-position.center-shift-bottom .center {
+  top: 39%;
+}
+.land-stage .center-position.center-shift-top .center {
+  top: 61%;
+}
+.land-stage .center-position.center-shift-left .center {
+  left: 61%;
+}
+.land-stage .center-position.center-shift-right .center {
+  left: 39%;
+}
+.land-stage .tile-action-pop .btn {
+  min-height: 38px;
+  font-size: 13px;
+}
