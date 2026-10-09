@@ -38,9 +38,8 @@ export function Sheet({
   useLayoutEffect(() => {
     if (!game || !surface.current) return;
     const pd = game.pending;
-    const tileIndex = 'tile' in pd && typeof pd.tile === 'number'
-      ? pd.tile
-      : game.players[game.current]?.position;
+    const tileIndex =
+      'tile' in pd && typeof pd.tile === 'number' ? pd.tile : game.players[game.current]?.position;
     if (tileIndex === undefined) return;
     const source = document.querySelector<HTMLElement>(
       `.land .board .tile[data-tile-index="${tileIndex}"]`,
@@ -48,8 +47,14 @@ export function Sheet({
     if (!source) return;
     const from = source.getBoundingClientRect();
     const to = surface.current.getBoundingClientRect();
-    surface.current.style.setProperty('--sheet-origin-x', `${from.left + from.width / 2 - to.left}px`);
-    surface.current.style.setProperty('--sheet-origin-y', `${from.top + from.height / 2 - to.top}px`);
+    surface.current.style.setProperty(
+      '--sheet-origin-x',
+      `${from.left + from.width / 2 - to.left}px`,
+    );
+    surface.current.style.setProperty(
+      '--sheet-origin-y',
+      `${from.top + from.height / 2 - to.top}px`,
+    );
   }, []);
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -60,7 +65,13 @@ export function Sheet({
   }, []);
   return (
     <div className={`sheet-backdrop${compactManage ? ' sheet-backdrop-manage' : ''}`}>
-      <section ref={surface} className="sheet" role="dialog" aria-modal="true" aria-label={label ?? title}>
+      <section
+        ref={surface}
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={label ?? title}
+      >
         <header className="app-header">
           <h1 className="app-title">CỜ TỶ PHÚ</h1>
           {game && game.pending.type !== 'ended' && <TurnLine game={game} who={who} />}

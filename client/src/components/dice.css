@@ -48,7 +48,6 @@
   }
 }
 
-
 /* The roll settles only after the three-second reveal period. */
 .die-rolling {
   animation-duration: 3000ms;

@@ -90,7 +90,13 @@ function useWalk(
   game: GameState,
   previous?: GameState | null,
   onWalkChange?: (walking: boolean, destination: number | null) => void,
-): { playerId: string; at: number; stomp: number | null; anticipating: boolean; landing: boolean } | null {
+): {
+  playerId: string;
+  at: number;
+  stomp: number | null;
+  anticipating: boolean;
+  landing: boolean;
+} | null {
   const walk = useMemo(() => (reducedMotion() ? null : walkOf(game, previous)), [game, previous]);
   // -2 rolls dice, -1 pulses starting token, 0..steps enters each tile,
   // steps waits on destination for one second.
@@ -103,9 +109,13 @@ function useWalk(
     onWalkChange?.(walking, destination);
     if (!walking) return;
     const delay =
-      step === -2 ? ROLL_MS :
-      step === -1 ? ANTICIPATION_MS :
-      step === walk.steps - 1 ? LAND_MS : STEP_MS;
+      step === -2
+        ? ROLL_MS
+        : step === -1
+          ? ANTICIPATION_MS
+          : step === walk.steps - 1
+            ? LAND_MS
+            : STEP_MS;
     const timer = setTimeout(() => setProgress({ game, step: step + 1 }), delay);
     return () => clearTimeout(timer);
   }, [walking, walk, game, step, onWalkChange]);

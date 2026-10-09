@@ -23,9 +23,7 @@ export function App() {
   const aiActions = hotSeat.current?.actions;
   const aiPrevious = hotSeat.current?.previous;
   // The bot must not advance the state while the dice and walking sequence plays.
-  const newlyRolled = aiPrevious
-    ? aiGame?.events.slice(aiPrevious.events.length)
-    : undefined;
+  const newlyRolled = aiPrevious ? aiGame?.events.slice(aiPrevious.events.length) : undefined;
   const lastAiMove = newlyRolled?.find((e) => e.type === 'move');
   const lastAiRoll = newlyRolled?.find((e) => e.type === 'roll');
   const aiAnimationDelay =
