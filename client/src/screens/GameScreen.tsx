@@ -487,6 +487,9 @@ export function GameScreen({
               dice={dice}
               diceColor={rollerColor}
               rollKey={actions}
+              animateRoll={Boolean(
+                previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
+              )}
               formula={formula}
               notice={arrivalHold && arrivalTile !== null ? 'Đã đến nơi' : notice}
               arrivalOnly={arrivalHold}
@@ -686,6 +689,7 @@ interface CenterPanelProps {
   dice: readonly number[] | null;
   diceColor: string;
   rollKey: number;
+  animateRoll: boolean;
   formula: PayFormula | null;
   /** Lời nhắc chuyển máy / đang chờ người khác. */
   notice: string | null;
@@ -811,6 +815,7 @@ function CenterPanel({
   dice,
   diceColor,
   rollKey,
+  animateRoll,
   formula,
   notice,
   children,
@@ -825,11 +830,11 @@ function CenterPanel({
   const isTurn = game.players[game.current]?.id === me.id;
   const [rolling, setRolling] = useState(false);
   useEffect(() => {
-    if (!game.events.some((e) => e.type === 'roll')) return;
+    if (!animateRoll) return;
     setRolling(true);
-    const timer = setTimeout(() => setRolling(false), 650);
+    const timer = setTimeout(() => setRolling(false), 3000);
     return () => clearTimeout(timer);
-  }, [rollKey, game.events]);
+  }, [rollKey, animateRoll]);
 
   return (
     <div className="center center-player-theme">
