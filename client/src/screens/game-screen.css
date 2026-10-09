@@ -1608,10 +1608,7 @@
   overflow: hidden;
 }
 
-/* Sound toggle stays above the board without blocking dice or tile buttons. */
-.center-position {
-  position: relative;
-}
+/* Keep the center overlay anchored to the board; the sound toggle is positioned inside it. */
 .dice-sound-toggle {
   position: absolute;
   top: 4px;
