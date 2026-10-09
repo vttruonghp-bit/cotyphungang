@@ -25,11 +25,11 @@ interface BoardProps {
   onWalkChange?: (walking: boolean, destination: number | null) => void;
 }
 
-/** Three-second roll, one-second token anticipation, 0.4s per crossed tile. */
+/** Three-second roll, short anticipation, 0.2s per crossed tile. */
 const ROLL_MS = 3000;
-const ANTICIPATION_MS = 1000;
-const STEP_MS = 400;
-const LAND_MS = 1000;
+const ANTICIPATION_MS = 200;
+const STEP_MS = 200;
+const LAND_MS = 200;
 
 function cornerSide(tile: Tile): string {
   const { row, col } = gridPosition(tile.index);
