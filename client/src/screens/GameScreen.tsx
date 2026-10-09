@@ -455,6 +455,7 @@ export function GameScreen({
                 onWalkChange={(isWalking, destination) => {
                   setWalking(isWalking);
                   if (isWalking && destination !== null) setArrivalTile(destination);
+                  else if (!isWalking) setArrivalTile(null);
                 }}
               />
             </div>
