@@ -15,6 +15,7 @@ import './board.css';
 
 interface BoardProps {
   game: GameState;
+  previous?: GameState | null;
   /** Ô đang được làm nổi (thường là ô người tới lượt đang đứng). */
   focus?: number | null;
   onTileClick?: (index: number) => void;
@@ -82,8 +83,10 @@ interface Walk {
 }
 
 /** Lần đi theo 2 xúc xắc trong thao tác vừa rồi; đi bằng thẻ, Metro, vào tù thì nhảy thẳng. */
-function walkOf(game: GameState): Walk | null {
-  const ev = game.events;
+function walkOf(game: GameState, previous?: GameState | null): Walk | null {
+  // Only animate the move made by this action, never a historical dice roll.
+  if (!previous || game.events.length <= previous.events.length) return null;
+  const ev = game.events.slice(previous.events.length);
   for (let i = 0; i + 1 < ev.length; i++) {
     const r = ev[i]!;
     const m = ev[i + 1]!;
@@ -103,9 +106,10 @@ const reducedMotion = () =>
 /** Quân vừa đổ xúc xắc đi từng ô tới chỗ mới; trả về ô đang vẽ của quân đó trong lúc đi. */
 function useWalk(
   game: GameState,
+  previous?: GameState | null,
   onWalkChange?: (walking: boolean, destination: number | null) => void,
 ): { playerId: string; at: number; stomp: number } | null {
-  const walk = useMemo(() => (reducedMotion() ? null : walkOf(game)), [game]);
+  const walk = useMemo(() => (reducedMotion() ? null : walkOf(game, previous)), [game, previous]);
   const [progress, setProgress] = useState({ game, step: 0 });
   const step = progress.game === game ? progress.step : 0;
   const walking = walk !== null && step < walk.steps;
@@ -166,8 +170,8 @@ function Tokens({
   );
 }
 
-export function Board({ game, focus, onTileClick, children, onWalkChange }: BoardProps) {
-  const walk = useWalk(game, onWalkChange);
+export function Board({ game, previous, focus, onTileClick, children, onWalkChange }: BoardProps) {
+  const walk = useWalk(game, previous, onWalkChange);
   const currentId = game.players[game.current]?.id;
   const positionOf = (p: PlayerState) => (walk?.playerId === p.id ? walk.at : p.position);
   return (
