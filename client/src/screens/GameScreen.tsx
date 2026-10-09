@@ -383,8 +383,7 @@ export function GameScreen({
   const actionTile = pd.type === 'buy' || pd.type === 'upgrade' ? pd.tile : waiter.position;
   const position = gridPosition(actionTile);
   const tileActions = myMove && !motionLocked && !sheet &&
-    pd.type !== 'buy' &&
-    (pd.type === 'buy' || pd.type === 'upgrade' || pd.type === 'pay') &&
+    (pd.type === 'upgrade' || pd.type === 'pay') &&
     actionTile % 10 !== 0;
   const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
     position.col === 0 ? 'left' : 'right';
