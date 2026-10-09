@@ -168,7 +168,7 @@ export function GameScreen({
   const newMovementRoll = Boolean(
     previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
   );
-  const centerRollLocked = newMovementRoll && (walking || arrivalTile === null);
+  const centerRollLocked = newMovementRoll && walking;
 
   // Sau khi quân dừng: giữ tên ô đích 1 giây rồi mới cho hiện thao tác/màn phụ.
   useEffect(() => {
