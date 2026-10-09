@@ -132,7 +132,7 @@ export function GameScreen({
   });
   const playRollSound = () => {
     if (!rollSoundOn) return;
-    const audio = rollAudio.current ?? new Audio('/sounds/dice-roll.mp3');
+    const audio = rollAudio.current ?? new Audio('/dice-roll.mp3');
     rollAudio.current = audio;
     audio.volume = 0.35;
     audio.pause();
