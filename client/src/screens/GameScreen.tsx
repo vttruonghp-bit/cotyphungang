@@ -386,7 +386,6 @@ export function GameScreen({
 
   // Nút hành động theo vị trí ô đến; bốn ô góc không tạo cụm nút.
   const actionTile = pd.type === 'buy' || pd.type === 'upgrade' ? pd.tile : waiter.position;
-  const buying = myMove && !motionLocked && !sheet && pd.type === 'buy';
   const position = gridPosition(actionTile);
   const tileActions = myMove && !motionLocked && !sheet &&
     (pd.type === 'buy' || pd.type === 'upgrade' || pd.type === 'pay') &&
@@ -472,26 +471,6 @@ export function GameScreen({
                 {pd.type !== 'pay' && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
               </div>
             )}
-            {false && buying && main && (
-              <div className="board-buy-actions" role="group" aria-label="Quyết định mua đất">
-                <button
-                  type="button"
-                  className={`btn btn-teal board-buy-confirm`}
-                  disabled={busy > 0}
-                  onClick={main.run}
-                >
-                  {main.label}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline board-buy-decline"
-                  disabled={busy > 0}
-                  onClick={secondary.run}
-                >
-                  Không mua
-                </button>
-              </div>
-            )}
             <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
             <button
               type="button"
@@ -524,7 +503,7 @@ export function GameScreen({
               arrivalOnly={arrivalHold}
             >
               <div className="btn-row action-bar">
-                {tileActions || buying ? null : main ? (
+                {tileActions ? null : main ? (
                   <button
                     type="button"
                     className={`btn btn-grow ${main.tone}`}
@@ -539,7 +518,7 @@ export function GameScreen({
                     {othersText ? `Chờ ${waiter.name}…` : 'Đang chờ…'}
                   </button>
                 )}
-                {!tileActions && !buying && <button
+                {!tileActions && <button
                   type="button"
                   className={`btn ${secondary.tone}`}
                   disabled={
