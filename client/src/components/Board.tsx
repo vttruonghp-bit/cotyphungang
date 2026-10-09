@@ -218,6 +218,7 @@ export function Board({ game, previous, focus, onTileClick, children, onWalkChan
             type="button"
             key={tile.index}
             className={classes}
+            data-tile-index={tile.index}
             style={style}
             onClick={onTileClick ? () => onTileClick(tile.index) : undefined}
             aria-label={label}
