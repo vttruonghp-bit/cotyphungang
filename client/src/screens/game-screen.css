@@ -1732,8 +1732,21 @@
   z-index: 4;
   scale: 0.62;
 }
-.land-stage .center-position.center-shift-bottom { transform: translateY(-27%); }
-.land-stage .center-position.center-shift-top { transform: translateY(27%); }
-.land-stage .center-position.center-shift-left { transform: translateX(26%); }
-.land-stage .center-position.center-shift-right { transform: translateX(-26%); }
-.land-stage .tile-action-pop .btn { display: block; width: 100%; visibility: visible; opacity: 1; }
+.land-stage .center-position.center-shift-bottom {
+  transform: translateY(-27%);
+}
+.land-stage .center-position.center-shift-top {
+  transform: translateY(27%);
+}
+.land-stage .center-position.center-shift-left {
+  transform: translateX(26%);
+}
+.land-stage .center-position.center-shift-right {
+  transform: translateX(-26%);
+}
+.land-stage .tile-action-pop .btn {
+  display: block;
+  width: 100%;
+  visibility: visible;
+  opacity: 1;
+}
