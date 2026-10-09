@@ -3,8 +3,8 @@
  * and React screen re-renders without creating overlapping players.
  */
 const BACKGROUND_VOLUME = 0.3;
-const DUCKED_VOLUME = 0.075;
-const DICE_VOLUME = 0.8;
+const DUCKED_VOLUME = 0.015;
+const DICE_VOLUME = 1;
 
 let background: HTMLAudioElement | null = null;
 let dice: HTMLAudioElement | null = null;
