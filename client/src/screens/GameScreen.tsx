@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   BOARD,
   gridPosition,
@@ -120,6 +120,58 @@ export function GameScreen({
   const [walking, setWalking] = useState(false);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
+  // The MP3 is served as a static file to avoid restarting on React re-renders.
+  const rollAudio = useRef<HTMLAudioElement | null>(null);
+  const skipServerEcho = useRef(false);
+  const [rollSoundOn, setRollSoundOn] = useState(() => {
+    try {
+      return window.localStorage.getItem('dice-roll-sound') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+  const playRollSound = () => {
+    if (!rollSoundOn) return;
+    const audio = rollAudio.current ?? new Audio('/sounds/dice-roll.mp3');
+    rollAudio.current = audio;
+    audio.volume = 0.35;
+    audio.pause();
+    audio.currentTime = 0;
+    void audio.play().catch(() => {
+      // Mobile browsers can block audio until the first user gesture.
+    });
+  };
+  const toggleRollSound = () => {
+    setRollSoundOn((on) => {
+      if (on) rollAudio.current?.pause();
+      try {
+        window.localStorage.setItem('dice-roll-sound', on ? 'off' : 'on');
+      } catch {
+        // Private browsing may disable storage.
+      }
+      return !on;
+    });
+  };
+  // Includes AI and remote players; only react to a *new* roll, not other actions.
+  useEffect(() => {
+    if (!previous) return;
+    const previousRolls = previous.events.filter((event) => event.type === 'roll').length;
+    const currentRolls = game.events.filter((event) => event.type === 'roll').length;
+    const cardRoll =
+      previous.pending.type === 'cardDice' &&
+      previous.pending.dice === null &&
+      game.pending.type === 'cardDice' &&
+      game.pending.dice !== null;
+    if (currentRolls <= previousRolls && !cardRoll) return;
+    if (skipServerEcho.current) {
+      skipServerEcho.current = false;
+      return;
+    }
+    playRollSound();
+    // The action counter changes when the game applies an action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions]);
+
 
   const cur = game.players[game.current]!;
   const waiter = waitingPlayer(game);
@@ -165,6 +217,10 @@ export function GameScreen({
   // Online: số thao tác đang chờ máy chủ; nút chính mờ đi trong lúc chờ để khỏi bấm lại.
   const [busy, setBusy] = useState(0);
   const send = async (a: Action) => {
+    if (a.type === 'roll' || a.type === 'rollCardDice') {
+      skipServerEcho.current = true;
+      playRollSound();
+    }
     if (online) setBusy((n) => n + 1);
     try {
       const err = await dispatch(a);
@@ -428,6 +484,15 @@ export function GameScreen({
               </div>
             )}
             <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
+            <button
+              type="button"
+              className="dice-sound-toggle"
+              onClick={toggleRollSound}
+              aria-label={rollSoundOn ? 'Tắt tiếng xúc xắc' : 'Bật tiếng xúc xắc'}
+              title={rollSoundOn ? 'Tắt tiếng xúc xắc' : 'Bật tiếng xúc xắc'}
+            >
+              {rollSoundOn ? '🔊' : '🔇'}
+            </button>
             <CenterPanel
               game={game}
               me={waiter}
