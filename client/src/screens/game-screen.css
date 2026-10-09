@@ -1705,3 +1705,17 @@
     animation: none;
   }
 }
+
+/* Keep contextual buy/decline/pay controls above the shrinking center panel. */
+.land-stage > .tile-action-pop {
+  z-index: 80;
+  pointer-events: auto;
+}
+.land-stage > .center-position {
+  z-index: 5;
+}
+.tile-action-pop .btn {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
