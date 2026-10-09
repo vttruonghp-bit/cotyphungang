@@ -383,6 +383,7 @@ export function GameScreen({
   const actionTile = pd.type === 'buy' || pd.type === 'upgrade' ? pd.tile : waiter.position;
   const position = gridPosition(actionTile);
   const tileActions = myMove && !motionLocked && !sheet &&
+    pd.type !== 'buy' &&
     (pd.type === 'buy' || pd.type === 'upgrade' || pd.type === 'pay') &&
     actionTile % 10 !== 0;
   const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
@@ -463,7 +464,7 @@ export function GameScreen({
               <div className={`tile-action-pop tile-action-${actionSide}`} style={tileOffset}>
                 <div className="tile-action-player"><TokenIcon icon={me.icon} color={me.color} size={23} /> <strong>{me.name}</strong></div>
                 {main && <button type="button" className={`btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>{pd.type === "pay" && me.cash >= pd.total ? `Trả ${money(pd.total)}` : main.label}</button>}
-                {(pd.type === "buy" || pd.type === "upgrade") && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
+                {pd.type === 'upgrade' && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
               </div>
             )}
             <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
