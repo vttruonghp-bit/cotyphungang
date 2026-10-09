@@ -1607,3 +1607,19 @@
   max-height: 100%;
   overflow: hidden;
 }
+
+/* Sound toggle stays above the board without blocking dice or tile buttons. */
+.center-position { position: relative; }
+.dice-sound-toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 12;
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 50%;
+  background: rgba(0,0,0,.52);
+  color: white;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
