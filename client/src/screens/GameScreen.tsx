@@ -464,7 +464,7 @@ export function GameScreen({
               <div className={`tile-action-pop tile-action-${actionSide}`} style={tileOffset}>
                 <div className="tile-action-player"><TokenIcon icon={me.icon} color={me.color} size={23} /> <strong>{me.name}</strong></div>
                 {main && <button type="button" className={`btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>{pd.type === "pay" && me.cash >= pd.total ? `Trả ${money(pd.total)}` : main.label}</button>}
-                {pd.type === 'upgrade' && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
+                {pd.type !== 'pay' && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
               </div>
             )}
             <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
