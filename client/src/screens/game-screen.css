@@ -1750,3 +1750,40 @@
   visibility: visible;
   opacity: 1;
 }
+
+/* Compact the actual center card, not only its full-screen wrapper. */
+.land-stage .center-position.center-shift {
+  scale: 1;
+  transform: none;
+}
+.land-stage .center-position.center-shift .center {
+  box-sizing: border-box;
+  width: min(360px, 48cqw);
+  height: min(340px, 46cqh);
+  min-height: 0;
+  max-height: min(340px, 46cqh);
+  overflow: hidden;
+}
+.land-stage .center-position.center-shift .turn-hero {
+  min-height: 0;
+  padding: 6px 10px;
+}
+.land-stage .center-position.center-shift .center-body {
+  min-height: 0;
+  overflow: auto;
+}
+.land-stage .center-position.center-shift-bottom .center {
+  top: 37%;
+}
+.land-stage .center-position.center-shift-top .center {
+  top: 63%;
+}
+.land-stage .center-position.center-shift-left .center {
+  left: 62%;
+}
+.land-stage .center-position.center-shift-right .center {
+  left: 38%;
+}
+.land-stage .tile-action-pop {
+  z-index: 110 !important;
+}
