@@ -1645,3 +1645,63 @@
     animation: none;
   }
 }
+
+/* Purchase actions are always inside the board's inner 9x9 area, not by the rim. */
+.board-buy-actions {
+  position: absolute;
+  z-index: 24;
+  left: 50%;
+  top: calc(50% + var(--board-s) * 0.29);
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(var(--board-s) * 0.68));
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-soft) 94%, white);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 50%);
+  pointer-events: auto;
+  animation: board-buy-appear 320ms ease-out both;
+}
+.board-buy-actions .btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.board-buy-actions .board-buy-confirm {
+  flex: 1.4;
+}
+@keyframes board-buy-appear {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@media (max-width: 600px) and (orientation: portrait),
+  (max-height: 550px) and (orientation: landscape) {
+  .board-buy-actions {
+    left: auto;
+    right: calc(3px + var(--board-s) * 0.16);
+    width: calc(var(--board-s) * 0.68);
+    top: calc(50% + var(--board-s) * 0.29);
+    transform: translateY(-50%);
+  }
+  .board-buy-actions .btn {
+    min-height: 34px;
+    font-size: clamp(11px, 2.2cqh, 15px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-buy-actions {
+    animation: none;
+  }
+}
