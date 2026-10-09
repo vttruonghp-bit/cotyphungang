@@ -1820,15 +1820,15 @@
 }
 /* Preserve readable central information while making a lane for the actions. */
 .land-stage .center-position.center-shift .center {
-  width: min(470px, 58cqw);
-  height: min(370px, 45cqh);
-  max-height: min(370px, 45cqh);
+  width: min(580px, 76cqw);
+  height: min(490px, 68cqh);
+  max-height: min(490px, 68cqh);
 }
 .land-stage .center-position.center-shift-bottom .center {
-  top: 39%;
+  top: 37%;
 }
 .land-stage .center-position.center-shift-top .center {
-  top: 61%;
+  top: 63%;
 }
 .land-stage .center-position.center-shift-left .center {
   left: 61%;
