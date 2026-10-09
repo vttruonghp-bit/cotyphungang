@@ -119,6 +119,7 @@ export function GameScreen({
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<object | null>(null);
   const [walking, setWalking] = useState(false);
+  const [rollStartTile, setRollStartTile] = useState<number | null>(null);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
   const skipServerEcho = useRef(false);
@@ -164,6 +165,16 @@ export function GameScreen({
   const accent = colorOf(waiter.color);
   const meColor = colorOf(me.color);
   const pd = game.pending;
+
+  const newMovementRoll = Boolean(
+    previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
+  );
+  const centerRollLocked = newMovementRoll && (walking || arrivalTile === null);
+  useEffect(() => {
+    if (newMovementRoll && previous) {
+      setRollStartTile(previous.players.find((p) => p.id === waiter.id)?.position ?? null);
+    }
+  }, [actions, newMovementRoll, previous, waiter.id]);
 
   // Sau khi quân dừng: giữ tên ô đích 1 giây rồi mới cho hiện thao tác/màn phụ.
   useEffect(() => {
@@ -503,7 +514,9 @@ export function GameScreen({
               mine={online !== null && waiter.id === me.id}
               away={offline.has(waiter.id)}
               tile={
-                arrivalHold && arrivalTile !== null ? arrivalTile : (viewTile ?? waiter.position)
+                centerRollLocked && rollStartTile !== null
+                  ? rollStartTile
+                  : arrivalHold && arrivalTile !== null ? arrivalTile : (viewTile ?? waiter.position)
               }
               viewing={viewTile !== null}
               dice={dice}
