@@ -2,9 +2,9 @@
  * One shared mixer for the whole browser tab. Audio continues across turns
  * and React screen re-renders without creating overlapping players.
  */
-const BACKGROUND_VOLUME = 0.30;
+const BACKGROUND_VOLUME = 0.3;
 const DUCKED_VOLUME = 0.075;
-const DICE_VOLUME = 0.80;
+const DICE_VOLUME = 0.8;
 
 let background: HTMLAudioElement | null = null;
 let dice: HTMLAudioElement | null = null;
