@@ -202,6 +202,7 @@ export function Board({ game, previous, focus, onTileClick, children, onWalkChan
           `tile-${tile.kind}`,
           corner ? 'tile-corner' : '',
           hotel ? 'tile-hotel' : '',
+          owner && tile.kind === 'property' ? 'tile-owned' : '',
           st?.mortgaged ? 'tile-mortgaged' : '',
           focus === tile.index ? 'tile-focus' : '',
           walk?.stomp === tile.index ? 'tile-stomp' : '',
