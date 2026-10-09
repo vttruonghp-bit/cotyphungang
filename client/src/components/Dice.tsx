@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import './dice.css';
 
 const PIPS: Record<number, [number, number][]> = {
@@ -45,6 +46,29 @@ interface DiceProps {
 
 /** Xúc xắc vẽ bằng SVG; `rolling` cho hiệu ứng rung khi vừa gieo. */
 export function Dice({ values, color = 'var(--teal)', size = 34, rolling = false }: DiceProps) {
+  const [flicker, setFlicker] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (!rolling || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const started = performance.now();
+    const tick = () => {
+      const elapsed = performance.now() - started;
+      if (elapsed >= 2960) {
+        setFlicker(null);
+        return;
+      }
+      setFlicker(values.map(() => 1 + Math.floor(Math.random() * 6)));
+      // Face changes are rapid at launch, then progressively slow down.
+      const ratio = elapsed / 3000;
+      timer = setTimeout(tick, Math.round(50 + 280 * ratio * ratio));
+    };
+    tick();
+    return () => {
+      clearTimeout(timer);
+      setFlicker(null);
+    };
+  }, [rolling, values.length]);
+
   return (
     <span className="dice" role="img" aria-label={`Xúc xắc ${values.join(' và ')}`}>
       {values.map((v, i) => (
@@ -53,8 +77,8 @@ export function Dice({ values, color = 'var(--teal)', size = 34, rolling = false
           viewBox="0 0 100 100"
           width={size}
           height={size}
-          className={rolling ? 'die die-rolling' : 'die'}
-          style={{ color, animationDelay: `${i * 60}ms` }}
+          className={rolling ? `die die-rolling die-rolling-${i % 2}` : 'die'}
+          style={{ color }}
           aria-hidden="true"
         >
           <rect
@@ -67,7 +91,7 @@ export function Dice({ values, color = 'var(--teal)', size = 34, rolling = false
             stroke="currentColor"
             strokeWidth="7"
           />
-          {(PIPS[v] ?? []).map(([cx, cy], k) => (
+          {(PIPS[flicker?.[i] ?? v] ?? []).map(([cx, cy], k) => (
             <circle key={k} cx={cx} cy={cy} r="8.5" fill="currentColor" />
           ))}
         </svg>
