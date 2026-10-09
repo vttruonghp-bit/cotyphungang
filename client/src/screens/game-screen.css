@@ -1758,10 +1758,10 @@
 }
 .land-stage .center-position.center-shift .center {
   box-sizing: border-box;
-  width: min(360px, 48cqw);
-  height: min(340px, 46cqh);
+  width: min(430px, 56cqw);
+  height: min(420px, 60cqh);
   min-height: 0;
-  max-height: min(340px, 46cqh);
+  max-height: min(420px, 60cqh);
   overflow: hidden;
 }
 .land-stage .center-position.center-shift .turn-hero {
@@ -1773,16 +1773,16 @@
   overflow: auto;
 }
 .land-stage .center-position.center-shift-bottom .center {
-  top: 37%;
+  top: 34%;
 }
 .land-stage .center-position.center-shift-top .center {
-  top: 63%;
+  top: 66%;
 }
 .land-stage .center-position.center-shift-left .center {
-  left: 62%;
+  left: 65%;
 }
 .land-stage .center-position.center-shift-right .center {
-  left: 38%;
+  left: 35%;
 }
 .land-stage .tile-action-pop {
   z-index: 110 !important;
