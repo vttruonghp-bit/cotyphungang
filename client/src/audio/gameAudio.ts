@@ -48,9 +48,11 @@ export function startGameMusic(): void {
   active = true;
   if (!canPlay()) return;
   const audio = getBackground();
-  if (audio.paused) void audio.play().catch(() => {
-    // iOS Safari requires an explicit tap before playback is allowed.
-  });
+  if (audio.paused) {
+    void audio.play().catch(() => {
+      // iOS Safari requires an explicit tap before playback is allowed.
+    });
+  }
 }
 
 export function stopGameMusic(): void {
