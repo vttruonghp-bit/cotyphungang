@@ -119,7 +119,6 @@ export function GameScreen({
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<object | null>(null);
   const [walking, setWalking] = useState(false);
-  const [rollStartTile, setRollStartTile] = useState<number | null>(null);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
   const skipServerEcho = useRef(false);
@@ -170,11 +169,6 @@ export function GameScreen({
     previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
   );
   const centerRollLocked = newMovementRoll && (walking || arrivalTile === null);
-  useEffect(() => {
-    if (newMovementRoll && previous) {
-      setRollStartTile(previous.players.find((p) => p.id === waiter.id)?.position ?? null);
-    }
-  }, [actions, newMovementRoll, previous, waiter.id]);
 
   // Sau khi quân dừng: giữ tên ô đích 1 giây rồi mới cho hiện thao tác/màn phụ.
   useEffect(() => {
@@ -392,10 +386,9 @@ export function GameScreen({
 
   // Nút hành động theo vị trí ô đến; bốn ô góc không tạo cụm nút.
   const actionTile = pd.type === 'buy' || pd.type === 'upgrade' ? pd.tile : waiter.position;
-  const buying = myMove && !motionLocked && !sheet && pd.type === 'buy';
   const position = gridPosition(actionTile);
   const tileActions = myMove && !motionLocked && !sheet &&
-    (pd.type === 'upgrade' || pd.type === 'pay') &&
+    (pd.type === 'buy' || pd.type === 'upgrade' || pd.type === 'pay') &&
     actionTile % 10 !== 0;
   const actionSide = position.row === 10 ? 'bottom' : position.row === 0 ? 'top' :
     position.col === 0 ? 'left' : 'right';
@@ -467,7 +460,7 @@ export function GameScreen({
                 onWalkChange={(isWalking, destination) => {
                   setWalking(isWalking);
                   if (isWalking && destination !== null) setArrivalTile(destination);
-                  else if (!isWalking) setArrivalTile(null);
+                  else if (!isWalking && destination !== null) setArrivalTile(destination);
                 }}
               />
             </div>
@@ -476,26 +469,6 @@ export function GameScreen({
                 <div className="tile-action-player"><TokenIcon icon={me.icon} color={me.color} size={23} /> <strong>{me.name}</strong></div>
                 {main && <button type="button" className={`btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>{pd.type === "pay" && me.cash >= pd.total ? `Trả ${money(pd.total)}` : main.label}</button>}
                 {pd.type !== 'pay' && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
-              </div>
-            )}
-            {buying && main && (
-              <div className="board-buy-actions" role="group" aria-label="Quyết định mua đất">
-                <button
-                  type="button"
-                  className={`btn btn-teal board-buy-confirm`}
-                  disabled={busy > 0}
-                  onClick={main.run}
-                >
-                  {main.label}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline board-buy-decline"
-                  disabled={busy > 0}
-                  onClick={secondary.run}
-                >
-                  Không mua
-                </button>
               </div>
             )}
             <div className={`center-position ${tileActions ? `center-shift center-shift-${actionSide}` : ""}`}>
@@ -514,8 +487,8 @@ export function GameScreen({
               mine={online !== null && waiter.id === me.id}
               away={offline.has(waiter.id)}
               tile={
-                centerRollLocked && rollStartTile !== null
-                  ? rollStartTile
+                centerRollLocked && previous
+                  ? (previous.players.find((p) => p.id === waiter.id)?.position ?? waiter.position)
                   : arrivalHold && arrivalTile !== null ? arrivalTile : (viewTile ?? waiter.position)
               }
               viewing={viewTile !== null}
@@ -530,7 +503,7 @@ export function GameScreen({
               arrivalOnly={arrivalHold}
             >
               <div className="btn-row action-bar">
-                {tileActions || buying ? null : main ? (
+                {tileActions ? null : main ? (
                   <button
                     type="button"
                     className={`btn btn-grow ${main.tone}`}
@@ -545,7 +518,7 @@ export function GameScreen({
                     {othersText ? `Chờ ${waiter.name}…` : 'Đang chờ…'}
                   </button>
                 )}
-                {!tileActions && !buying && <button
+                {!tileActions && <button
                   type="button"
                   className={`btn ${secondary.tone}`}
                   disabled={
