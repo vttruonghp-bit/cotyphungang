@@ -81,6 +81,7 @@ export function parseTicket(x: unknown): Result<SeatTicket> {
 
 const SIMPLE_ACTIONS = new Set([
   'roll',
+  'drawCard',
   'rollCardDice',
   'confirmCardDice',
   'payBail',

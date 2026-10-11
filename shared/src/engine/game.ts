@@ -32,7 +32,7 @@ import {
   takeCard,
   tileState,
 } from './core';
-import { getCard, land, resolveCardDice } from './landing';
+import { drawCard, getCard, land, resolveCardDice } from './landing';
 import { rollDie, shuffle, type Rng } from './rng';
 import type {
   Action,
@@ -240,6 +240,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
       return true;
     }
     case 'buy':
+    case 'drawCard':
     case 'cardDice':
     case 'upgrade':
     case 'metro':
@@ -338,6 +339,12 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       // bailStep sẽ đưa người chơi vào luồng xử lý nợ/thanh lý tài sản hiện có.
       const after: Step = { type: 'moveAfterJail', playerId: p.id, steps: pd.steps };
       prepend(s, a.type === 'payBail' ? [bailStep(p), after] : [after]);
+      return advance(s, rng);
+    }
+    case 'drawCard': {
+      const pd = expectPending(s, a.playerId, 'drawCard');
+      const out = drawCard(s, getPlayer(s, pd.playerId), pd.deck, rng);
+      prepend(s, out.steps);
       return advance(s, rng);
     }
     case 'rollCardDice': {
@@ -790,6 +797,8 @@ function timeout(s: GameState, rng: Rng): void {
       return handle(s, { type: 'skipUpgrade', playerId: pd.playerId }, rng);
     case 'metro':
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
+    case 'drawCard':
+      return handle(s, { type: 'drawCard', playerId: pd.playerId }, rng);
     case 'cardDice':
       return handle(
         s,
