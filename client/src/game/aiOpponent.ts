@@ -69,6 +69,8 @@ export function chooseAiAction(s: GameState): Action | null {
         return { type: 'manage', playerId: p.id, ops: [{ op, tile: i }] };
       }
       return { type: 'timeout' };
+    case 'endTurn':
+      return { type: 'endTurn', playerId: p.id };
     case 'drawCard':
       return { type: 'drawCard', playerId: p.id };
     case 'cardDice':

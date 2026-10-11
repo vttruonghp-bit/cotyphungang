@@ -77,6 +77,8 @@ export function chooseAction(s: GameState, rng: Rng): Action {
   // Thỉnh thoảng để hết giờ cho máy chủ tự xử lý.
   if (rng.int(1, 20) === 1) return { type: 'timeout' };
   switch (pd.type) {
+    case 'endTurn':
+      return { type: 'endTurn', playerId: id };
     case 'drawCard':
       return { type: 'drawCard', playerId: id };
     case 'roll':

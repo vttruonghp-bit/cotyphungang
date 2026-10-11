@@ -123,6 +123,7 @@ export function expireTaxWaivers(s: GameState) {
 /** Tiến `steps` ô; qua hoặc dừng ô 00 thì nhận 200Đ nếu `collectGo`. */
 export function moveForward(s: GameState, p: PlayerState, steps: number, collectGo: boolean) {
   const from = p.position;
+  if (p.stepsSinceHit !== undefined) p.stepsSinceHit += steps;
   const raw = p.position + steps;
   p.position = raw % BOARD_SIZE;
   const passedGo = collectGo && raw >= BOARD_SIZE;
@@ -147,10 +148,21 @@ export function moveForwardTo(s: GameState, p: PlayerState, target: number, coll
 
 /** Lùi `steps` ô, không bao giờ nhận tiền ô 00. */
 export function moveBack(s: GameState, p: PlayerState, steps: number) {
+  if (p.stepsSinceHit !== undefined) p.stepsSinceHit += steps;
   jumpTo(s, p, (((p.position - steps) % BOARD_SIZE) + BOARD_SIZE) % BOARD_SIZE);
 }
 
-export function sendToJail(s: GameState, p: PlayerState) {
+/** Trong 40 ô kể từ lần bị trả thuê hoặc vào tù gần nhất thì không phải vào tù nữa. */
+export const HIT_GRACE_STEPS = 40;
+
+/** Vào tù; trả false nếu được miễn vì vừa bị trả thuê hoặc vào tù trong 40 ô gần nhất. */
+export function sendToJail(s: GameState, p: PlayerState): boolean {
+  if (p.stepsSinceHit !== undefined && p.stepsSinceHit < HIT_GRACE_STEPS) {
+    if (currentPlayer(s).id === p.id) s.extraRoll = false;
+    addLog(s, p.id, 'Được miễn vào tù (đã bị phạt trong 40 ô gần nhất)');
+    return false;
+  }
+  p.stepsSinceHit = 0;
   if (p.position !== JAIL_INDEX) jumpTo(s, p, JAIL_INDEX);
   s.events.push({ type: 'jail', playerId: p.id });
   p.position = JAIL_INDEX;
@@ -158,6 +170,7 @@ export function sendToJail(s: GameState, p: PlayerState) {
   p.jailAttempts = 0;
   if (currentPlayer(s).id === p.id) s.extraRoll = false;
   addLog(s, p.id, 'Vào tù');
+  return true;
 }
 
 /** Tiền tối đa người chơi có thể gom bằng cách hạ hết công trình rồi bán hết tài sản. */

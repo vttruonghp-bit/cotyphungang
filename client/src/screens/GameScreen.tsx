@@ -92,9 +92,10 @@ function waitingPlayer(s: GameState): PlayerState {
 /** Ụp/Mở đầy đủ chỉ ở đầu lượt của mình (trước khi đổ); lúc khác chỉ xem. */
 function canManage(s: GameState, p: PlayerState): boolean {
   return (
-    s.players[s.current]!.id === p.id &&
-    !s.rolled &&
-    (s.pending.type === 'roll' || s.pending.type === 'jail')
+    (s.players[s.current]!.id === p.id &&
+      !s.rolled &&
+      (s.pending.type === 'roll' || s.pending.type === 'jail')) ||
+    (s.pending.type === 'endTurn' && s.pending.playerId === p.id)
   );
 }
 
@@ -332,6 +333,12 @@ export function GameScreen({
     switch (pd.type) {
       case 'roll':
         return { label: 'Sục', tone: '', run: () => send({ type: 'roll', playerId: id }) };
+      case 'endTurn':
+        return {
+          label: 'Kết thúc lượt',
+          tone: '',
+          run: () => send({ type: 'endTurn', playerId: id }),
+        };
       case 'buy': {
         const t = BOARD[pd.tile]!;
         const price = 'price' in t ? t.price : 0;
@@ -573,6 +580,8 @@ export function waitingOther(s: GameState, p: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Đang chờ ${n} đổ xúc xắc…`;
+    case 'endTurn':
+      return `Đang chờ ${n} kết thúc lượt…`;
     case 'drawCard':
       return `Đang chờ ${n} rút thẻ ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}…`;
     case 'cardDice':
@@ -611,6 +620,8 @@ export function waitingText(s: GameState, me: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Chờ ${me.name} nhấn “Sục”`;
+    case 'endTurn':
+      return `${me.name} kết thúc lượt hoặc Ụp/Mở`;
     case 'drawCard':
       return `Chờ ${me.name} chọn 1 lá ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}`;
     case 'cardDice':

@@ -162,6 +162,10 @@ describe('một vòng chơi qua 3 điện thoại', () => {
     v = await server.settle(code, phones);
     expect(v.game!.tiles[3]!.owner).toBe(a.id);
     expect(player(v, a.id).cash).toBe(440);
+    // Hết việc: hỏi Kết thúc lượt hay Ụp/Mở trước khi sang người sau.
+    expect(v.game!.pending).toEqual({ type: 'endTurn', playerId: a.id });
+    expect(await a.act({ type: 'endTurn', playerId: a.id })).toEqual({ ok: true });
+    v = await server.settle(code, phones);
     expect(v.game!.pending).toEqual({ type: 'roll', playerId: b.id });
 
     // B cũng đến ô 3: trả thuê 2Đ cho A.
@@ -173,6 +177,8 @@ describe('một vòng chơi qua 3 điện thoại', () => {
     v = await server.settle(code, phones);
     expect(player(v, b.id).cash).toBe(498);
     expect(player(v, a.id).cash).toBe(442);
+    expect(await b.act({ type: 'endTurn', playerId: b.id })).toEqual({ ok: true });
+    v = await server.settle(code, phones);
     expect(v.game!.pending).toEqual({ type: 'roll', playerId: c.id });
 
     // C đổ đôi 2 + 2 vào ô Thuế (200Đ), được đổ thêm, rồi 3 + 4 đến ô 11 và không mua.
@@ -188,6 +194,7 @@ describe('một vòng chơi qua 3 điện thoại', () => {
     v = await server.settle(code, phones);
     expect(v.game!.pending).toEqual({ type: 'buy', playerId: c.id, tile: 11 });
     expect(await c.act({ type: 'declineBuy', playerId: c.id })).toEqual({ ok: true });
+    expect(await c.act({ type: 'endTurn', playerId: c.id })).toEqual({ ok: true });
     v = await server.settle(code, phones);
 
     expect(v.game!.pending).toEqual({ type: 'roll', playerId: a.id });
@@ -254,6 +261,7 @@ describe('mất kết nối giữa ván', () => {
     rng.queue.push(1, 2);
     expect(await a.act({ type: 'roll', playerId: a.id })).toEqual({ ok: true });
     expect(await a.act({ type: 'declineBuy', playerId: a.id })).toEqual({ ok: true });
+    expect(await a.act({ type: 'endTurn', playerId: a.id })).toEqual({ ok: true });
 
     const b2 = await server.phone();
     expect(await b2.resume(ticket)).toEqual(ticket);

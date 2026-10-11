@@ -173,6 +173,8 @@ function advance(s: GameState, rng: Rng) {
       if (p.status === 'active' && s.extraRoll && !p.inJail) {
         s.extraRoll = false;
         s.pending = { type: 'roll', playerId: p.id };
+      } else if (s.stagedDiceCards && p.status === 'active') {
+        s.pending = { type: 'endTurn', playerId: p.id };
       } else {
         endTurn(s);
       }
@@ -241,6 +243,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
     }
     case 'buy':
     case 'drawCard':
+    case 'endTurn':
     case 'cardDice':
     case 'upgrade':
     case 'metro':
@@ -260,6 +263,7 @@ function executePay(s: GameState, step: Extract<Pending, { type: 'pay' }>) {
   const p = getPlayer(s, step.playerId);
   if (p.cash < step.total) throw new RuleError(`Chưa đủ tiền: cần ${step.total}Đ, có ${p.cash}Đ`);
   p.cash -= step.total;
+  if (step.reason === 'rent') p.stepsSinceHit = 0;
   for (const c of step.creditors) {
     if (c.playerId !== null) getPlayer(s, c.playerId).cash += c.amount;
   }
@@ -341,6 +345,9 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       prepend(s, a.type === 'payBail' ? [bailStep(p), after] : [after]);
       return advance(s, rng);
     }
+    case 'endTurn':
+      expectPending(s, a.playerId, 'endTurn');
+      return endTurn(s);
     case 'drawCard': {
       const pd = expectPending(s, a.playerId, 'drawCard');
       const out = drawCard(s, getPlayer(s, pd.playerId), pd.deck, rng);
@@ -573,12 +580,12 @@ function doRoll(s: GameState, rng: Rng) {
   addLog(s, p.id, `Đổ ${d1} + ${d2}${double ? ' (đôi)' : ''}`);
   if (double) {
     s.doublesCount += 1;
-    if (s.doublesCount >= MAX_DOUBLES_BEFORE_JAIL) {
-      sendToJail(s, p);
+    if (s.doublesCount >= MAX_DOUBLES_BEFORE_JAIL && sendToJail(s, p)) {
       return advance(s, rng);
     }
   }
-  s.extraRoll = double;
+  // Đôi lần thứ 3 nhưng được miễn tù: vẫn đi bình thường, không có lượt thêm.
+  s.extraRoll = double && s.doublesCount < MAX_DOUBLES_BEFORE_JAIL;
   moveForward(s, p, d1 + d2, true);
   s.arrivedByRoll = true;
   prepend(s, land(s, p, rng).steps);
@@ -667,7 +674,8 @@ function manage(s: GameState, playerId: string, ops: ManageOp[]) {
   if (p.status !== 'active') throw new RuleError('Bạn không còn trong ván');
   const pd = s.pending;
   const startOfTurn =
-    currentPlayer(s).id === p.id && !s.rolled && (pd.type === 'roll' || pd.type === 'jail');
+    (currentPlayer(s).id === p.id && !s.rolled && (pd.type === 'roll' || pd.type === 'jail')) ||
+    (pd.type === 'endTurn' && pd.playerId === p.id);
   const inDebt = pd.type === 'pay' && pd.playerId === p.id && p.cash < pd.total;
   if (!startOfTurn && !inDebt) {
     throw new RuleError('Chỉ Ụp/Mở được ở đầu lượt hoặc khi đang nợ');
@@ -799,6 +807,8 @@ function timeout(s: GameState, rng: Rng): void {
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
     case 'drawCard':
       return handle(s, { type: 'drawCard', playerId: pd.playerId }, rng);
+    case 'endTurn':
+      return handle(s, { type: 'endTurn', playerId: pd.playerId }, rng);
     case 'cardDice':
       return handle(
         s,

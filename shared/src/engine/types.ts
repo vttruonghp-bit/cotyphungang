@@ -21,6 +21,11 @@ export interface PlayerState {
   jailAttempts: number;
   heldCards: HeldCard[];
   status: PlayerStatus;
+  /**
+   * Số ô đã đi kể từ lần gần nhất bị trả thuê hoặc vào tù (không có = chưa bị lần nào).
+   * Dưới 40 ô thì không phải vào tù thêm lần nữa.
+   */
+  stepsSinceHit?: number;
 }
 
 export interface TileState {
@@ -52,6 +57,8 @@ export type Pending =
   | { type: 'buy'; playerId: string; tile: number }
   /** Dừng ở ô Cơ Hội / Khí Vận: chờ người chơi chọn lá rồi mới rút thẻ và áp dụng. */
   | { type: 'drawCard'; playerId: string; deck: 'chance' | 'community' }
+  /** Hết việc trong lượt: hỏi Kết thúc lượt hay Ụp/Mở trước (không hỏi giữa các lần đổ đôi). */
+  | { type: 'endTurn'; playerId: string }
   /** Card is drawn; player must roll and confirm before its effect changes game state. */
   | {
       type: 'cardDice';
@@ -185,6 +192,7 @@ export type ManageOp =
 export type Action =
   | { type: 'roll'; playerId: string }
   | { type: 'drawCard'; playerId: string }
+  | { type: 'endTurn'; playerId: string }
   | { type: 'rollCardDice'; playerId: string }
   | { type: 'confirmCardDice'; playerId: string }
   | { type: 'payBail'; playerId: string }

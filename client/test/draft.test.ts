@@ -432,7 +432,7 @@ describe('xử lý nợ', () => {
     expect(cash(after, 'b')).toBe(25);
     // Chi đủ tiền nên tự trả; hết lượt An, tới Bình.
     expect(cash(after, 'a')).toBe(cash(s0, 'a') + 20);
-    expect(after.pending).toMatchObject({ type: 'roll', playerId: 'b' });
+    expect(after.pending).toMatchObject({ type: 'endTurn', playerId: 'a' });
   });
 
   it('không đủ dù thanh lý hết: bộ luật tuyên bố phá sản ngay, không có bảng Xử lý nợ', () => {
