@@ -355,6 +355,8 @@ function nextText(game: GameState, draws: Draw[], k: number, online: boolean): s
   const pd = game.pending;
   const name = 'playerId' in pd ? (playerById(game, pd.playerId)?.name ?? '') : '';
   switch (pd.type) {
+    case 'drawCard':
+      return `${name} rút thẻ ${DECK_NAME[pd.deck]}.`;
     case 'cardDice':
       return pd.dice === null
         ? `${name} cần bấm Sục xúc xắc thẻ.`

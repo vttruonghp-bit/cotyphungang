@@ -87,6 +87,10 @@ export function land(s: GameState, p: PlayerState, rng: Rng, opts: LandOptions =
       return { steps: [bankPay(p, tile.amount, 'tax', true, `Nộp ${tile.name}`)], net: 0 };
     case 'chance':
     case 'community':
+      // Ván thật: dừng lại chờ người chơi chọn lá trong quạt bài, chưa rút, chưa có hiệu ứng.
+      if (s.stagedDiceCards) {
+        return { steps: [{ type: 'drawCard', playerId: p.id, deck: tile.kind }], net: 0 };
+      }
       return drawCard(s, p, tile.kind, rng);
     default:
       return landOwnable(s, p, p.position, rng, opts);
@@ -197,7 +201,7 @@ function landOwnable(
   };
 }
 
-function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outcome {
+export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outcome {
   if (s.decks[deck].length === 0) {
     const held = new Set(s.players.flatMap((x) => x.heldCards.map((c) => c.cardId)));
     s.decks[deck] = shuffle(

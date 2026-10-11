@@ -50,6 +50,8 @@ export type Pending =
   /** Lần thử thứ 3 không ra đôi và có thẻ ra tù: chọn trả 50Đ hoặc dùng thẻ, rồi đi `steps`. */
   | { type: 'jailRelease'; playerId: string; steps: number }
   | { type: 'buy'; playerId: string; tile: number }
+  /** Dừng ở ô Cơ Hội / Khí Vận: chờ người chơi chọn lá rồi mới rút thẻ và áp dụng. */
+  | { type: 'drawCard'; playerId: string; deck: 'chance' | 'community' }
   /** Card is drawn; player must roll and confirm before its effect changes game state. */
   | {
       type: 'cardDice';
@@ -182,6 +184,7 @@ export type ManageOp =
 
 export type Action =
   | { type: 'roll'; playerId: string }
+  | { type: 'drawCard'; playerId: string }
   | { type: 'rollCardDice'; playerId: string }
   | { type: 'confirmCardDice'; playerId: string }
   | { type: 'payBail'; playerId: string }
