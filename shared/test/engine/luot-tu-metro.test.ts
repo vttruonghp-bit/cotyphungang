@@ -1272,15 +1272,21 @@ describe('ở tù: thêm trường hợp biên (mục 6)', () => {
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
   });
 
-  it('vào tù lại trong 40 ô kể từ lần vào tù trước: được miễn, đi tiếp bình thường', () => {
+  it('trong 40 ô kể từ lần vào tù: xúc xắc tự gieo lại để không ra đôi lần 3', () => {
     let s = act(aTrongTu(), { type: 'payBail', playerId: 'a' });
     setPlayer(s, 'a', { stepsSinceHit: 0 });
     s = roll(s, 5, 5); // 20
     s = roll(s, 2, 2); // 24
     s = act(s, { type: 'declineBuy', playerId: 'a' });
-    s = roll(s, 3, 3); // đôi lần 3, mới đi 20 ô: miễn tù, tới ô 30 (Vào tù) cũng được miễn
-    expect(player(s, 'a')).toMatchObject({ position: 30, inJail: false });
-    expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+    s = roll(s, 3, 3, 1, 2); // 3+3 là đôi lần 3 nên gieo lại: 1+2 tới ô 27
+    expect(player(s, 'a')).toMatchObject({ position: 27, inJail: false });
+  });
+
+  it('trong 40 ô kể từ lần trả thuê: không đổ trúng ô Vào Tù', () => {
+    let s = act(aTrongTu(), { type: 'payBail', playerId: 'a' });
+    setPlayer(s, 'a', { stepsSinceHit: 0, position: 26 });
+    s = roll(s, 1, 3, 1, 2); // 1+3 tới ô 30 nên gieo lại: 1+2 tới ô 29
+    expect(player(s, 'a')).toMatchObject({ position: 29, inJail: false });
   });
 
   it('vừa trả thuê thì trong 40 ô không phải vào tù', () => {

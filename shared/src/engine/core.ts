@@ -155,9 +155,15 @@ export function moveBack(s: GameState, p: PlayerState, steps: number) {
 /** Trong 40 ô kể từ lần bị trả thuê hoặc vào tù gần nhất thì không phải vào tù nữa. */
 export const HIT_GRACE_STEPS = 40;
 
+/** Đang trong 40 ô kể từ lần trả thuê hoặc vào tù: xúc xắc và thẻ được chọn để không vào tù. */
+export function inJailGrace(p: PlayerState): boolean {
+  return p.stepsSinceHit !== undefined && p.stepsSinceHit < HIT_GRACE_STEPS;
+}
+
 /** Vào tù; trả false nếu được miễn vì vừa bị trả thuê hoặc vào tù trong 40 ô gần nhất. */
 export function sendToJail(s: GameState, p: PlayerState): boolean {
-  if (p.stepsSinceHit !== undefined && p.stepsSinceHit < HIT_GRACE_STEPS) {
+  // Dự phòng: xúc xắc và thẻ đã tránh tù, chỉ còn vài đường đi hiếm (thẻ di chuyển) tới đây.
+  if (inJailGrace(p)) {
     if (currentPlayer(s).id === p.id) s.extraRoll = false;
     addLog(s, p.id, 'Được miễn vào tù (đã bị phạt trong 40 ô gần nhất)');
     return false;

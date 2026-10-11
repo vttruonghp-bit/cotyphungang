@@ -28,6 +28,8 @@ import {
   ownableTile,
   ownedTiles,
   propertyTile,
+  HIT_GRACE_STEPS,
+  inJailGrace,
   sendToJail,
   takeCard,
   tileState,
@@ -571,8 +573,21 @@ function bailStep(p: PlayerState): Step {
 
 function doRoll(s: GameState, rng: Rng) {
   const p = currentPlayer(s);
-  const d1 = rollDie(rng);
-  const d2 = rollDie(rng);
+  let d1 = rollDie(rng);
+  let d2 = rollDie(rng);
+  // Trong 40 ô kể từ lần trả thuê hoặc vào tù: gieo lại cho tới khi không phải vào tù
+  // (không đôi lần 3, không dừng ở ô Vào Tù).
+  const leadsToJail = () =>
+    d1 === d2
+      ? s.doublesCount + 1 >= MAX_DOUBLES_BEFORE_JAIL || (p.position + d1 + d2) % 40 === 30
+      : (p.position + d1 + d2) % 40 === 30;
+  // Ô Vào Tù tính theo số ô sau khi đi: tới đó đã quá 40 ô thì không cần tránh.
+  const graceAfterMove = () =>
+    inJailGrace(p) && (d1 === d2 || p.stepsSinceHit! + d1 + d2 < HIT_GRACE_STEPS);
+  for (let k = 0; graceAfterMove() && leadsToJail() && k < 100; k++) {
+    d1 = rollDie(rng);
+    d2 = rollDie(rng);
+  }
   s.rolled = true;
   s.lastDice = [d1, d2];
   s.events.push({ type: 'roll', playerId: p.id, dice: [d1, d2], jail: false });

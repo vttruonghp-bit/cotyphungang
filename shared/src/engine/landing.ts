@@ -16,6 +16,7 @@ import {
   ownableTile,
   ownedProperties,
   othersInSeatOrder,
+  inJailGrace,
   sendToJail,
   stationRent,
   takeCard,
@@ -208,6 +209,11 @@ export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng)
       ALL_CARDS[deck].map((c) => c.id).filter((id) => !held.has(id)),
       rng,
     );
+  }
+  // Trong 40 ô kể từ lần trả thuê hoặc vào tù: lá Vào tù nằm trên cùng thì đưa xuống dưới.
+  const pile = s.decks[deck];
+  if (inJailGrace(p) && pile.length > 1 && getCard(pile[0]!).effect.type === 'goToJail') {
+    pile.push(pile.shift()!);
   }
   const card = getCard(s.decks[deck].shift()!);
   addLog(s, p.id, `Rút thẻ ${deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}: ${card.title}`);
