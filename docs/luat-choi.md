@@ -62,7 +62,7 @@ _Cập nhật 06/10/2026. Gộp từ file luật đầu tiên, các câu trả l
 ## 3. Một lượt chơi
 
 1. **Đầu lượt** (nút Sục): trước khi đổ, người chơi được mở bảng Ụp/Mở để hạ cấp, cắm, bán hoặc chuộc tài sản.
-2. Đổ 2 xúc xắc, đi theo tổng, xử lý ô dừng, trả các khoản bắt buộc rồi mới kết thúc lượt.
+2. Đổ 2 xúc xắc, đi theo tổng, xử lý ô dừng và trả các khoản bắt buộc. Trước khi chuyển người kế tiếp, trò chơi hỏi **Kết thúc lượt** hoặc **Ụp/Mở**. Người chơi có thể quản lý tài sản và xác nhận, rồi chủ động bấm **Kết thúc lượt**. Nếu được đổ thêm do đôi, thực hiện lượt đổ thêm trước khi hiện lựa chọn này.
 3. **Đổ đôi** được thêm lượt nếu không vào tù. Giữa các lần đổ đôi không được Ụp/Mở, trừ khi đang nợ thì vào Xử lý nợ (hạ cấp, cắm hoặc bán) để trả.
 4. **Đôi lần thứ 3 liên tiếp:** vào tù ngay, không di chuyển theo lần đổ đó.
 5. **"Lượt"** trong luật này là cả chuỗi từ lúc người chơi bắt đầu đến khi chuyển sang người kế tiếp, gồm các lần đổ đôi và di chuyển theo thẻ (mặc định). Ví dụ: đất mua ở lần đổ đầu thì cả chuỗi đó chưa được nâng.
