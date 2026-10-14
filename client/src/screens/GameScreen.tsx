@@ -88,12 +88,12 @@ function waitingPlayer(s: GameState): PlayerState {
   return s.players.find((p) => p.id === id)!;
 }
 
-/** Ụp/Mở đầy đủ chỉ ở đầu lượt của mình (trước khi đổ); lúc khác chỉ xem. */
+/** Ụp/Mở đầy đủ ở đầu lượt và khi người chơi chuẩn bị kết thúc lượt. */
 function canManage(s: GameState, p: PlayerState): boolean {
   return (
     s.players[s.current]!.id === p.id &&
     !s.rolled &&
-    (s.pending.type === 'roll' || s.pending.type === 'jail')
+    (s.pending.type === 'endTurn' || (!s.rolled && (s.pending.type === 'roll' || s.pending.type === 'jail')))
   );
 }
 
@@ -331,6 +331,8 @@ export function GameScreen({
     if (!myMove) return null;
     const id = me.id;
     switch (pd.type) {
+      case 'endTurn':
+        return { label: 'Kết thúc lượt', tone: 'btn-teal', run: () => send({ type: 'endTurn', playerId: id }) };
       case 'roll':
         return { label: 'Sục', tone: '', run: () => send({ type: 'roll', playerId: id }) };
       case 'buy': {
