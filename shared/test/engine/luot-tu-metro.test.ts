@@ -61,14 +61,21 @@ function taoVan(n: number, dice: number[]): GameState {
 function luotNhanh(s: GameState): GameState {
   expect(s.pending.type).toBe('roll');
   setPlayer(s, who(s), { position: 15 });
-  return roll(s, 2, 3);
+  return hetLuot(roll(s, 2, 3));
+}
+
+/** Ván thật hỏi Kết thúc lượt trước khi sang người sau: bấm luôn. */
+function hetLuot(s: GameState): GameState {
+  return s.pending.type === 'endTurn'
+    ? act(s, { type: 'endTurn', playerId: s.pending.playerId })
+    : s;
 }
 
 /** `a` vào tù qua ô 30, những người khác đi một lượt nhanh: ván đang chờ `a` ở tù. */
 function aTrongTu(n = 2): GameState {
   let s = newGame(n);
   setPlayer(s, 'a', { position: 25 });
-  s = roll(s, 2, 3);
+  s = hetLuot(roll(s, 2, 3));
   while (who(s) !== 'a') s = luotNhanh(s);
   expect(s.pending).toEqual({ type: 'jail', playerId: 'a' });
   return s;
@@ -1255,12 +1262,38 @@ describe('ở tù: thêm trường hợp biên (mục 6)', () => {
 
   it('trả 50Đ ra tù rồi đổ đôi 3 lần liên tiếp: vào tù lại', () => {
     let s = act(aTrongTu(), { type: 'payBail', playerId: 'a' });
+    // Đã đi hơn 40 ô kể từ lần vào tù trước.
+    setPlayer(s, 'a', { stepsSinceHit: 40 });
     s = roll(s, 5, 5); // 20
     s = roll(s, 2, 2); // 24
     s = act(s, { type: 'declineBuy', playerId: 'a' });
     s = roll(s, 3, 3); // đôi lần 3
     expect(player(s, 'a')).toMatchObject({ position: 10, inJail: true });
     expect(s.pending).toEqual({ type: 'roll', playerId: 'b' });
+  });
+
+  it('trong 40 ô kể từ lần vào tù: xúc xắc tự gieo lại để không ra đôi lần 3', () => {
+    let s = act(aTrongTu(), { type: 'payBail', playerId: 'a' });
+    setPlayer(s, 'a', { stepsSinceHit: 0 });
+    s = roll(s, 5, 5); // 20
+    s = roll(s, 2, 2); // 24
+    s = act(s, { type: 'declineBuy', playerId: 'a' });
+    s = roll(s, 3, 3, 1, 2); // 3+3 là đôi lần 3 nên gieo lại: 1+2 tới ô 27
+    expect(player(s, 'a')).toMatchObject({ position: 27, inJail: false });
+  });
+
+  it('trong 40 ô kể từ lần trả thuê: không đổ trúng ô Vào Tù', () => {
+    let s = act(aTrongTu(), { type: 'payBail', playerId: 'a' });
+    setPlayer(s, 'a', { stepsSinceHit: 0, position: 26 });
+    s = roll(s, 1, 3, 1, 2); // 1+3 tới ô 30 nên gieo lại: 1+2 tới ô 29
+    expect(player(s, 'a')).toMatchObject({ position: 29, inJail: false });
+  });
+
+  it('vừa trả thuê thì trong 40 ô không phải vào tù', () => {
+    let s = act(aTrongTu(), { type: 'payBail', playerId: 'a' });
+    setPlayer(s, 'a', { stepsSinceHit: 39, position: 26 });
+    s = roll(s, 1, 3); // 30 Vào tù: 43 ô kể từ lần trước nên vẫn vào tù
+    expect(player(s, 'a')).toMatchObject({ position: 10, inJail: true, stepsSinceHit: 0 });
   });
 
   it('ba lần thử tù của một người không cho người khác chen lượt', () => {
