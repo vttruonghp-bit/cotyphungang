@@ -419,7 +419,9 @@ describe('xử lý nợ', () => {
       'community-birthday',
       ...s0.decks.community.filter((c) => c !== 'community-birthday'),
     ];
-    const s = act(s0, { type: 'roll', playerId: 'a' }, [1, 2]);
+    const s1 = act(s0, { type: 'roll', playerId: 'a' }, [1, 2]);
+    expect(s1.pending).toMatchObject({ type: 'drawCard', playerId: 'a', deck: 'community' });
+    const s = act(s1, { type: 'drawCard', playerId: 'a' });
     expect(s.pending).toMatchObject({ type: 'pay', playerId: 'b', total: 10 });
     expect(s.players[s.current]!.id).toBe('a');
     expect(manageMode(s, 'b')).toBe('debt');
@@ -430,7 +432,7 @@ describe('xử lý nợ', () => {
     expect(cash(after, 'b')).toBe(25);
     // Chi đủ tiền nên tự trả; hết lượt An, tới Bình.
     expect(cash(after, 'a')).toBe(cash(s0, 'a') + 20);
-    expect(after.pending).toMatchObject({ type: 'roll', playerId: 'b' });
+    expect(after.pending).toMatchObject({ type: 'endTurn', playerId: 'a' });
   });
 
   it('không đủ dù thanh lý hết: bộ luật tuyên bố phá sản ngay, không có bảng Xử lý nợ', () => {
