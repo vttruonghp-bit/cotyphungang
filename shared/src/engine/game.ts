@@ -28,11 +28,13 @@ import {
   ownableTile,
   ownedTiles,
   propertyTile,
+  HIT_GRACE_STEPS,
+  inJailGrace,
   sendToJail,
   takeCard,
   tileState,
 } from './core';
-import { getCard, land, resolveCardDice } from './landing';
+import { drawCard, getCard, land, resolveCardDice } from './landing';
 import { rollDie, shuffle, type Rng } from './rng';
 import type {
   Action,
@@ -173,8 +175,10 @@ function advance(s: GameState, rng: Rng) {
       if (p.status === 'active' && s.extraRoll && !p.inJail) {
         s.extraRoll = false;
         s.pending = { type: 'roll', playerId: p.id };
-      } else {
+      } else if (s.stagedDiceCards && p.status === 'active') {
         s.pending = { type: 'endTurn', playerId: p.id };
+      } else {
+        endTurn(s);
       }
       return;
     }
@@ -240,10 +244,11 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
       return true;
     }
     case 'buy':
+    case 'drawCard':
+    case 'endTurn':
     case 'cardDice':
     case 'upgrade':
     case 'metro':
-    case 'endTurn':
     case 'chooseTile':
     case 'jailRelease':
     case 'roll':
@@ -260,6 +265,7 @@ function executePay(s: GameState, step: Extract<Pending, { type: 'pay' }>) {
   const p = getPlayer(s, step.playerId);
   if (p.cash < step.total) throw new RuleError(`Chưa đủ tiền: cần ${step.total}Đ, có ${p.cash}Đ`);
   p.cash -= step.total;
+  if (step.reason === 'rent') p.stepsSinceHit = 0;
   for (const c of step.creditors) {
     if (c.playerId !== null) getPlayer(s, c.playerId).cash += c.amount;
   }
@@ -312,9 +318,6 @@ function expectPending<T extends Pending['type']>(
 
 function handle(s: GameState, a: Action, rng: Rng): void {
   switch (a.type) {
-    case 'endTurn':
-      expectPending(s, a.playerId, 'endTurn');
-      return endTurn(s);
     case 'roll': {
       const pd = expectPending(s, a.playerId, 'roll', 'jail');
       return pd.type === 'roll' ? doRoll(s, rng) : doJailRoll(s, rng);
@@ -342,6 +345,15 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       // bailStep sẽ đưa người chơi vào luồng xử lý nợ/thanh lý tài sản hiện có.
       const after: Step = { type: 'moveAfterJail', playerId: p.id, steps: pd.steps };
       prepend(s, a.type === 'payBail' ? [bailStep(p), after] : [after]);
+      return advance(s, rng);
+    }
+    case 'endTurn':
+      expectPending(s, a.playerId, 'endTurn');
+      return endTurn(s);
+    case 'drawCard': {
+      const pd = expectPending(s, a.playerId, 'drawCard');
+      const out = drawCard(s, getPlayer(s, pd.playerId), pd.deck, rng);
+      prepend(s, out.steps);
       return advance(s, rng);
     }
     case 'rollCardDice': {
@@ -561,8 +573,21 @@ function bailStep(p: PlayerState): Step {
 
 function doRoll(s: GameState, rng: Rng) {
   const p = currentPlayer(s);
-  const d1 = rollDie(rng);
-  const d2 = rollDie(rng);
+  let d1 = rollDie(rng);
+  let d2 = rollDie(rng);
+  // Trong 40 ô kể từ lần trả thuê hoặc vào tù: gieo lại cho tới khi không phải vào tù
+  // (không đôi lần 3, không dừng ở ô Vào Tù).
+  const leadsToJail = () =>
+    d1 === d2
+      ? s.doublesCount + 1 >= MAX_DOUBLES_BEFORE_JAIL || (p.position + d1 + d2) % 40 === 30
+      : (p.position + d1 + d2) % 40 === 30;
+  // Ô Vào Tù tính theo số ô sau khi đi: tới đó đã quá 40 ô thì không cần tránh.
+  const graceAfterMove = () =>
+    inJailGrace(p) && (d1 === d2 || p.stepsSinceHit! + d1 + d2 < HIT_GRACE_STEPS);
+  for (let k = 0; graceAfterMove() && leadsToJail() && k < 100; k++) {
+    d1 = rollDie(rng);
+    d2 = rollDie(rng);
+  }
   s.rolled = true;
   s.lastDice = [d1, d2];
   s.events.push({ type: 'roll', playerId: p.id, dice: [d1, d2], jail: false });
@@ -570,12 +595,12 @@ function doRoll(s: GameState, rng: Rng) {
   addLog(s, p.id, `Đổ ${d1} + ${d2}${double ? ' (đôi)' : ''}`);
   if (double) {
     s.doublesCount += 1;
-    if (s.doublesCount >= MAX_DOUBLES_BEFORE_JAIL) {
-      sendToJail(s, p);
+    if (s.doublesCount >= MAX_DOUBLES_BEFORE_JAIL && sendToJail(s, p)) {
       return advance(s, rng);
     }
   }
-  s.extraRoll = double;
+  // Đôi lần thứ 3 nhưng được miễn tù: vẫn đi bình thường, không có lượt thêm.
+  s.extraRoll = double && s.doublesCount < MAX_DOUBLES_BEFORE_JAIL;
   moveForward(s, p, d1 + d2, true);
   s.arrivedByRoll = true;
   prepend(s, land(s, p, rng).steps);
@@ -664,10 +689,11 @@ function manage(s: GameState, playerId: string, ops: ManageOp[]) {
   if (p.status !== 'active') throw new RuleError('Bạn không còn trong ván');
   const pd = s.pending;
   const startOfTurn =
-    currentPlayer(s).id === p.id && ((!s.rolled && (pd.type === 'roll' || pd.type === 'jail')) || pd.type === 'endTurn');
+    (currentPlayer(s).id === p.id && !s.rolled && (pd.type === 'roll' || pd.type === 'jail')) ||
+    (pd.type === 'endTurn' && pd.playerId === p.id);
   const inDebt = pd.type === 'pay' && pd.playerId === p.id && p.cash < pd.total;
   if (!startOfTurn && !inDebt) {
-    throw new RuleError('Chỉ Ụp/Mở được ở đầu lượt, trước khi kết thúc lượt hoặc khi đang nợ');
+    throw new RuleError('Chỉ Ụp/Mở được ở đầu lượt hoặc khi đang nợ');
   }
   if (!Array.isArray(ops) || ops.length === 0) throw new RuleError('Chưa có thay đổi nào');
   // Cả bản nháp được xác nhận một lần: chỉ cần tiền sau toàn bộ thao tác không âm.
@@ -772,8 +798,6 @@ function autoLiquidate(s: GameState, p: PlayerState, target: number) {
 function timeout(s: GameState, rng: Rng): void {
   const pd = s.pending;
   switch (pd.type) {
-    case 'endTurn':
-      return handle(s, { type: 'endTurn', playerId: pd.playerId }, rng);
     case 'roll':
       return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
     case 'jail':
@@ -796,6 +820,10 @@ function timeout(s: GameState, rng: Rng): void {
       return handle(s, { type: 'skipUpgrade', playerId: pd.playerId }, rng);
     case 'metro':
       return handle(s, { type: 'metro', playerId: pd.playerId, destination: null }, rng);
+    case 'drawCard':
+      return handle(s, { type: 'drawCard', playerId: pd.playerId }, rng);
+    case 'endTurn':
+      return handle(s, { type: 'endTurn', playerId: pd.playerId }, rng);
     case 'cardDice':
       return handle(
         s,
