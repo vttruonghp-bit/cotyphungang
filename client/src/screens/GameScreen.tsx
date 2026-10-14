@@ -77,7 +77,8 @@ interface Reveal {
 const MAX_REVEALS = 6;
 
 const revealsOf = ({ game, previous }: GameView): Reveal[] =>
-  game.events.slice(previous?.events.length ?? game.events.length)
+  // Bộ luật xóa `events` ở đầu mỗi thao tác, nên mọi sự kiện trong ván mới đều là của thao tác vừa rồi.
+  (previous ? game.events : [])
     .filter((e): e is CardEvent | HighwayEvent => e.type === 'card' || e.type === 'highway')
     .map((event) => ({ game, previous, event }));
 
@@ -88,12 +89,13 @@ function waitingPlayer(s: GameState): PlayerState {
   return s.players.find((p) => p.id === id)!;
 }
 
-/** Ụp/Mở đầy đủ ở đầu lượt và khi người chơi chuẩn bị kết thúc lượt. */
+/** Ụp/Mở đầy đủ chỉ ở đầu lượt của mình (trước khi đổ); lúc khác chỉ xem. */
 function canManage(s: GameState, p: PlayerState): boolean {
   return (
-    s.players[s.current]!.id === p.id &&
-    !s.rolled &&
-    (s.pending.type === 'endTurn' || (!s.rolled && (s.pending.type === 'roll' || s.pending.type === 'jail')))
+    (s.players[s.current]!.id === p.id &&
+      !s.rolled &&
+      (s.pending.type === 'roll' || s.pending.type === 'jail')) ||
+    (s.pending.type === 'endTurn' && s.pending.playerId === p.id)
   );
 }
 
@@ -117,7 +119,6 @@ export function GameScreen({
   const [viewTile, setViewTile] = useState<number | null>(null);
   const [reveals, setReveals] = useState(() => revealsOf(view));
   const [error, setError] = useState<string | null>(null);
-  const [picked, setPicked] = useState<object | null>(null);
   const [walking, setWalking] = useState(false);
   const [arrivalTile, setArrivalTile] = useState<number | null>(null);
   const [arrivalHold, setArrivalHold] = useState(false);
@@ -272,22 +273,21 @@ export function GameScreen({
   const reveal = visibleReveals[0];
   let sheet: ReactNode = null;
   // Thẻ làm phá sản vẫn hiện trước, rồi mới tới màn kết thúc.
-  // Thẻ của người cầm máy: chọn 1 lá trong quạt bài trước (chỉ để xem, bộ luật đã rút sẵn).
-  const fan =
-    reveal &&
-    reveal.event.type === 'card' &&
-    picked !== reveal.event &&
-    (!online || reveal.event.playerId === me.id)
-      ? reveal.event
-      : null;
   if (motionLocked) {
     sheet = null;
-  } else if (reveal && fan) {
-    const deck = getCard(fan.cardId).deck;
-    const d = (reveal.previous ?? reveal.game).decks[deck] as unknown;
-    const count =
-      (typeof d === 'number' ? d : Array.isArray(d) ? d.length : 0) + (reveal.previous ? 0 : 1);
-    sheet = <CardFan deck={deck} count={Math.max(1, count)} onPick={() => setPicked(fan)} />;
+  } else if (!reveal && pd.type === 'drawCard' && myMove) {
+    // Chọn 1 lá trong quạt bài: máy chủ chỉ rút thẻ và áp dụng hiệu ứng sau khi chọn.
+    const d = game.decks[pd.deck] as unknown;
+    const count = typeof d === 'number' ? d : Array.isArray(d) ? d.length : 0;
+    sheet = (
+      <CardFan
+        deck={pd.deck}
+        count={Math.max(1, count)}
+        onPick={() => {
+          void send({ type: 'drawCard', playerId: pd.playerId });
+        }}
+      />
+    );
   } else if (reveal) {
     sheet = (
       <CardSheet
@@ -331,10 +331,14 @@ export function GameScreen({
     if (!myMove) return null;
     const id = me.id;
     switch (pd.type) {
-      case 'endTurn':
-        return { label: 'Kết thúc lượt', tone: 'btn-teal', run: () => send({ type: 'endTurn', playerId: id }) };
       case 'roll':
         return { label: 'Sục', tone: '', run: () => send({ type: 'roll', playerId: id }) };
+      case 'endTurn':
+        return {
+          label: 'Kết thúc lượt',
+          tone: '',
+          run: () => send({ type: 'endTurn', playerId: id }),
+        };
       case 'buy': {
         const t = BOARD[pd.tile]!;
         const price = 'price' in t ? t.price : 0;
@@ -576,6 +580,10 @@ export function waitingOther(s: GameState, p: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Đang chờ ${n} đổ xúc xắc…`;
+    case 'endTurn':
+      return `Đang chờ ${n} kết thúc lượt…`;
+    case 'drawCard':
+      return `Đang chờ ${n} rút thẻ ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}…`;
     case 'cardDice':
       return pd.dice === null ? `Đang chờ ${n} sục xúc xắc thẻ…` : `Đang chờ ${n} xác nhận kết quả thẻ…`;
     case 'jail':
@@ -612,6 +620,10 @@ export function waitingText(s: GameState, me: PlayerState): string {
   switch (pd.type) {
     case 'roll':
       return `Chờ ${me.name} nhấn “Sục”`;
+    case 'endTurn':
+      return `${me.name} kết thúc lượt hoặc Ụp/Mở`;
+    case 'drawCard':
+      return `Chờ ${me.name} chọn 1 lá ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}`;
     case 'cardDice':
       return pd.dice === null ? `Chờ ${me.name} nhấn “Sục” cho thẻ` : `Chờ ${me.name} xác nhận xúc xắc thẻ`;
     case 'jail':
