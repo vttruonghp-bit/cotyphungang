@@ -1,12 +1,45 @@
 import { describe, expect, it } from 'vitest';
 import { act, cash, newGame, own, roll, setPlayer, topCard, reject } from './helpers';
 
+const drawPick = (s: ReturnType<typeof newGame>) => {
+  expect(s.pending.type).toBe('drawCard');
+  return act(s, { type: 'drawCard', playerId: (s.pending as { playerId: string }).playerId });
+};
+
+describe('Card is drawn only after the player picks it from the fan', () => {
+  it('landing on Cơ Hội waits without drawing or applying anything', () => {
+    let s = newGame();
+    s.stagedDiceCards = true;
+    topCard(s, 'chance-lottery');
+    const before = s.decks.chance.length;
+    s = roll(s, 3, 4);
+    expect(s.pending).toMatchObject({ type: 'drawCard', playerId: 'a', deck: 'chance' });
+    expect(s.decks.chance.length).toBe(before);
+    expect(s.events.some((e) => e.type === 'card')).toBe(false);
+    expect(cash(s, 'a')).toBe(500);
+    expect(reject(s, { type: 'drawCard', playerId: 'b' })).toBe('Chưa tới lượt bạn');
+    s = act(s, { type: 'drawCard', playerId: 'a' });
+    expect(s.decks.chance.length).toBe(before - 1);
+    expect(s.pending).toMatchObject({ type: 'cardDice', cardId: 'chance-lottery' });
+  });
+
+  it('timeout draws the card for the player', () => {
+    let s = newGame();
+    s.stagedDiceCards = true;
+    topCard(s, 'chance-lottery');
+    s = roll(s, 3, 4);
+    s = act(s, { type: 'timeout' });
+    expect(s.pending).toMatchObject({ type: 'cardDice', cardId: 'chance-lottery' });
+  });
+});
+
 describe('Card dice are rolled and confirmed before effects in live games', () => {
   it('lottery requires the actual drawer to roll and confirm before receiving a prize', () => {
     let s = newGame();
     s.stagedDiceCards = true;
     topCard(s, 'chance-lottery');
     s = roll(s, 3, 4);
+    s = drawPick(s);
     expect(s.pending).toMatchObject({
       type: 'cardDice',
       playerId: 'a',
@@ -32,6 +65,7 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     own(s, 'b', 8);
     topCard(s, 'chance-nearest-property');
     s = roll(s, 3, 4);
+    s = drawPick(s);
     expect(s.pending.type).toBe('cardDice');
     expect(s.players[0]!.position).toBe(7);
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [2, 3]);
@@ -50,6 +84,7 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     topCard(s, 'community-highway');
     setPlayer(s, 'a', { position: 14 });
     s = roll(s, 1, 2);
+    s = drawPick(s);
     expect(s.pending).toMatchObject({ type: 'chooseTile', purpose: 'highway' });
     s = act(s, { type: 'chooseTile', playerId: 'a', tile: 6 });
     expect(s.pending).toMatchObject({
@@ -74,6 +109,7 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     topCard(s, 'community-swap');
     setPlayer(s, 'a', { position: 14 });
     s = roll(s, 1, 2);
+    s = drawPick(s);
     expect(s.pending).toMatchObject({ type: 'cardDice', dice: null });
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [1, 4]);
     expect(s.tiles[3]!.owner).toBe('a');
@@ -89,6 +125,7 @@ describe('Card dice are rolled and confirmed before effects in live games', () =
     own(s, 'b', 11, { level: 2 });
     topCard(s, 'chance-neighbor-fire');
     s = roll(s, 3, 4);
+    s = drawPick(s);
     expect(s.pending).toMatchObject({ type: 'cardDice', dice: null });
     s = act(s, { type: 'rollCardDice', playerId: 'a' }, [1, 1, 1, 1]);
     expect(s.tiles[11]!.level).toBe(2);
