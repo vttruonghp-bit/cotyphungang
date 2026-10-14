@@ -174,7 +174,7 @@ function advance(s: GameState, rng: Rng) {
         s.extraRoll = false;
         s.pending = { type: 'roll', playerId: p.id };
       } else {
-        endTurn(s);
+        s.pending = { type: 'endTurn', playerId: p.id };
       }
       return;
     }
@@ -243,6 +243,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
     case 'cardDice':
     case 'upgrade':
     case 'metro':
+    case 'endTurn':
     case 'chooseTile':
     case 'jailRelease':
     case 'roll':
@@ -311,6 +312,9 @@ function expectPending<T extends Pending['type']>(
 
 function handle(s: GameState, a: Action, rng: Rng): void {
   switch (a.type) {
+    case 'endTurn':
+      expectPending(s, a.playerId, 'endTurn');
+      return endTurn(s);
     case 'roll': {
       const pd = expectPending(s, a.playerId, 'roll', 'jail');
       return pd.type === 'roll' ? doRoll(s, rng) : doJailRoll(s, rng);
@@ -660,10 +664,10 @@ function manage(s: GameState, playerId: string, ops: ManageOp[]) {
   if (p.status !== 'active') throw new RuleError('Bạn không còn trong ván');
   const pd = s.pending;
   const startOfTurn =
-    currentPlayer(s).id === p.id && !s.rolled && (pd.type === 'roll' || pd.type === 'jail');
+    currentPlayer(s).id === p.id && ((!s.rolled && (pd.type === 'roll' || pd.type === 'jail')) || pd.type === 'endTurn');
   const inDebt = pd.type === 'pay' && pd.playerId === p.id && p.cash < pd.total;
   if (!startOfTurn && !inDebt) {
-    throw new RuleError('Chỉ Ụp/Mở được ở đầu lượt hoặc khi đang nợ');
+    throw new RuleError('Chỉ Ụp/Mở được ở đầu lượt, trước khi kết thúc lượt hoặc khi đang nợ');
   }
   if (!Array.isArray(ops) || ops.length === 0) throw new RuleError('Chưa có thay đổi nào');
   // Cả bản nháp được xác nhận một lần: chỉ cần tiền sau toàn bộ thao tác không âm.
@@ -768,6 +772,8 @@ function autoLiquidate(s: GameState, p: PlayerState, target: number) {
 function timeout(s: GameState, rng: Rng): void {
   const pd = s.pending;
   switch (pd.type) {
+    case 'endTurn':
+      return handle(s, { type: 'endTurn', playerId: pd.playerId }, rng);
     case 'roll':
       return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
     case 'jail':
