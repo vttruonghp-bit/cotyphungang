@@ -21,6 +21,11 @@ export interface PlayerState {
   jailAttempts: number;
   heldCards: HeldCard[];
   status: PlayerStatus;
+  /**
+   * Số ô đã đi kể từ lần gần nhất bị trả thuê hoặc vào tù (không có = chưa bị lần nào).
+   * Dưới 40 ô thì không phải vào tù thêm lần nữa.
+   */
+  stepsSinceHit?: number;
 }
 
 export interface TileState {
@@ -50,6 +55,10 @@ export type Pending =
   /** Lần thử thứ 3 không ra đôi và có thẻ ra tù: chọn trả 50Đ hoặc dùng thẻ, rồi đi `steps`. */
   | { type: 'jailRelease'; playerId: string; steps: number }
   | { type: 'buy'; playerId: string; tile: number }
+  /** Dừng ở ô Cơ Hội / Khí Vận: chờ người chơi chọn lá rồi mới rút thẻ và áp dụng. */
+  | { type: 'drawCard'; playerId: string; deck: 'chance' | 'community' }
+  /** Hết việc trong lượt: hỏi Kết thúc lượt hay Ụp/Mở trước (không hỏi giữa các lần đổ đôi). */
+  | { type: 'endTurn'; playerId: string }
   /** Card is drawn; player must roll and confirm before its effect changes game state. */
   | {
       type: 'cardDice';
@@ -61,8 +70,6 @@ export type Pending =
   /** Dừng ở đất của mình: nâng 1 cấp, hoặc chuộc (+ nâng lên 1 nhà nếu là đất màu). */
   | { type: 'upgrade'; playerId: string; tile: number; mode: 'build' | 'redeemBuild' | 'redeem' }
   | { type: 'metro'; playerId: string }
-  /** Đã xử lý xong ô: đợi người chơi xác nhận hết lượt hoặc Ụp/Mở. */
-  | { type: 'endTurn'; playerId: string }
   /** Khoản phải trả. `confirm` = người chơi phải tự bấm (Trả tiền / Là nó). */
   | {
       type: 'pay';
@@ -184,6 +191,7 @@ export type ManageOp =
 
 export type Action =
   | { type: 'roll'; playerId: string }
+  | { type: 'drawCard'; playerId: string }
   | { type: 'endTurn'; playerId: string }
   | { type: 'rollCardDice'; playerId: string }
   | { type: 'confirmCardDice'; playerId: string }
