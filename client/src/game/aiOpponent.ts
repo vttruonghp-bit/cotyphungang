@@ -25,6 +25,8 @@ export function chooseAiAction(s: GameState): Action | null {
   const p = me(s);
   const cash = p.cash;
   switch (pending.type) {
+    case 'endTurn':
+      return { type: 'endTurn', playerId: p.id };
     case 'roll': {
       // Redeem mortgaged property only with a safe cash buffer, once per turn.
       // Main bot flow rolls immediately, preserving a snappy game.
