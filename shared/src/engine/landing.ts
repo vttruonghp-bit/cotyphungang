@@ -16,6 +16,7 @@ import {
   ownableTile,
   ownedProperties,
   othersInSeatOrder,
+  inJailGrace,
   sendToJail,
   stationRent,
   takeCard,
@@ -87,6 +88,10 @@ export function land(s: GameState, p: PlayerState, rng: Rng, opts: LandOptions =
       return { steps: [bankPay(p, tile.amount, 'tax', true, `Nộp ${tile.name}`)], net: 0 };
     case 'chance':
     case 'community':
+      // Ván thật: dừng lại chờ người chơi chọn lá trong quạt bài, chưa rút, chưa có hiệu ứng.
+      if (s.stagedDiceCards) {
+        return { steps: [{ type: 'drawCard', playerId: p.id, deck: tile.kind }], net: 0 };
+      }
       return drawCard(s, p, tile.kind, rng);
     default:
       return landOwnable(s, p, p.position, rng, opts);
@@ -197,13 +202,18 @@ function landOwnable(
   };
 }
 
-function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outcome {
+export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outcome {
   if (s.decks[deck].length === 0) {
     const held = new Set(s.players.flatMap((x) => x.heldCards.map((c) => c.cardId)));
     s.decks[deck] = shuffle(
       ALL_CARDS[deck].map((c) => c.id).filter((id) => !held.has(id)),
       rng,
     );
+  }
+  // Trong 40 ô kể từ lần trả thuê hoặc vào tù: lá Vào tù nằm trên cùng thì đưa xuống dưới.
+  const pile = s.decks[deck];
+  if (inJailGrace(p) && pile.length > 1 && getCard(pile[0]!).effect.type === 'goToJail') {
+    pile.push(pile.shift()!);
   }
   const card = getCard(s.decks[deck].shift()!);
   addLog(s, p.id, `Rút thẻ ${deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}: ${card.title}`);
