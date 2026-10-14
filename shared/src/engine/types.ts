@@ -61,6 +61,8 @@ export type Pending =
   /** Dừng ở đất của mình: nâng 1 cấp, hoặc chuộc (+ nâng lên 1 nhà nếu là đất màu). */
   | { type: 'upgrade'; playerId: string; tile: number; mode: 'build' | 'redeemBuild' | 'redeem' }
   | { type: 'metro'; playerId: string }
+  /** Đã xử lý xong ô: đợi người chơi xác nhận hết lượt hoặc Ụp/Mở. */
+  | { type: 'endTurn'; playerId: string }
   /** Khoản phải trả. `confirm` = người chơi phải tự bấm (Trả tiền / Là nó). */
   | {
       type: 'pay';
@@ -182,6 +184,7 @@ export type ManageOp =
 
 export type Action =
   | { type: 'roll'; playerId: string }
+  | { type: 'endTurn'; playerId: string }
   | { type: 'rollCardDice'; playerId: string }
   | { type: 'confirmCardDice'; playerId: string }
   | { type: 'payBail'; playerId: string }
