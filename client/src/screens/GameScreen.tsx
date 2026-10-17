@@ -876,9 +876,9 @@ function CenterPanel({
         </div>
         <div className="turn-hero-dice">
           {dice && !viewing ? (
-            <Dice values={dice} color={diceColor} size={58} rolling={rolling} key={rollKey} />
+            <Dice values={dice} color={diceColor} size={50} rolling={rolling} key={rollKey} />
           ) : (
-            <Dice values={[1, 1]} color={diceColor} size={58} />
+            <Dice values={[1, 1]} color={diceColor} size={50} />
           )}
         </div>
       </div>

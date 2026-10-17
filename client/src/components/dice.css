@@ -116,3 +116,100 @@
     animation: none;
   }
 }
+
+/* Xúc xắc 3D: khối 6 mặt, nhìn xéo từ trên xuống. */
+.dice-3d {
+  gap: calc(var(--gap, 14px));
+  perspective: 600px;
+}
+.die3d-wrap {
+  position: relative;
+  display: inline-block;
+  perspective: 900px;
+  filter: drop-shadow(0 8px 6px rgb(0 0 0 / 35%));
+}
+.die3d {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.die3d.is-rolling {
+  transition: transform 2800ms cubic-bezier(0.15, 0.6, 0.25, 1);
+}
+.die3d-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+.die3d-face svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.die3d-front {
+  transform: translateZ(calc(var(--s) / 2));
+}
+.die3d-back {
+  transform: rotateY(180deg) translateZ(calc(var(--s) / 2));
+}
+.die3d-right {
+  transform: rotateY(90deg) translateZ(calc(var(--s) / 2));
+  filter: brightness(0.86);
+}
+.die3d-left {
+  transform: rotateY(-90deg) translateZ(calc(var(--s) / 2));
+  filter: brightness(0.86);
+}
+.die3d-top {
+  transform: rotateX(90deg) translateZ(calc(var(--s) / 2));
+  filter: brightness(1.04);
+}
+.die3d-bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--s) / 2));
+  filter: brightness(0.75);
+}
+/* Nảy trên bàn: cao lúc đầu, thấp dần rồi nằm yên. */
+.die3d-bounce {
+  animation: die3d-hop 2800ms cubic-bezier(0.3, 0, 0.6, 1) both;
+}
+.die3d-bounce-1 {
+  animation-delay: 80ms;
+}
+@keyframes die3d-hop {
+  0% {
+    transform: translate(0, 0);
+  }
+  12% {
+    transform: translate(-6px, -38%);
+  }
+  24% {
+    transform: translate(4px, 0);
+  }
+  34% {
+    transform: translate(-3px, -22%);
+  }
+  44% {
+    transform: translate(2px, 0);
+  }
+  52% {
+    transform: translate(-1px, -10%);
+  }
+  60% {
+    transform: translate(0, 0);
+  }
+  66% {
+    transform: translate(0, -4%);
+  }
+  72%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .die3d.is-rolling {
+    transition: none;
+  }
+  .die3d-bounce {
+    animation: none;
+  }
+}
