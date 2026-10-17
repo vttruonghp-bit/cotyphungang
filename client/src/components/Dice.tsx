@@ -84,7 +84,7 @@ const TO_FRONT: Record<number, [number, number]> = {
   5: [90, 0],
 };
 
-/** Một viên xúc xắc 3D nhìn xéo từ trên xuống: thấy 3 mặt, mặt kết quả to nhất ở phía trước. */
+/** Một viên xúc xắc 3D nhìn từ trên cao xuống: mặt kết quả nằm trên, to và rõ nhất; thấy thêm 2 mặt bên. */
 function Die3D({
   value,
   color,
@@ -117,7 +117,9 @@ function Die3D({
     >
       <span
         className={settled && rolling ? 'die3d is-rolling' : 'die3d'}
-        style={{ transform: `rotateX(-24deg) rotateY(-32deg) rotateX(${rx}deg) rotateY(${ry}deg)` }}
+        style={{
+          transform: `rotateX(-55deg) rotateY(-30deg) rotateX(90deg) rotateX(${rx}deg) rotateY(${ry}deg)`,
+        }}
       >
         {SIDES.map(([side, v]) => (
           <span key={side} className={`die3d-face die3d-${side}`}>
