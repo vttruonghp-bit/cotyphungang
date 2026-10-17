@@ -29,6 +29,7 @@ import { debtorOf } from '../game/draft';
 import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
 import { CardFan } from '../sheets/CardFan';
+import { CardListPanel } from '../sheets/CardListPanel';
 import { CardSheet } from '../sheets/CardSheet';
 import { CardDiceSheet } from '../sheets/CardDiceSheet';
 import { ChooseTileSheet } from '../sheets/ChooseTileSheet';
@@ -116,6 +117,7 @@ export function GameScreen({
   const online = mode.kind === 'online' ? mode : null;
   const [manual, setManual] = useState<Manual>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
   const [viewTile, setViewTile] = useState<number | null>(null);
   const [reveals, setReveals] = useState(() => revealsOf(view));
   const [error, setError] = useState<string | null>(null);
@@ -446,6 +448,14 @@ export function GameScreen({
               >
                 ☷ Lịch sử
               </button>
+              <button
+                type="button"
+                className="history-toggle cards-toggle"
+                aria-pressed={cardsOpen}
+                onClick={() => setCardsOpen((v) => !v)}
+              >
+                Cơ hội / Khí vận
+              </button>
               <button type="button" className="btn btn-surrender" onClick={() => setManual('surrender')}>
                 ⚠ Đầu hàng
               </button>
@@ -453,6 +463,7 @@ export function GameScreen({
                 Đen VL
               </button>
             </div>
+            {cardsOpen && <CardListPanel game={game} />}
             {historyOpen && (
               <div className="mobile-history" id="mobile-history">
                 <button type="button" className="mobile-history-close" onClick={() => setHistoryOpen(false)} aria-label="Đóng lịch sử">×</button>

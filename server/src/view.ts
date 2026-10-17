@@ -2,7 +2,14 @@
  * Những gì trình duyệt được thấy. Dựng từng trường một (không sao chép cả đối tượng)
  * để vé, socket hay thứ tự bộ thẻ không bao giờ lọt ra ngoài.
  */
-import type { GameState, PublicGameState, RoomView, Seat } from '@cotiphu/shared';
+import {
+  CHANCE_CARDS,
+  COMMUNITY_CARDS,
+  type GameState,
+  type PublicGameState,
+  type RoomView,
+  type Seat,
+} from '@cotiphu/shared';
 import type { Room } from './rooms';
 
 /** Giấu thứ tự bộ thẻ, chỉ còn số lá. */
@@ -11,6 +18,11 @@ export function publicGame(game: GameState): PublicGameState {
   return {
     ...rest,
     decks: { chance: decks.chance.length, community: decks.community.length },
+    // Lá nào đã bốc (không còn trong chồng) thì ai cũng thấy; thứ tự lá còn lại vẫn giấu.
+    drawnCards: {
+      chance: CHANCE_CARDS.map((c) => c.id).filter((id) => !decks.chance.includes(id)),
+      community: COMMUNITY_CARDS.map((c) => c.id).filter((id) => !decks.community.includes(id)),
+    },
   };
 }
 

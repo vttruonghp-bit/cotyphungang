@@ -168,6 +168,11 @@ export interface GameState {
   arrivedByRoll: boolean;
   tiles: (TileState | null)[];
   decks: Record<DeckKind, string[]>;
+  /**
+   * Chỉ có ở bản gửi cho trình duyệt khi chơi online (bộ thẻ bị giấu): các lá không còn trong
+   * chồng, tức đã được bốc từ lần xáo gần nhất.
+   */
+  drawnCards?: Record<DeckKind, string[]>;
   pending: Pending;
   queue: Step[];
   log: LogEntry[];
