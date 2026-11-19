@@ -11,6 +11,7 @@ const DUCKED_VOLUME = 0.003;
 const DICE_VOLUME = 1;
 const STEP_VOLUME = 0.8;
 const COIN_VOLUME = 0.9;
+const LINE_VOLUME = 1;
 /** Mỗi bước 0,2 giây mà tiếng dài 0,6 giây: vài bản phát chồng lên nhau. */
 const STEP_POOL = 4;
 
@@ -121,12 +122,38 @@ export function playCoinSound(): void {
   void coins.play().catch(() => {});
 }
 
+const lineAudio = new Map<string, HTMLAudioElement>();
+const brokenFiles = new Set<string>();
+
 /**
- * Câu nói ngắn khi quân đến ô. Đọc bằng giọng tiếng Việt có sẵn trên máy (điện thoại, trình
- * duyệt); máy không có giọng tiếng Việt thì im lặng thay vì đọc sai bằng giọng nước ngoài.
+ * Câu nói ngắn khi quân đến ô: phát file giọng đã thu sẵn; file lỗi thì đọc `text` bằng giọng
+ * tiếng Việt có sẵn trên máy (máy không có giọng tiếng Việt thì im lặng).
  */
-export function sayLine(text: string): void {
+export function sayLine(text: string, file?: string): void {
   if (!active || !canPlay()) return;
+  if (file && !brokenFiles.has(file)) {
+    let a = lineAudio.get(file);
+    if (!a) {
+      a = new Audio(file);
+      a.preload = 'auto';
+      a.volume = LINE_VOLUME;
+      lineAudio.set(file, a);
+    }
+    for (const other of lineAudio.values()) if (other !== a) other.pause();
+    a.currentTime = 0;
+    const played = a.play();
+    void played.catch((err: unknown) => {
+      // Trình duyệt chặn tự phát (chưa chạm trang) thì thôi; file hỏng thì đọc bằng giọng máy.
+      if (err instanceof DOMException && err.name === 'NotAllowedError') return;
+      brokenFiles.add(file);
+      speak(text);
+    });
+    return;
+  }
+  speak(text);
+}
+
+function speak(text: string): void {
   const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
   const voice = vietnameseVoice();
   if (!synth || !voice) return;
@@ -170,6 +197,7 @@ export function setGameSoundEnabled(enabled: boolean): void {
     background?.pause();
     dice?.pause();
     coins?.pause();
+    for (const a of lineAudio.values()) a.pause();
     window.speechSynthesis?.cancel();
     for (const a of steps) a.pause();
     restoreBackground();

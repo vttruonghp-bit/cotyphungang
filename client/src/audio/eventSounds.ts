@@ -3,11 +3,11 @@ import type { GameState } from '@cotiphu/shared';
 import { walkOf } from '../components/Board';
 import { playCoinSound, sayLine } from './gameAudio';
 
-/** Câu nói khi quân đến ô. */
+/** Câu nói khi quân đến ô: file giọng thu sẵn (client/public/giong), kèm chữ để máy đọc dự phòng. */
 export const LINES = {
-  rent: 'Ôi thôi chết!',
-  tax: 'Là nó!',
-  jail: 'Vào tù là rõ!',
+  rent: { text: 'Ôi thôi chết!', file: '/giong/oi-thoi-chet.mp3' },
+  tax: { text: 'Là nó!', file: '/giong/la-no.mp3' },
+  jail: { text: 'Vào tù là rõ!', file: '/giong/vao-tu-la-ro.mp3' },
 } as const;
 
 export interface EventCue {
@@ -61,7 +61,7 @@ export function useEventSounds(game: GameState, previous: GameState | null, acti
     if (cue.coins) playCoinSound();
     const line = cue.line;
     if (!line) return;
-    const t = setTimeout(() => sayLine(LINES[line]), cue.delay);
+    const t = setTimeout(() => sayLine(LINES[line].text, LINES[line].file), cue.delay);
     return () => clearTimeout(t);
     // Chỉ chạy khi có thao tác mới.
     // eslint-disable-next-line react-hooks/exhaustive-deps
