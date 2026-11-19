@@ -4,11 +4,13 @@
  */
 import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import {
+  CHAT_HISTORY_MAX,
   PLAYER_COLOR_COUNT,
   PLAYER_ICON_COUNT,
   ROOM_CODE_ALPHABET,
   ROOM_CODE_LENGTH,
   type Action,
+  type ChatMessage,
   type GameState,
   type Profile,
   type Rng,
@@ -24,6 +26,11 @@ export interface SeatRecord extends Profile {
   token: string;
   /** null khi người ngồi ghế không mở trang. */
   socketId: string | null;
+  /** Đang ở kênh nói chuyện / đang bật mic; về false khi đổi hay mất kết nối. */
+  voice: boolean;
+  mic: boolean;
+  /** Thời điểm các tin gửi gần đây (chống gửi dồn dập). */
+  chatTimes: number[];
 }
 
 export interface Room {
@@ -39,12 +46,20 @@ export interface Room {
   /** Đếm để đặt mã ghế p1, p2… không trùng lại kể cả khi có người rời phòng chờ. */
   seatCounter: number;
   lastActivity: number;
+  /** Các tin gần nhất (tối đa CHAT_HISTORY_MAX). */
+  chat: ChatMessage[];
+  chatCounter: number;
 }
 
 export interface SeatAt {
   room: Room;
   seat: SeatRecord;
 }
+
+/** Gửi tối đa CHAT_BURST tin trong CHAT_WINDOW_MS. */
+export const CHAT_BURST = 5;
+export const CHAT_WINDOW_MS = 5000;
+export const CHAT_TOO_FAST = 'Bạn gửi nhanh quá, đợi một chút nhé';
 
 /** Phòng không ai mở trang quá lâu thì bị xóa. */
 export const ROOM_IDLE_MS = 2 * 60 * 60 * 1000;
@@ -84,6 +99,8 @@ export class Rooms {
       version: 0,
       seatCounter: 0,
       lastActivity: this.now(),
+      chat: [],
+      chatCounter: 0,
     };
     const seat = this.addSeat(room, host);
     room.hostId = seat.id;
@@ -118,6 +135,9 @@ export class Rooms {
         PLAYER_ICON_COUNT,
       ),
       socketId: null,
+      voice: false,
+      mic: false,
+      chatTimes: [],
     };
     room.seats.push(seat);
     this.touch(room);
@@ -141,7 +161,42 @@ export class Rooms {
   setSocket(room: Room, seat: SeatRecord, socketId: string | null): void {
     if (seat.socketId === socketId) return;
     seat.socketId = socketId;
+    // Trang mới (hay mất trang) phải tự vào lại kênh nói chuyện.
+    seat.voice = false;
+    seat.mic = false;
     this.touch(room);
+  }
+
+  /** Thêm một tin của `seat` (đã kiểm tra nội dung); từ chối khi gửi quá dồn dập. */
+  chat(room: Room, seat: SeatRecord, text: string): Result<ChatMessage> {
+    const now = this.now();
+    seat.chatTimes = seat.chatTimes.filter((t) => now - t < CHAT_WINDOW_MS);
+    if (seat.chatTimes.length >= CHAT_BURST) return fail(CHAT_TOO_FAST);
+    seat.chatTimes.push(now);
+    room.chatCounter += 1;
+    const message: ChatMessage = { id: room.chatCounter, from: seat.id, text, at: now };
+    room.chat.push(message);
+    if (room.chat.length > CHAT_HISTORY_MAX)
+      room.chat.splice(0, room.chat.length - CHAT_HISTORY_MAX);
+    room.lastActivity = now;
+    return ok(message);
+  }
+
+  /** Vào / rời kênh nói chuyện; rời kênh thì tắt luôn mic. */
+  setVoice(room: Room, seat: SeatRecord, on: boolean): void {
+    if (seat.voice === on && (on || !seat.mic)) return;
+    seat.voice = on;
+    if (!on) seat.mic = false;
+    this.touch(room);
+  }
+
+  setMic(room: Room, seat: SeatRecord, on: boolean): Result {
+    if (on && !seat.voice) return fail('Chưa vào kênh nói chuyện');
+    if (seat.mic !== on) {
+      seat.mic = on;
+      this.touch(room);
+    }
+    return done;
   }
 
   setProfile(room: Room, seat: SeatRecord, profile: Profile): Result {

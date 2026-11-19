@@ -34,6 +34,8 @@ export function roomView(room: Room): RoomView {
     icon: s.icon,
     connected: s.socketId !== null,
     isHost: s.id === room.hostId,
+    voice: s.voice,
+    mic: s.mic,
   }));
   return {
     code: room.code,

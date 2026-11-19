@@ -28,9 +28,9 @@ import {
 import { debtorOf } from '../game/draft';
 import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
-import { CardFan } from '../sheets/CardFan';
 import { CardListPanel } from '../sheets/CardListPanel';
-import { CardSheet } from '../sheets/CardSheet';
+import { ChatPanel, PlayerCards } from './SidePanel';
+import { CardConfirmSheet, CardSheet } from '../sheets/CardSheet';
 import { CardDiceSheet } from '../sheets/CardDiceSheet';
 import { ChooseTileSheet } from '../sheets/ChooseTileSheet';
 import { GameOverSheet } from '../sheets/GameOverSheet';
@@ -61,6 +61,9 @@ interface GameScreenProps {
   onHome?: () => void;
 }
 
+/** Nội dung khu bên trái, phía trên các ô người chơi. */
+type Panel = 'chat' | 'history' | 'cards';
+
 /** 'board': tạm ẩn Xử lý nợ để xem bàn cờ (nút chính "Xử lý nợ" mở lại). */
 type Manual = null | 'manage' | 'appearance' | 'surrender' | 'board';
 
@@ -77,11 +80,16 @@ interface Reveal {
 /** Giữ tối đa chừng này lần rút chưa xem (khi người khác đi nhanh hơn). */
 const MAX_REVEALS = 6;
 
-const revealsOf = ({ game, previous }: GameView): Reveal[] =>
+const revealsOf = ({ game, previous }: GameView): Reveal[] => {
+  // Lá vừa được Xác nhận đã hiện nội dung trước đó: không hiện lại lần nữa.
+  const confirmed =
+    previous?.pending.type === 'drawCard' ? previous.pending.cardId : undefined;
   // Bộ luật xóa `events` ở đầu mỗi thao tác, nên mọi sự kiện trong ván mới đều là của thao tác vừa rồi.
-  (previous ? game.events : [])
+  return (previous ? game.events : [])
     .filter((e): e is CardEvent | HighwayEvent => e.type === 'card' || e.type === 'highway')
+    .filter((e) => !(e.type === 'card' && confirmed !== undefined && e.cardId === confirmed))
     .map((event) => ({ game, previous, event }));
+};
 
 /** Người ván đang chờ (người phải bấm nút tiếp theo); khi ván kết thúc là người giữ lượt cuối. */
 function waitingPlayer(s: GameState): PlayerState {
@@ -116,8 +124,24 @@ export function GameScreen({
   const { game, previous, actions } = view;
   const online = mode.kind === 'online' ? mode : null;
   const [manual, setManual] = useState<Manual>(null);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [cardsOpen, setCardsOpen] = useState(false);
+  // Khu bên trái (trên các ô người chơi): chat khi chơi online, không thì lịch sử.
+  const defaultPanel: Panel = mode.kind === 'online' ? 'chat' : 'history';
+  const [panel, setPanel] = useState<Panel>(defaultPanel);
+  const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? defaultPanel : p));
+  const [chatFocus, setChatFocus] = useState(0);
+  const openChat = () => {
+    setPanel('chat');
+    setChatFocus((n) => n + 1);
+  };
+  // Tin chưa đọc: tin của người khác tới khi khu chat đang hiện thứ khác.
+  const chat = mode.kind === 'online' ? mode.chat : [];
+  const lastChatId = chat.at(-1)?.id ?? 0;
+  const [seenChatId, setSeenChatId] = useState(lastChatId);
+  if (panel === 'chat' && seenChatId !== lastChatId) setSeenChatId(lastChatId);
+  const unread =
+    mode.kind === 'online'
+      ? chat.filter((m) => m.id > seenChatId && m.from !== mode.meId).length
+      : 0;
   const [viewTile, setViewTile] = useState<number | null>(null);
   const [reveals, setReveals] = useState(() => revealsOf(view));
   const [error, setError] = useState<string | null>(null);
@@ -211,6 +235,12 @@ export function GameScreen({
 
   // Online: số thao tác đang chờ máy chủ; nút chính mờ đi trong lúc chờ để khỏi bấm lại.
   const [busy, setBusy] = useState(0);
+  const toggleMic = async () => {
+    if (!online) return;
+    const err = await online.voice.toggleMic();
+    if (err) setError(err);
+  };
+
   const send = async (a: Action) => {
     if (a.type === 'roll' || a.type === 'rollCardDice') {
       skipServerEcho.current = true;
@@ -278,14 +308,15 @@ export function GameScreen({
   if (motionLocked) {
     sheet = null;
   } else if (!reveal && pd.type === 'drawCard' && myMove) {
-    // Chọn 1 lá trong quạt bài: máy chủ chỉ rút thẻ và áp dụng hiệu ứng sau khi chọn.
-    const d = game.decks[pd.deck] as unknown;
-    const count = typeof d === 'number' ? d : Array.isArray(d) ? d.length : 0;
+    // Lá đã lật: xem nội dung, bấm Xác nhận thì máy chủ mới áp dụng.
     sheet = (
-      <CardFan
+      <CardConfirmSheet
+        game={game}
+        playerId={pd.playerId}
+        cardId={pd.cardId}
         deck={pd.deck}
-        count={Math.max(1, count)}
-        onPick={() => {
+        busy={busy > 0}
+        onConfirm={() => {
           void send({ type: 'drawCard', playerId: pd.playerId });
         }}
       />
@@ -436,40 +467,76 @@ export function GameScreen({
       <main className="land game-screen" style={accentStyle}>
         {/* Khi màn phụ đang mở, màn chính phía sau không bấm hay đọc tới được. */}
         <div className="land-main" inert={sheet !== null}>
-          <div className="player-column">
-            <PlayerFrames game={game} meId={online?.meId ?? null} offline={offline} />
-            <div className="mobile-player-actions">
+          <div className="player-column side-layout">
+            <nav className="side-buttons" aria-label="Thông tin và trò chuyện">
+              {onHome && (
+                <button type="button" className="side-btn" onClick={onHome}>
+                  ‹ Màn đầu
+                </button>
+              )}
               <button
                 type="button"
-                className="history-toggle"
-                aria-expanded={historyOpen}
-                aria-controls="mobile-history"
-                onClick={() => setHistoryOpen((open) => !open)}
+                className="side-btn"
+                aria-pressed={panel === 'history'}
+                onClick={() => togglePanel('history')}
               >
                 ☷ Lịch sử
               </button>
               <button
                 type="button"
-                className="history-toggle cards-toggle"
-                aria-pressed={cardsOpen}
-                onClick={() => setCardsOpen((v) => !v)}
+                className="side-btn"
+                aria-pressed={panel === 'cards'}
+                onClick={() => togglePanel('cards')}
               >
                 Cơ hội / Khí vận
               </button>
-              <button type="button" className="btn btn-surrender" onClick={() => setManual('surrender')}>
+              <button type="button" className="side-btn side-surrender" onClick={() => setManual('surrender')}>
                 ⚠ Đầu hàng
               </button>
-              <button type="button" className="btn btn-denvl" onClick={() => setManual('appearance')}>
+              <button type="button" className="side-btn side-denvl" onClick={() => setManual('appearance')}>
                 Đen VL
               </button>
-            </div>
-            {cardsOpen && <CardListPanel game={game} />}
-            {historyOpen && (
-              <div className="mobile-history" id="mobile-history">
-                <button type="button" className="mobile-history-close" onClick={() => setHistoryOpen(false)} aria-label="Đóng lịch sử">×</button>
-                <LogPanel game={game} />
+              {online && (
+                <button
+                  type="button"
+                  className="side-btn side-chat"
+                  aria-pressed={panel === 'chat'}
+                  onClick={openChat}
+                >
+                  💬 Chat
+                  {unread > 0 && <span className="side-badge">{unread > 9 ? '9+' : unread}</span>}
+                </button>
+              )}
+              {online && (
+                <button
+                  type="button"
+                  className={`side-btn side-mic${online.voice.micOn ? ' is-on' : ''}`}
+                  aria-pressed={online.voice.micOn}
+                  disabled={online.voice.busy}
+                  onClick={toggleMic}
+                >
+                  {online.voice.micOn ? '🎤 Tắt mic' : '🎤 Bật mic'}
+                </button>
+              )}
+            </nav>
+            <div className="side-main">
+              <div className="side-panel">
+                {panel === 'cards' ? (
+                  <CardListPanel game={game} />
+                ) : panel === 'chat' && online ? (
+                  <ChatPanel
+                    game={game}
+                    meId={online.meId}
+                    messages={online.chat}
+                    send={online.sendChat}
+                    focusKey={chatFocus}
+                  />
+                ) : (
+                  <LogPanel game={game} />
+                )}
               </div>
-            )}
+              <PlayerCards game={game} meId={online?.meId ?? null} seats={online?.seats ?? null} />
+            </div>
           </div>
           <div className="land-stage">
             <div className="iso">
@@ -485,7 +552,7 @@ export function GameScreen({
             </div>
             {tileActions && (
               <div className={`tile-action-pop tile-action-${actionSide}`} style={tileOffset}>
-                <div className="tile-action-player"><TokenIcon icon={me.icon} color={me.color} size={23} /> <strong>{me.name}</strong></div>
+                <div className="tile-action-player"><TokenIcon icon={me.icon} color={me.color} size={18} /> <strong>{me.name}</strong></div>
                 {main && <button type="button" className={`btn ${main.tone}`} disabled={busy > 0} onClick={main.run}>{pd.type === "pay" && me.cash >= pd.total ? `Trả ${money(pd.total)}` : main.label}</button>}
                 {pd.type !== 'pay' && <button type="button" className={`btn ${secondary.tone}`} disabled={busy > 0} onClick={secondary.run}>{secondary.label}</button>}
               </div>
@@ -594,7 +661,7 @@ export function waitingOther(s: GameState, p: PlayerState): string {
     case 'endTurn':
       return `Đang chờ ${n} kết thúc lượt…`;
     case 'drawCard':
-      return `Đang chờ ${n} rút thẻ ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}…`;
+      return `Đang chờ ${n} xác nhận thẻ ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}…`;
     case 'cardDice':
       return pd.dice === null ? `Đang chờ ${n} sục xúc xắc thẻ…` : `Đang chờ ${n} xác nhận kết quả thẻ…`;
     case 'jail':
@@ -634,7 +701,7 @@ export function waitingText(s: GameState, me: PlayerState): string {
     case 'endTurn':
       return `${me.name} kết thúc lượt hoặc Ụp/Mở`;
     case 'drawCard':
-      return `Chờ ${me.name} chọn 1 lá ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}`;
+      return `Chờ ${me.name} xác nhận thẻ ${pd.deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}`;
     case 'cardDice':
       return pd.dice === null ? `Chờ ${me.name} nhấn “Sục” cho thẻ` : `Chờ ${me.name} xác nhận xúc xắc thẻ`;
     case 'jail':
@@ -655,66 +722,6 @@ export function waitingText(s: GameState, me: PlayerState): string {
     case 'ended':
       return 'Ván đã kết thúc';
   }
-}
-
-interface PlayerFramesProps {
-  game: GameState;
-  /** Online: người cầm máy này. */
-  meId: string | null;
-  /** Online: những người đang mất kết nối. */
-  offline: ReadonlySet<string>;
-}
-
-/** Toàn bộ người chơi nằm trong một cột riêng bên trái, không đè lên bàn cờ. */
-function PlayerFrames({ game, meId, offline }: PlayerFramesProps) {
-  const cur = game.players[game.current]!;
-  const ordered = [cur, ...game.players.filter((p) => p.id !== cur.id)];
-  return (
-    <aside className="player-rail" aria-label="Người chơi" style={{ ['--turn-pc' as string]: colorOf(cur.color).main }}>
-      {ordered.map((p) => {
-        const active = p.id === cur.id;
-        const assets = game.tiles.flatMap((st, index) =>
-          st?.owner === p.id ? [{ tile: BOARD[index]!, level: st.level }] : [],
-        );
-        const land = assets.filter(({ tile }) => tile.kind === 'property');
-        const stations = assets.filter(({ tile }) => tile.kind === 'station');
-        const utilities = assets.filter(({ tile }) => tile.kind === 'utility');
-        const cards = p.heldCards.map((c) => getCard(c.cardId).title);
-        return (
-          <div
-            key={p.id}
-            className={`frame${active ? ' is-turn is-expanded' : ' is-waiting'}${p.status !== 'active' ? ' is-out' : ''}`}
-            style={{ ['--pc' as string]: colorOf(p.color).main }}
-          >
-            <span className="frame-text">
-              <span className="frame-topline">
-                <span className="frame-player-token">
-                  <TokenIcon icon={p.icon} color={p.color} size={active ? 36 : 30} />
-                  {offline.has(p.id) && <span className="offline-dot" />}
-                </span>
-                <b className="frame-name">{p.name}{p.id === meId ? ' (bạn)' : ''}</b>
-                <b className="frame-cash">{money(p.cash)}</b>
-              </span>
-              <span className="frame-assets" aria-label={`Tài sản của ${p.name}`}>
-                {land.map(({ tile, level }) => (
-                  <span key={tile.index} className="frame-asset-line">
-                    <span>{tile.name}</span>
-                    <span className="frame-asset-level">
-                      {level >= HOTEL_LEVEL ? '🏨' : level === 0 ? '0' : '🏠'.repeat(level)}
-                    </span>
-                  </span>
-                ))}
-                {stations.map(({ tile }) => <span key={tile.index} className="frame-asset-line">🚉 {tile.name}</span>)}
-                {utilities.map(({ tile }) => <span key={tile.index} className="frame-asset-line">🏭 {tile.name}</span>)}
-                {cards.map((card, i) => <span key={i} className="frame-asset-line">🃏 {card}</span>)}
-                {assets.length === 0 && cards.length === 0 && <span>Chưa có tài sản</span>}
-              </span>
-            </span>
-          </div>
-        );
-      })}
-    </aside>
-  );
 }
 
 interface CenterPanelProps {

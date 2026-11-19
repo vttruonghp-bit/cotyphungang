@@ -55,8 +55,11 @@ export type Pending =
   /** Lần thử thứ 3 không ra đôi và có thẻ ra tù: chọn trả 50Đ hoặc dùng thẻ, rồi đi `steps`. */
   | { type: 'jailRelease'; playerId: string; steps: number }
   | { type: 'buy'; playerId: string; tile: number }
-  /** Dừng ở ô Cơ Hội / Khí Vận: chờ người chơi chọn lá rồi mới rút thẻ và áp dụng. */
-  | { type: 'drawCard'; playerId: string; deck: 'chance' | 'community' }
+  /**
+   * Dừng ở ô Cơ Hội / Khí Vận: lá `cardId` đã lật cho người chơi xem, chờ bấm Xác nhận mới áp
+   * dụng. Không có `cardId` thì lá chưa rút (rút và áp dụng khi xác nhận).
+   */
+  | { type: 'drawCard'; playerId: string; deck: 'chance' | 'community'; cardId?: string }
   /** Hết việc trong lượt: hỏi Kết thúc lượt hay Ụp/Mở trước (không hỏi giữa các lần đổ đôi). */
   | { type: 'endTurn'; playerId: string }
   /** Card is drawn; player must roll and confirm before its effect changes game state. */

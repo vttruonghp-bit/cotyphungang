@@ -1840,3 +1840,24 @@
   min-height: 38px;
   font-size: 13px;
 }
+
+/* Nút Mua / Không mua, Trả tiền: khung gọn lại (Wins, 19/11/2026). */
+.land-stage .tile-action-pop {
+  width: clamp(92px, calc(var(--board-s) * 0.22), 132px);
+  min-width: 0;
+  max-width: none;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 10px;
+}
+.land-stage .tile-action-pop .tile-action-player {
+  gap: 4px;
+  font-size: 11px;
+}
+.land-stage .tile-action-pop .btn {
+  min-height: 28px;
+  padding: 3px 4px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.15;
+}

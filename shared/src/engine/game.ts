@@ -34,7 +34,7 @@ import {
   takeCard,
   tileState,
 } from './core';
-import { drawCard, getCard, land, resolveCardDice } from './landing';
+import { applyDrawnCard, drawCard, getCard, land, resolveCardDice } from './landing';
 import { rollDie, shuffle, type Rng } from './rng';
 import type {
   Action,
@@ -352,7 +352,11 @@ function handle(s: GameState, a: Action, rng: Rng): void {
       return endTurn(s);
     case 'drawCard': {
       const pd = expectPending(s, a.playerId, 'drawCard');
-      const out = drawCard(s, getPlayer(s, pd.playerId), pd.deck, rng);
+      const p = getPlayer(s, pd.playerId);
+      const out =
+        pd.cardId !== undefined
+          ? applyDrawnCard(s, p, pd.cardId, rng)
+          : drawCard(s, p, pd.deck, rng);
       prepend(s, out.steps);
       return advance(s, rng);
     }

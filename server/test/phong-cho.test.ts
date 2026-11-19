@@ -43,6 +43,8 @@ describe('tạo phòng và vào phòng', () => {
       icon: 5,
       connected: true,
       isHost: true,
+      voice: false,
+      mic: false,
     });
   });
 

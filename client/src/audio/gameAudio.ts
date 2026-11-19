@@ -3,19 +3,29 @@
  * and React screen re-renders without creating overlapping players.
  */
 const BACKGROUND_VOLUME = 0.3;
+/** Nhạc nền khi có người đang bật mic nói chuyện. */
+const VOICE_VOLUME = 0.06;
 const DUCKED_VOLUME = 0.015;
 const DICE_VOLUME = 1;
+const STEP_VOLUME = 0.8;
+/** Mỗi bước 0,2 giây mà tiếng dài 0,6 giây: vài bản phát chồng lên nhau. */
+const STEP_POOL = 4;
 
 let background: HTMLAudioElement | null = null;
 let dice: HTMLAudioElement | null = null;
+const steps: HTMLAudioElement[] = [];
+let nextStep = 0;
 let active = false;
+let voiceDucked = false;
+
+const baseVolume = (): number => (voiceDucked ? VOICE_VOLUME : BACKGROUND_VOLUME);
 
 function getBackground(): HTMLAudioElement {
   if (!background) {
     background = new Audio('/background.mp3');
     background.loop = true;
     background.preload = 'auto';
-    background.volume = BACKGROUND_VOLUME;
+    background.volume = baseVolume();
   }
   return background;
 }
@@ -33,7 +43,13 @@ function getDice(): HTMLAudioElement {
 }
 
 function restoreBackground(): void {
-  if (background) background.volume = BACKGROUND_VOLUME;
+  if (background && (!dice || dice.paused || dice.ended)) background.volume = baseVolume();
+}
+
+/** Có người bật mic: nhạc nền nhỏ lại để nghe rõ tiếng nói. */
+export function setVoiceDucking(on: boolean): void {
+  voiceDucked = on;
+  restoreBackground();
 }
 
 function canPlay(): boolean {
@@ -73,6 +89,21 @@ export function playDiceSound(): void {
   void sound.play().catch(() => restoreBackground());
 }
 
+/** Tiếng một bước nhảy của quân cờ (mỗi ô đi qua phát một lần). */
+export function playStepSound(): void {
+  if (!active || !canPlay()) return;
+  if (steps.length < STEP_POOL) {
+    const a = new Audio('/buoc-nhay.mp3');
+    a.preload = 'auto';
+    a.volume = STEP_VOLUME;
+    steps.push(a);
+  }
+  const sound = steps[nextStep % steps.length]!;
+  nextStep += 1;
+  sound.currentTime = 0;
+  void sound.play().catch(() => {});
+}
+
 export function setGameSoundEnabled(enabled: boolean): void {
   try {
     localStorage.setItem('dice-roll-sound', enabled ? 'on' : 'off');
@@ -83,6 +114,7 @@ export function setGameSoundEnabled(enabled: boolean): void {
   if (!enabled) {
     background?.pause();
     dice?.pause();
+    for (const a of steps) a.pause();
     restoreBackground();
   }
 }

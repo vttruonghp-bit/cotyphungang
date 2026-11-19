@@ -41,6 +41,90 @@ const HIGHWAY_STEPS = (() => {
 
 const isDraw = (e: GameEvent): e is Draw => e.type === 'card' || e.type === 'highway';
 
+/**
+ * Lá vừa lật khi dừng ở ô Cơ Hội / Khí Vận: hiện ngay nội dung, bấm Xác nhận thì máy chủ mới áp
+ * dụng (tiền đổi, quân đi…). Người khác (online) không thấy màn này, chỉ thấy dòng đang chờ.
+ */
+export function CardConfirmSheet({
+  game,
+  playerId,
+  cardId,
+  deck,
+  busy,
+  onConfirm,
+}: {
+  game: GameState;
+  playerId: string;
+  cardId: string | undefined;
+  deck: DeckKind;
+  busy: boolean;
+  onConfirm: () => void;
+}) {
+  const drawer = playerById(game, playerId)!;
+  const c = cardId ? getCard(cardId) : null;
+  const list = DECK_CARDS[deck];
+  const number = c ? list.findIndex((x) => x.id === c.id) + 1 : 0;
+  const whoStyle = {
+    ['--who' as string]: colorOf(drawer.color).main,
+    ['--who-soft' as string]: colorOf(drawer.color).soft,
+  };
+  return (
+    <Sheet
+      game={game}
+      who={{ playerId: drawer.id, text: `${drawer.name} rút` }}
+      icon={
+        <SheetGlyph color={deck === 'chance' ? 'var(--orange)' : 'var(--red)'}>
+          {deck === 'chance' ? <StarGlyph /> : <GiftGlyph />}
+        </SheetGlyph>
+      }
+      title={`Thẻ ${DECK_NAME[deck]}`}
+      subtitle={
+        c
+          ? `${drawer.name} rút ở ô ${numbered(drawer.position)} · thẻ số ${pad(number)}/${list.length}`
+          : `${drawer.name} rút ở ô ${numbered(drawer.position)}`
+      }
+      label={c ? `Thẻ ${DECK_NAME[deck]}: ${c.title}` : `Thẻ ${DECK_NAME[deck]}`}
+      footer={
+        <div className="draw-footer">
+          <p className="draw-next">
+            <span className="eyebrow">Tiếp theo</span>
+            <span>Bấm Xác nhận để thực hiện thẻ.</span>
+          </p>
+          <button
+            type="button"
+            className={`btn ${deck === 'chance' ? 'btn-orange' : 'btn-blue'}`}
+            disabled={busy}
+            onClick={onConfirm}
+          >
+            Xác nhận
+          </button>
+        </div>
+      }
+    >
+      <div className="draw-body" key={`x-${cardId ?? deck}`} style={whoStyle}>
+        <div className="draw-stage">
+          <article className={`draw-card draw-card-${deck}`}>
+            <div className="draw-card-top">
+              <span className="draw-card-deck">
+                {DECK_NAME[deck]}
+                {c ? ` · ${pad(number)}` : ''}
+              </span>
+              <span className="draw-card-who">
+                <TokenIcon icon={drawer.icon} color={drawer.color} size={22} />
+                <span>{drawer.name} rút</span>
+              </span>
+            </div>
+            <h3 className="draw-card-title">{c ? c.title : 'Lá trên cùng'}</h3>
+            <p className="draw-card-text">
+              {c ? c.description : 'Bấm Xác nhận để rút và thực hiện thẻ.'}
+            </p>
+          </article>
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
 /** Lá thẻ vừa rút và kết quả của nó (hình 3). */
 export function CardSheet({
   game,
@@ -358,7 +442,7 @@ function nextText(game: GameState, draws: Draw[], k: number, online: boolean): s
     case 'endTurn':
       return `${name} kết thúc lượt hoặc Ụp/Mở.`;
     case 'drawCard':
-      return `${name} rút thẻ ${DECK_NAME[pd.deck]}.`;
+      return `${name} xác nhận thẻ ${DECK_NAME[pd.deck]}.`;
     case 'cardDice':
       return pd.dice === null
         ? `${name} cần bấm Sục xúc xắc thẻ.`

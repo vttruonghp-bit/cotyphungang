@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { Ack, Action, GameState, Profile, RoomView, SeatTicket } from '@cotiphu/shared';
+import {
+  CHAT_HISTORY_MAX,
+  type Ack,
+  type Action,
+  type ChatMessage,
+  type GameState,
+  type Profile,
+  type RoomView,
+  type SeatTicket,
+} from '@cotiphu/shared';
 import { getSocket, request, whenConnected, type GameSocket } from './socket';
 import { toGameState } from './view';
 import { loadTicket, saveTicket } from './storage';
@@ -25,6 +34,10 @@ export interface Online {
   view: OnlineGame | null;
   /** Lời nhắn cho màn đầu: phòng đã đóng, không vào lại được… */
   notice: string | null;
+  /** Tin nhắn gần đây trong phòng, cũ trước mới sau. */
+  chat: readonly ChatMessage[];
+  /** Gửi tin nhắn; trả lỗi hoặc null khi máy chủ đã nhận. */
+  sendChat(text: string): Promise<string | null>;
   create(capacity: number, profile: Profile): Promise<string | null>;
   join(code: string, profile: Profile): Promise<string | null>;
   profile(profile: Profile): Promise<string | null>;
@@ -63,6 +76,7 @@ export function useOnline(): Online {
   const [status, setStatus] = useState<ConnStatus>(ticket ? 'connecting' : 'idle');
   const [data, setData] = useState<Data>({ room: null, view: null });
   const [notice, setNotice] = useState<string | null>(null);
+  const [chat, setChat] = useState<readonly ChatMessage[]>([]);
   // Ván lần trước (dạng chuỗi) để chỉ tăng `actions` khi ván thật sự đổi.
   const last = useRef<{ json: string; view: OnlineGame | null }>({ json: '', view: null });
   // Số lần đã nhận trạng thái phòng; ai đang chờ trạng thái mới thì nằm trong `waiters`.
@@ -82,6 +96,7 @@ export function useOnline(): Online {
     (why: string | null) => {
       setTicket(null);
       setData({ room: null, view: null });
+      setChat([]);
       last.current = { json: '', view: null };
       setNotice(why);
     },
@@ -136,12 +151,19 @@ export function useOnline(): Online {
       for (const wake of waiters.current.splice(0)) wake();
     };
     const onClosed = (reason: string) => drop(reason || 'Phòng đã đóng.');
+    const onHistory = (list: ChatMessage[]) => setChat(list.slice(-CHAT_HISTORY_MAX));
+    const onMessage = (m: ChatMessage) =>
+      setChat((list) =>
+        list.some((x) => x.id === m.id) ? list : [...list, m].slice(-CHAT_HISTORY_MAX),
+      );
 
     s.on('connect', onConnect);
     s.on('disconnect', onDisconnect);
     s.on('connect_error', onError);
     s.on('room:state', onState);
     s.on('room:closed', onClosed);
+    s.on('chat:history', onHistory);
+    s.on('chat:message', onMessage);
     if (ticketRef.current) {
       if (s.connected) onConnect();
       else s.connect();
@@ -152,6 +174,8 @@ export function useOnline(): Online {
       s.off('connect_error', onError);
       s.off('room:state', onState);
       s.off('room:closed', onClosed);
+      s.off('chat:history', onHistory);
+      s.off('chat:message', onMessage);
     };
   }, [drop, setTicket]);
 
@@ -238,6 +262,11 @@ export function useOnline(): Online {
     [simple],
   );
   const start = useCallback(() => simple((s, done) => s.emit('room:start', done)), [simple]);
+  // Tin nhắn không đổi trạng thái phòng nên không chờ `room:state`.
+  const sendChat = useCallback(
+    (text: string) => simple((s, done) => s.emit('chat:send', text, done), false),
+    [simple],
+  );
   const leave = useCallback(async () => {
     // Người rời phòng không nhận trạng thái phòng nữa nên không chờ.
     const err = await simple((s, done) => s.emit('room:leave', done), false);
@@ -264,6 +293,8 @@ export function useOnline(): Online {
     room,
     view: room ? data.view : null,
     notice,
+    chat: room ? chat : [],
+    sendChat,
     create,
     join,
     profile,

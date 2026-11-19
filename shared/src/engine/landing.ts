@@ -88,9 +88,20 @@ export function land(s: GameState, p: PlayerState, rng: Rng, opts: LandOptions =
       return { steps: [bankPay(p, tile.amount, 'tax', true, `Nộp ${tile.name}`)], net: 0 };
     case 'chance':
     case 'community':
-      // Ván thật: dừng lại chờ người chơi chọn lá trong quạt bài, chưa rút, chưa có hiệu ứng.
+      // Ván thật: lật lá ngay cho người chơi xem, nhưng chỉ áp dụng khi người chơi bấm Xác nhận
+      // (thẻ cần xúc xắc thì chờ Sục rồi Xác nhận như cũ).
       if (s.stagedDiceCards) {
-        return { steps: [{ type: 'drawCard', playerId: p.id, deck: tile.kind }], net: 0 };
+        const card = revealCard(s, p, tile.kind, rng);
+        if (needsDice(s, p, card)) {
+          return {
+            steps: [{ type: 'cardDice', playerId: p.id, cardId: card.id, dice: null }],
+            net: 0,
+          };
+        }
+        return {
+          steps: [{ type: 'drawCard', playerId: p.id, deck: tile.kind, cardId: card.id }],
+          net: 0,
+        };
       }
       return drawCard(s, p, tile.kind, rng);
     default:
@@ -202,7 +213,8 @@ function landOwnable(
   };
 }
 
-export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outcome {
+/** Lật lá trên cùng của chồng (xáo lại khi hết) và ghi nhật ký; chưa áp dụng hiệu ứng. */
+function revealCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Card {
   if (s.decks[deck].length === 0) {
     const held = new Set(s.players.flatMap((x) => x.heldCards.map((c) => c.cardId)));
     s.decks[deck] = shuffle(
@@ -217,10 +229,13 @@ export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng)
   }
   const card = getCard(s.decks[deck].shift()!);
   addLog(s, p.id, `Rút thẻ ${deck === 'chance' ? 'Cơ Hội' : 'Khí Vận'}: ${card.title}`);
-  // Live sessions pause before any random effect. The actual effect is applied only
-  // after the drawer rolls and explicitly confirms the server-generated dice.
+  return card;
+}
+
+/** Thẻ có phần ngẫu nhiên: ván thật phải Sục xúc xắc rồi Xác nhận mới áp dụng. */
+function needsDice(s: GameState, p: PlayerState, card: Card): boolean {
   const e = card.effect;
-  const needsDice =
+  return (
     e.type === 'lottery' ||
     e.type === 'flyDice' ||
     e.type === 'neighborFire' ||
@@ -232,10 +247,13 @@ export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng)
         return (
           owner !== null && owner !== undefined && owner !== p.id && !s.tiles[target]!.mortgaged
         );
-      })());
-  if (s.stagedDiceCards && needsDice) {
-    return { steps: [{ type: 'cardDice', playerId: p.id, cardId: card.id, dice: null }], net: 0 };
-  }
+      })())
+  );
+}
+
+/** Áp dụng lá đã lật (không cần xúc xắc, hoặc ván không chờ xúc xắc thẻ). */
+export function applyDrawnCard(s: GameState, p: PlayerState, cardId: string, rng: Rng): Outcome {
+  const card = getCard(cardId);
   const ev: Extract<GameEvent, { type: 'card' }> = {
     type: 'card',
     playerId: p.id,
@@ -248,6 +266,16 @@ export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng)
   }
   if (out.net !== 0) out.steps.push({ type: 'fortuneMirror', drawerId: p.id, net: out.net });
   return out;
+}
+
+export function drawCard(s: GameState, p: PlayerState, deck: DeckKind, rng: Rng): Outcome {
+  const card = revealCard(s, p, deck, rng);
+  // Live sessions pause before any random effect. The actual effect is applied only
+  // after the drawer rolls and explicitly confirms the server-generated dice.
+  if (s.stagedDiceCards && needsDice(s, p, card)) {
+    return { steps: [{ type: 'cardDice', playerId: p.id, cardId: card.id, dice: null }], net: 0 };
+  }
+  return applyDrawnCard(s, p, card.id, rng);
 }
 
 /** Resolve a rolled card from its previously shown dice; never roll new card dice at confirmation. */

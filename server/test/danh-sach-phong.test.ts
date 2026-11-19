@@ -49,8 +49,26 @@ describe('trạng thái gửi cho trình duyệt', () => {
     });
     expect(json).not.toContain(JSON.stringify(room.game!.decks.chance));
     expect(view.seats).toEqual([
-      { id: seat.id, name: 'Chủ', color: 0, icon: 0, connected: true, isHost: true },
-      { id: guest.id, name: 'Khách', color: 1, icon: 1, connected: false, isHost: false },
+      {
+        id: seat.id,
+        name: 'Chủ',
+        color: 0,
+        icon: 0,
+        connected: true,
+        isHost: true,
+        voice: false,
+        mic: false,
+      },
+      {
+        id: guest.id,
+        name: 'Khách',
+        color: 1,
+        icon: 1,
+        connected: false,
+        isHost: false,
+        voice: false,
+        mic: false,
+      },
     ]);
   });
 
