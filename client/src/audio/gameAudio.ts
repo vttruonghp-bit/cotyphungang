@@ -2,19 +2,21 @@
  * One shared mixer for the whole browser tab. Audio continues across turns
  * and React screen re-renders without creating overlapping players.
  */
-/** Nhạc nền: 30% mức cũ (0,3) theo yêu cầu. */
-const BACKGROUND_VOLUME = 0.09;
-/** Nhạc nền khi có người đang bật mic nói chuyện (cũng 30% mức cũ). */
-const VOICE_VOLUME = 0.018;
+/** Nhạc nền (đã hạ hai lần theo yêu cầu: 0,3 → 0,09 → 0,045). */
+const BACKGROUND_VOLUME = 0.045;
+/** Nhạc nền khi có người đang bật mic nói chuyện. */
+const VOICE_VOLUME = 0.009;
 /** Nhạc nền lúc xúc xắc đang lăn. */
-const DUCKED_VOLUME = 0.005;
+const DUCKED_VOLUME = 0.003;
 const DICE_VOLUME = 1;
 const STEP_VOLUME = 0.8;
+const COIN_VOLUME = 0.9;
 /** Mỗi bước 0,2 giây mà tiếng dài 0,6 giây: vài bản phát chồng lên nhau. */
 const STEP_POOL = 4;
 
 let background: HTMLAudioElement | null = null;
 let dice: HTMLAudioElement | null = null;
+let coins: HTMLAudioElement | null = null;
 const steps: HTMLAudioElement[] = [];
 let nextStep = 0;
 let active = false;
@@ -65,6 +67,7 @@ function canPlay(): boolean {
 export function startGameMusic(): void {
   active = true;
   if (!canPlay()) return;
+  unlockSpeech();
   const audio = getBackground();
   if (audio.paused) {
     void audio.play().catch(() => {
@@ -106,6 +109,56 @@ export function playStepSound(): void {
   void sound.play().catch(() => {});
 }
 
+/** Tiếng tiền rơi leng keng (mua đất, xây nhà). */
+export function playCoinSound(): void {
+  if (!active || !canPlay()) return;
+  if (!coins) {
+    coins = new Audio('/tien-roi.mp3');
+    coins.preload = 'auto';
+    coins.volume = COIN_VOLUME;
+  }
+  coins.currentTime = 0;
+  void coins.play().catch(() => {});
+}
+
+/**
+ * Câu nói ngắn khi quân đến ô. Đọc bằng giọng tiếng Việt có sẵn trên máy (điện thoại, trình
+ * duyệt); máy không có giọng tiếng Việt thì im lặng thay vì đọc sai bằng giọng nước ngoài.
+ */
+export function sayLine(text: string): void {
+  if (!active || !canPlay()) return;
+  const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
+  const voice = vietnameseVoice();
+  if (!synth || !voice) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.voice = voice;
+  u.lang = voice.lang;
+  u.rate = 1.05;
+  u.pitch = 1.1;
+  u.volume = 1;
+  synth.speak(u);
+}
+
+function vietnameseVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis?.getVoices() ?? [];
+  const vi = voices.filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith('vi'));
+  // Ưu tiên giọng có sẵn trên máy (không cần mạng), rồi tới giọng của trình duyệt.
+  return vi.find((v) => v.localService) ?? vi[0] ?? null;
+}
+
+let speechUnlocked = false;
+/** iOS chỉ cho đọc sau một lần chạm: đọc một câu rỗng ngay trong lần chạm đầu tiên. */
+function unlockSpeech(): void {
+  if (speechUnlocked || typeof window === 'undefined' || !window.speechSynthesis) return;
+  speechUnlocked = true;
+  // Gọi để trình duyệt nạp danh sách giọng sớm.
+  window.speechSynthesis.getVoices();
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
+}
+
 export function setGameSoundEnabled(enabled: boolean): void {
   try {
     localStorage.setItem('dice-roll-sound', enabled ? 'on' : 'off');
@@ -116,6 +169,8 @@ export function setGameSoundEnabled(enabled: boolean): void {
   if (!enabled) {
     background?.pause();
     dice?.pause();
+    coins?.pause();
+    window.speechSynthesis?.cancel();
     for (const a of steps) a.pause();
     restoreBackground();
   }
