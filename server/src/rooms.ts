@@ -17,7 +17,7 @@ import {
   type RoomPhase,
   type SeatTicket,
 } from '@cotiphu/shared';
-import { playAction, startGame } from './game-room';
+import { playAction, playForSeat, startGame } from './game-room';
 import { done, fail, ok, type Result } from './result';
 
 /** Một ghế phía máy chủ: thêm vé bí mật và socket đang giữ ghế (không bao giờ gửi đi). */
@@ -26,6 +26,10 @@ export interface SeatRecord extends Profile {
   token: string;
   /** null khi người ngồi ghế không mở trang. */
   socketId: string | null;
+  /** Thời điểm mất kết nối gần nhất; null khi đang mở trang. */
+  awaySince: number | null;
+  /** Máy chủ đang chơi hộ ghế này (vắng mặt quá lâu). */
+  auto: boolean;
   /** Đang ở kênh nói chuyện / đang bật mic; về false khi đổi hay mất kết nối. */
   voice: boolean;
   mic: boolean;
@@ -63,6 +67,9 @@ export const CHAT_TOO_FAST = 'Bạn gửi nhanh quá, đợi một chút nhé';
 
 /** Phòng không ai mở trang quá lâu thì bị xóa. */
 export const ROOM_IDLE_MS = 2 * 60 * 60 * 1000;
+
+/** Rời ván quá lâu thì máy chủ chơi hộ, để những người còn lại không phải chờ. */
+export const AUTOPLAY_AFTER_MS = 3 * 60 * 1000;
 
 export class Rooms {
   private readonly byCode = new Map<string, Room>();
@@ -135,6 +142,8 @@ export class Rooms {
         PLAYER_ICON_COUNT,
       ),
       socketId: null,
+      awaySince: null,
+      auto: false,
       voice: false,
       mic: false,
       chatTimes: [],
@@ -161,6 +170,9 @@ export class Rooms {
   setSocket(room: Room, seat: SeatRecord, socketId: string | null): void {
     if (seat.socketId === socketId) return;
     seat.socketId = socketId;
+    // Mất trang: tính giờ vắng mặt từ đây. Mở lại trang: trả quyền cho người chơi ngay.
+    seat.awaySince = socketId === null ? this.now() : null;
+    if (socketId !== null) seat.auto = false;
     // Trang mới (hay mất trang) phải tự vào lại kênh nói chuyện.
     seat.voice = false;
     seat.mic = false;
@@ -234,6 +246,35 @@ export class Rooms {
     const res = playAction(room, seat, action, rng);
     if (res.ok) this.touch(room);
     return res;
+  }
+
+  /**
+   * Bật cờ chơi hộ cho ghế vắng mặt lâu hơn `afterMs`, và nếu ván đang chờ một ghế như thế
+   * thì đi hộ một nước. Trả true khi phòng có gì đổi (để lớp socket gửi trạng thái mới).
+   */
+  autoPlay(room: Room, rng: Rng, afterMs: number = AUTOPLAY_AFTER_MS): boolean {
+    if (room.phase !== 'playing' || !room.game) return false;
+    const now = this.now();
+    let changed = false;
+    for (const seat of room.seats) {
+      const away =
+        seat.socketId === null && seat.awaySince !== null && now - seat.awaySince >= afterMs;
+      if (seat.auto !== away) {
+        seat.auto = away;
+        changed = true;
+      }
+    }
+    const pending = room.game.pending;
+    const waitingId = 'playerId' in pending ? pending.playerId : null;
+    const waiting = waitingId === null ? undefined : room.seats.find((s) => s.id === waitingId);
+    if (waiting?.auto && playForSeat(room, waiting, rng).ok) changed = true;
+    if (changed) this.touch(room);
+    return changed;
+  }
+
+  /** Các phòng đang trong ván (để đi hộ từng phòng một). */
+  playing(): Room[] {
+    return [...this.byCode.values()].filter((r) => r.phase === 'playing');
   }
 
   /** Xóa phòng không ai mở trang trong `idleMs`. Trả các phòng đã xóa. */

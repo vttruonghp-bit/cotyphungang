@@ -49,7 +49,12 @@ const channel = (code: string) => `phong:${code}`;
 /** Một lần xử lý: các phòng đã đổi sẽ được gửi trạng thái sau khi trả lời. */
 type Handler = (socket: IoSocket, payload: unknown, changed: Set<Room>) => Result<unknown>;
 
-export function attachRoomHandlers(io: IoServer, rooms: Rooms, rng: Rng): void {
+/** Những gì lớp ngoài (ví dụ vòng chơi hộ) cần gọi sau khi tự đổi phòng. */
+export interface RoomChannel {
+  broadcast(room: Room): void;
+}
+
+export function attachRoomHandlers(io: IoServer, rooms: Rooms, rng: Rng): RoomChannel {
   const socketOf = (id: string | null) => (id === null ? undefined : io.sockets.sockets.get(id));
 
   function broadcast(room: Room) {
@@ -293,4 +298,6 @@ export function attachRoomHandlers(io: IoServer, rooms: Rooms, rng: Rng): void {
       broadcast(at.room);
     });
   });
+
+  return { broadcast };
 }
