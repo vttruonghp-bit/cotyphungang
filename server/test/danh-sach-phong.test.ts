@@ -9,8 +9,8 @@ describe('dọn phòng bỏ không', () => {
   it('xóa phòng không ai mở trang sau 2 giờ, giữ phòng còn người', () => {
     let now = 1_000_000;
     const rooms = new Rooms(() => now);
-    const empty = rooms.create(2, profile('A', 0, 0));
-    const busy = rooms.create(2, profile('B', 0, 0));
+    const empty = rooms.create(profile('A', 0, 0));
+    const busy = rooms.create(profile('B', 0, 0));
     rooms.setSocket(busy.room, busy.seat, 'socket-1');
 
     now += ROOM_IDLE_MS - 1;
@@ -33,8 +33,8 @@ describe('dọn phòng bỏ không', () => {
 describe('trạng thái gửi cho trình duyệt', () => {
   it('không có vé, socket hay thứ tự bộ thẻ', () => {
     const rooms = new Rooms();
-    const { room, seat } = rooms.create(2, profile('Chủ', 0, 0));
-    const guest = rooms.addSeat(room, profile('Khách', 1, 1));
+    const { room, seat } = rooms.create(profile('Chủ', 0, 0));
+    const guest = rooms.addSeat(room, profile('Khách', 1, 1), 'player');
     rooms.setSocket(room, seat, 'socket-bí-mật');
     expect(rooms.start(room, seat, seededRng(3))).toEqual({ ok: true, value: undefined });
 
@@ -58,6 +58,9 @@ describe('trạng thái gửi cho trình duyệt', () => {
         isHost: true,
         voice: false,
         mic: false,
+        role: 'player',
+        bot: false,
+        local: false,
       },
       {
         id: guest.id,
@@ -68,6 +71,9 @@ describe('trạng thái gửi cho trình duyệt', () => {
         isHost: false,
         voice: false,
         mic: false,
+        role: 'player',
+        bot: false,
+        local: false,
       },
     ]);
   });
@@ -77,7 +83,7 @@ describe('trạng thái gửi cho trình duyệt', () => {
     const codes = new Set<string>();
     const tokens = new Set<string>();
     for (let i = 0; i < 200; i++) {
-      const { room, seat } = rooms.create(2, profile('A', 0, 0));
+      const { room, seat } = rooms.create(profile('A', 0, 0));
       codes.add(room.code);
       tokens.add(seat.token);
     }

@@ -26,6 +26,8 @@ export interface AppOptions {
   /** Phòng không ai mở bao lâu thì xóa, và bao lâu kiểm tra một lần. */
   idleMs?: number;
   sweepEveryMs?: number;
+  /** Nhân thời gian chờ của bot giữa hai thao tác (test dùng 0). */
+  botSpeed?: number;
 }
 
 export interface AppServer {
@@ -59,7 +61,7 @@ export function createAppServer(options: AppOptions = {}): AppServer {
   });
 
   const rooms = new Rooms();
-  attachRoomHandlers(io, rooms, options.rng ?? cryptoRng);
+  const handlers = attachRoomHandlers(io, rooms, options.rng ?? cryptoRng, options.botSpeed);
 
   const idleMs = options.idleMs ?? ROOM_IDLE_MS;
   const sweeper = setInterval(() => rooms.sweep(idleMs), options.sweepEveryMs ?? 10 * 60 * 1000);
@@ -72,6 +74,7 @@ export function createAppServer(options: AppOptions = {}): AppServer {
     close: () =>
       new Promise((resolve) => {
         clearInterval(sweeper);
+        handlers.stop();
         // io.close() đóng luôn httpServer; lỗi "chưa mở cổng" thì bỏ qua.
         void io.close(() => resolve());
       }),

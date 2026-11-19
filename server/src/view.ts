@@ -27,20 +27,25 @@ export function publicGame(game: GameState): PublicGameState {
 }
 
 export function roomView(room: Room): RoomView {
+  const host = room.seats.find((s) => s.id === room.hostId);
   const seats: Seat[] = room.seats.map((s) => ({
     id: s.id,
     name: s.name,
     color: s.color,
     icon: s.icon,
-    connected: s.socketId !== null,
+    // Bot luôn có mặt; người chơi chung máy chủ phòng có mặt khi chủ phòng mở trang.
+    connected: s.bot || (s.local ? host?.socketId != null : s.socketId !== null),
     isHost: s.id === room.hostId,
     voice: s.voice,
     mic: s.mic,
+    role: s.role,
+    bot: s.bot,
+    local: s.local,
   }));
   return {
     code: room.code,
+    kind: room.kind,
     phase: room.phase,
-    capacity: room.capacity,
     seats,
     game: room.game && publicGame(room.game),
     previous: room.previous && publicGame(room.previous),

@@ -26,7 +26,7 @@ async function room() {
     p.socket.on('chat:message', (m) => inbox.get(p)!.push(m));
     p.socket.on('voice:signal', (m) => signals.get(p)!.push(m));
   }
-  const t = await a.create(3, profile('An', 0, 0));
+  const t = await a.create(profile('An', 0, 0));
   await b.join(t.code, profile('Bình', 1, 1));
   await c.join(t.code, profile('Chi', 2, 2));
   return { a, b, c, code: t.code, inbox, signals };

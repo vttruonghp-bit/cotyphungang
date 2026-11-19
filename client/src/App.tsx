@@ -113,7 +113,16 @@ export function App() {
 
   let page: ReactNode;
   const { ticket, room, view } = online;
+  // Rời phòng hẳn (khách xem, chủ phòng chơi chung một máy); mất mạng thì chỉ bỏ vé trên máy này.
+  const leaveRoom = () => {
+    void online.leave().then((err) => {
+      if (err) online.forget();
+    });
+  };
   if (ticket) {
+    const seat = room?.seats.find((s) => s.id === ticket.playerId);
+    const spectator = seat?.role === 'spectator';
+    const controlsAll = room?.kind === 'local' && seat?.isHost === true;
     if (!room || (room.phase !== 'lobby' && !view)) {
       page = <ResumeScreen code={ticket.code} status={online.status} onAbandon={online.abandon} />;
     } else if (room.phase === 'lobby' || !view) {
@@ -122,7 +131,9 @@ export function App() {
           room={room}
           meId={ticket.playerId}
           onProfile={online.profile}
-          onCapacity={online.capacity}
+          onRole={online.role}
+          onAddBot={online.addBot}
+          onRemoveBot={online.removeBot}
           onStart={online.start}
           onLeave={online.leave}
         />
@@ -132,7 +143,14 @@ export function App() {
         <GameScreen
           view={view}
           dispatch={online.action}
-          onNewGame={online.forget}
+          onNewGame={spectator || controlsAll ? leaveRoom : online.forget}
+          onHome={spectator || controlsAll ? leaveRoom : undefined}
+          homeLabel={spectator ? '‹ Rời phòng' : '‹ Đóng phòng'}
+          homeConfirm={
+            controlsAll
+              ? 'Bấm lần nữa để đóng phòng (ván này sẽ mất, khách xem phải ra)'
+              : undefined
+          }
           mode={{
             kind: 'online',
             meId: ticket.playerId,
@@ -141,6 +159,9 @@ export function App() {
             chat: online.chat,
             sendChat: online.sendChat,
             voice,
+            code: room.code,
+            spectator,
+            controlsAll,
           }}
         />
       );
@@ -155,7 +176,12 @@ export function App() {
         onHome={home}
       />
     ) : (
-      <SetupScreen onStart={hotSeat.start} onStartAi={startAiGame} onBack={home} />
+      <SetupScreen
+        onStart={hotSeat.start}
+        onStartAi={startAiGame}
+        onStartShared={online.createLocal}
+        onBack={home}
+      />
     );
   } else {
     page = (

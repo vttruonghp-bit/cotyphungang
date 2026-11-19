@@ -1,6 +1,4 @@
 import {
-  MAX_PLAYERS,
-  MIN_PLAYERS,
   PLAYER_COLOR_COUNT,
   PLAYER_ICON_COUNT,
   PLAYER_NAME_MAX,
@@ -92,13 +90,3 @@ export function loadProfile(): Profile {
 }
 
 export const saveProfile = (p: Profile) => write(PROFILE_KEY, p);
-
-const CAPACITY_KEY = 'cotiphu.capacity.v1';
-
-/** Số người chọn lần trước khi tạo phòng (mặc định 4). */
-export function loadCapacity(): number {
-  const n = read(CAPACITY_KEY);
-  return typeof n === 'number' && n >= MIN_PLAYERS && n <= MAX_PLAYERS ? n : 4;
-}
-
-export const saveCapacity = (n: number) => write(CAPACITY_KEY, n);

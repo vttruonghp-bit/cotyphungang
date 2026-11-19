@@ -19,6 +19,12 @@ export type PlayMode =
       chat: readonly ChatMessage[];
       sendChat(text: string): Promise<string | null>;
       voice: Voice;
+      /** Mã phòng, để mời thêm người vào xem. */
+      code: string;
+      /** Khách quan sát: chỉ xem, chat và nói chuyện, không có lượt. */
+      spectator: boolean;
+      /** Chủ phòng chơi chung một máy: máy này đi cho mọi người chơi (như chơi chung một máy). */
+      controlsAll: boolean;
     };
 
 export const HOT_SEAT: PlayMode = { kind: 'hotseat' };
@@ -27,8 +33,8 @@ export const PlayModeContext = createContext<PlayMode>(HOT_SEAT);
 
 export const usePlayMode = (): PlayMode => useContext(PlayModeContext);
 
-/** Người cầm máy này khi chơi online; null khi chơi chung một máy. */
+/** Người cầm máy này khi chơi online; null khi chơi chung một máy (kể cả có khách xem). */
 export function useMeId(): string | null {
   const mode = usePlayMode();
-  return mode.kind === 'online' ? mode.meId : null;
+  return mode.kind === 'online' && !mode.controlsAll ? mode.meId : null;
 }

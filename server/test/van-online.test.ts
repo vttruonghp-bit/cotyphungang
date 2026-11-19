@@ -17,7 +17,7 @@ afterEach(async () => {
 /** Phòng `n` người đã vào ván. `turn` = các điện thoại theo thứ tự đi, bắt đầu từ người đi trước. */
 async function playing(n: number) {
   const host = await server.phone();
-  const { code } = await host.create(n, profile('Chủ', 0, 0));
+  const { code } = await host.create(profile('Chủ', 0, 0));
   const phones: Phone[] = [host];
   for (let i = 1; i < n; i++) {
     const p = await server.phone();

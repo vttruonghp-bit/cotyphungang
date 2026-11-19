@@ -49,7 +49,12 @@ export function PlayerCards({ game, meId, seats }: PlayerCardsProps) {
                   ⚠
                 </span>
               )}
-              {seat && seat.connected && (
+              {seat?.bot && (
+                <span className="pcard-mic" title="Máy chủ tự chơi" aria-label="Bot">
+                  🤖
+                </span>
+              )}
+              {seat && seat.connected && !seat.bot && !seat.local && (
                 <span
                   className="pcard-mic"
                   title={seat.mic ? 'Đang bật mic' : 'Đang tắt mic'}
@@ -78,6 +83,8 @@ export function PlayerCards({ game, meId, seats }: PlayerCardsProps) {
 
 interface ChatPanelProps {
   game: GameState;
+  /** Ghế trong phòng: tên, màu của cả khách quan sát. */
+  seats: readonly Seat[];
   meId: string;
   messages: readonly ChatMessage[];
   send(text: string): Promise<string | null>;
@@ -88,7 +95,7 @@ interface ChatPanelProps {
 const clock = (at: number) =>
   new Date(at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-export function ChatPanel({ game, meId, messages, send, focusKey }: ChatPanelProps) {
+export function ChatPanel({ game, seats, meId, messages, send, focusKey }: ChatPanelProps) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -125,10 +132,17 @@ export function ChatPanel({ game, meId, messages, send, focusKey }: ChatPanelPro
         {messages.length === 0 && <li className="chat-empty">Chưa có tin nhắn nào.</li>}
         {messages.map((m) => {
           const p = game.players.find((x) => x.id === m.from);
-          const color = p ? colorOf(p.color).main : undefined;
+          const seat = seats.find((x) => x.id === m.from);
+          const who = p ?? seat;
+          const color = who ? colorOf(who.color).main : undefined;
+          const watcher = !p && seat?.role === 'spectator';
           return (
             <li key={m.id} className={m.from === meId ? 'chat-msg is-me' : 'chat-msg'}>
-              <b style={color ? { color } : undefined}>{p?.name ?? 'Ai đó'}:</b> {m.text}
+              <b style={color ? { color } : undefined}>
+                {who?.name ?? 'Ai đó'}
+                {watcher ? ' (xem)' : ''}:
+              </b>{' '}
+              {m.text}
               <time className="chat-time">{clock(m.at)}</time>
             </li>
           );
