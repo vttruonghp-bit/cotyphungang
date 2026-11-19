@@ -12,8 +12,10 @@ import {
   isRecord,
   parseAction,
   parseCapacity,
+  parseChatText,
   parseCode,
   parseProfile,
+  parseSignal,
   parseTicket,
 } from './validate';
 import { roomView } from './view';
@@ -86,6 +88,8 @@ export function attachRoomHandlers(io: IoServer, rooms: Rooms, rng: Rng): void {
     socket.data.seat = { code: room.code, playerId: seat.id };
     socket.data.replaced = false;
     void socket.join(channel(room.code));
+    // Tin nhắn gần đây cho trang vừa vào (hoặc vào lại).
+    socket.emit('chat:history', room.chat);
   }
 
   function closeRoom(room: Room, reason: string, by: IoSocket) {
@@ -208,6 +212,57 @@ export function attachRoomHandlers(io: IoServer, rooms: Rooms, rng: Rng): void {
       const res = rooms.act(at.room, at.seat, action.value, rng);
       if (res.ok) changed.add(at.room);
       return res;
+    },
+
+    'chat:send': (socket, req) => {
+      const at = seated(socket);
+      if (!at) return notSeated(socket);
+      const text = parseChatText(req);
+      if (!text.ok) return text;
+      const res = rooms.chat(at.room, at.seat, text.value);
+      if (!res.ok) return res;
+      io.to(channel(at.room.code)).emit('chat:message', res.value);
+      return ok(undefined);
+    },
+
+    'voice:join': (socket, _req, changed) => {
+      const at = seated(socket);
+      if (!at) return notSeated(socket);
+      rooms.setVoice(at.room, at.seat, true);
+      changed.add(at.room);
+      // Máy vào sau gọi tới những máy đã ở trong kênh, nên hai máy không gọi nhau cùng lúc.
+      const peers = at.room.seats.filter((s) => s !== at.seat && s.voice && s.socketId !== null);
+      return ok(peers.map((s) => s.id));
+    },
+
+    'voice:leave': (socket, _req, changed) => {
+      const at = seated(socket);
+      if (!at) return ok(undefined);
+      rooms.setVoice(at.room, at.seat, false);
+      changed.add(at.room);
+      return ok(undefined);
+    },
+
+    'voice:mic': (socket, req, changed) => {
+      const at = seated(socket);
+      if (!at) return notSeated(socket);
+      if (typeof req !== 'boolean') return fail('Yêu cầu không hợp lệ');
+      const res = rooms.setMic(at.room, at.seat, req);
+      if (res.ok) changed.add(at.room);
+      return res;
+    },
+
+    'voice:signal': (socket, req) => {
+      const at = seated(socket);
+      if (!at) return notSeated(socket);
+      if (!at.seat.voice) return fail('Chưa vào kênh nói chuyện');
+      const msg = parseSignal(req);
+      if (!msg.ok) return msg;
+      const target = at.room.seats.find((s) => s.id === msg.value.to);
+      const to = target?.voice ? socketOf(target.socketId) : undefined;
+      if (!to) return fail('Người này không ở trong kênh nói chuyện');
+      to.emit('voice:signal', { from: at.seat.id, signal: msg.value.signal });
+      return ok(undefined);
     },
   };
 

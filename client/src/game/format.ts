@@ -3,6 +3,8 @@ import {
   HOTEL_LEVEL,
   STATION_RENTS,
   UTILITY_MULTIPLIERS,
+  downgradeRefund,
+  sellValue,
   type GameState,
   type PlayerState,
   type Tile,
@@ -75,6 +77,19 @@ export const playerById = (s: GameState, id: string | null | undefined): PlayerS
 /** Số ô (đất, ga, nhà máy) người chơi đang sở hữu. */
 export const assetCount = (s: GameState, id: string): number =>
   s.tiles.filter((t) => t?.owner === id).length;
+
+/** Tiền mặt nếu bán hết: hạ hết nhà / khách sạn rồi bán từng ô cho ngân hàng (ô đang cắm bán 5%). */
+export function liquidationValue(s: GameState, id: string): number {
+  const p = s.players.find((x) => x.id === id);
+  let total = p?.cash ?? 0;
+  s.tiles.forEach((t, i) => {
+    const tile = BOARD[i]!;
+    if (!t || t.owner !== id || !isOwnableTile(tile)) return;
+    if (tile.kind === 'property') total += t.level * downgradeRefund(tile.upgradeCost);
+    total += sellValue(tile.price, t.mortgaged);
+  });
+  return total;
+}
 
 export const isOwnableTile = (t: Tile): t is Extract<Tile, { price: number }> =>
   t.kind === 'property' || t.kind === 'station' || t.kind === 'utility';

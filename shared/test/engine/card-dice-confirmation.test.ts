@@ -1,35 +1,54 @@
 import { describe, expect, it } from 'vitest';
 import { act, cash, newGame, own, roll, setPlayer, topCard, reject } from './helpers';
 
+/** Thẻ không cần xúc xắc dừng ở bước Xác nhận; thẻ cần xúc xắc đi thẳng vào bước Sục. */
 const drawPick = (s: ReturnType<typeof newGame>) => {
-  expect(s.pending.type).toBe('drawCard');
-  return act(s, { type: 'drawCard', playerId: (s.pending as { playerId: string }).playerId });
+  if (s.pending.type !== 'drawCard') return s;
+  return act(s, { type: 'drawCard', playerId: s.pending.playerId });
 };
 
-describe('Card is drawn only after the player picks it from the fan', () => {
-  it('landing on Cơ Hội waits without drawing or applying anything', () => {
+describe('Card is shown on landing and applied only after Xác nhận', () => {
+  it('landing on Cơ Hội reveals the card but changes nothing until confirmed', () => {
+    let s = newGame();
+    s.stagedDiceCards = true;
+    topCard(s, 'chance-go');
+    const before = s.decks.chance.length;
+    s = roll(s, 3, 4);
+    expect(s.pending).toMatchObject({
+      type: 'drawCard',
+      playerId: 'a',
+      deck: 'chance',
+      cardId: 'chance-go',
+    });
+    expect(s.decks.chance.length).toBe(before - 1);
+    expect(s.events.some((e) => e.type === 'card')).toBe(false);
+    expect(s.players[0]!.position).toBe(7);
+    expect(cash(s, 'a')).toBe(500);
+    expect(reject(s, { type: 'drawCard', playerId: 'b' })).toBe('Chưa tới lượt bạn');
+    s = act(s, { type: 'drawCard', playerId: 'a' });
+    expect(s.decks.chance.length).toBe(before - 1);
+    expect(s.events.some((e) => e.type === 'card' && e.cardId === 'chance-go')).toBe(true);
+    expect(s.players[0]!.position).toBe(0);
+  });
+
+  it('a dice card goes straight to Sục, without a separate confirm', () => {
     let s = newGame();
     s.stagedDiceCards = true;
     topCard(s, 'chance-lottery');
     const before = s.decks.chance.length;
     s = roll(s, 3, 4);
-    expect(s.pending).toMatchObject({ type: 'drawCard', playerId: 'a', deck: 'chance' });
-    expect(s.decks.chance.length).toBe(before);
-    expect(s.events.some((e) => e.type === 'card')).toBe(false);
-    expect(cash(s, 'a')).toBe(500);
-    expect(reject(s, { type: 'drawCard', playerId: 'b' })).toBe('Chưa tới lượt bạn');
-    s = act(s, { type: 'drawCard', playerId: 'a' });
+    expect(s.pending).toMatchObject({ type: 'cardDice', cardId: 'chance-lottery', dice: null });
     expect(s.decks.chance.length).toBe(before - 1);
-    expect(s.pending).toMatchObject({ type: 'cardDice', cardId: 'chance-lottery' });
+    expect(cash(s, 'a')).toBe(500);
   });
 
-  it('timeout draws the card for the player', () => {
+  it('timeout confirms the revealed card for the player', () => {
     let s = newGame();
     s.stagedDiceCards = true;
-    topCard(s, 'chance-lottery');
+    topCard(s, 'chance-go');
     s = roll(s, 3, 4);
     s = act(s, { type: 'timeout' });
-    expect(s.pending).toMatchObject({ type: 'cardDice', cardId: 'chance-lottery' });
+    expect(s.events.some((e) => e.type === 'card' && e.cardId === 'chance-go')).toBe(true);
   });
 });
 

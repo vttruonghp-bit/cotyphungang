@@ -1,0 +1,312 @@
+/*
+ * Cột trái màn ngang: cột nút (Lịch sử, Cơ hội / Khí vận, Đầu hàng, Đen VL, Chat, mic),
+ * khu nội dung (chat, lịch sử hoặc danh sách thẻ) và các ô người chơi nhỏ bên dưới.
+ */
+.land .player-column.side-layout {
+  z-index: 18;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  padding: 4px;
+  min-height: 0;
+}
+
+.side-buttons {
+  display: flex;
+  flex: 0 0 clamp(72px, 19%, 120px);
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+
+.side-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(28px, 9cqh, 44px);
+  margin: 0;
+  padding: 3px 4px;
+  border: 1px solid #e4c77a;
+  border-radius: 8px;
+  background: #14243d;
+  color: #fff;
+  font: inherit;
+  font-size: clamp(9.5px, 2.8cqh, 13px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+.side-btn[aria-pressed='true'] {
+  background: #e4c77a;
+  color: #14243d;
+}
+.side-btn.side-surrender {
+  background: #6b1a24;
+}
+.side-btn.side-denvl {
+  background: #2e1b55;
+}
+.side-btn.side-chat {
+  background: #0f4c5c;
+}
+.side-btn.side-chat[aria-pressed='true'] {
+  background: #e4c77a;
+  color: #14243d;
+}
+.side-btn.side-mic {
+  background: #334155;
+}
+.side-btn.side-mic.is-on {
+  border-color: #86efac;
+  background: #15803d;
+  box-shadow: 0 0 0 2px rgb(134 239 172 / 45%);
+}
+.side-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.side-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 9px;
+  background: #e11d48;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.side-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.side-panel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid #e4c77a;
+  border-radius: 10px;
+  background: rgb(16 27 45 / 92%);
+  color: #fff;
+}
+
+/* Danh sách thẻ và lịch sử nằm gọn trong khu nội dung (không còn phủ lên cột người chơi). */
+.side-panel .card-list-panel {
+  position: static;
+  inset: auto;
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.land .side-panel .log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  border: 0;
+  background: transparent;
+  color: #fff;
+}
+.land .side-panel .log-head {
+  flex: none;
+}
+.land .side-panel .log li {
+  gap: 3px;
+  padding: 3px 2px;
+  font-size: 10px;
+}
+.land .side-panel .log-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Chat */
+.chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.chat-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  margin: 0;
+  padding: 6px 8px;
+  overflow-y: auto;
+  list-style: none;
+  font-size: clamp(11px, 3.1cqh, 14px);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.chat-list > :first-child {
+  margin-top: auto;
+}
+.chat-empty {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+}
+.chat-msg b {
+  font-weight: 900;
+  filter: brightness(1.45) saturate(1.1);
+}
+.chat-msg.is-me {
+  color: #fef3c7;
+}
+.chat-time {
+  margin-left: 5px;
+  color: #94a3b8;
+  font-size: 0.78em;
+}
+.chat-error {
+  margin: 0 6px 4px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: #7f1d1d;
+  font-size: 11px;
+}
+.chat-form {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  padding: 4px;
+  border-top: 1px solid rgb(228 199 122 / 60%);
+}
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  height: clamp(28px, 8.5cqh, 38px);
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid #94a3b8;
+  border-radius: 999px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+  font-size: clamp(12px, 3.3cqh, 15px);
+}
+.chat-send {
+  flex: none;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #e4c77a;
+  color: #14243d;
+  font: inherit;
+  font-size: clamp(11px, 3.1cqh, 14px);
+  font-weight: 900;
+  cursor: pointer;
+}
+.chat-send:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Ô người chơi: 3 dòng (tên; tiền mặt / tiền nếu bán hết; số đất, ga, nhà máy). */
+.pcards {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(var(--pcard-cols, 3), minmax(0, 1fr));
+  gap: 4px;
+}
+.pcard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 2px solid var(--pc);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--pc) 22%, white);
+  color: #172033;
+  font-size: clamp(10px, 2.9cqh, 13px);
+  line-height: 1.25;
+}
+.pcard.is-turn {
+  background: color-mix(in srgb, var(--pc) 42%, white);
+  box-shadow:
+    0 0 10px 2px color-mix(in srgb, var(--pc) 70%, transparent),
+    inset 0 0 0 1px rgb(255 255 255 / 70%);
+}
+.pcard.is-out {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+.pcard-name {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.pcard-name-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--pc) 75%, #111);
+  font-size: 1.08em;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pcard-mic,
+.pcard-off {
+  flex: none;
+  font-size: 0.95em;
+}
+.pcard-money {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pcard-money b {
+  font-weight: 900;
+}
+.pcard-money span {
+  color: #475569;
+  font-weight: 700;
+}
+.pcard-assets {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Mọi cỡ màn: bỏ cột lịch sử bên phải (đã có nút Lịch sử), cột trái lấy phần còn lại cạnh bàn cờ. */
+.land.game-screen {
+  --players: max(168px, calc(100cqw - 98cqh - 8px));
+  --side: 0px;
+}
+.land.game-screen .land-side {
+  display: none;
+}
+.land.game-screen .land-stage {
+  --mobile-board-size: min(100cqw, 98cqh);
+  --board-s: var(--mobile-board-size);
+}

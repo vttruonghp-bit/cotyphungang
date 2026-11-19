@@ -4,6 +4,7 @@
  */
 import {
   BOARD_SIZE,
+  CHAT_TEXT_MAX,
   MAX_PLAYERS,
   MIN_PLAYERS,
   PLAYER_COLOR_COUNT,
@@ -15,6 +16,7 @@ import {
   type ManageOp,
   type Profile,
   type SeatTicket,
+  type VoiceSignal,
 } from '@cotiphu/shared';
 import { fail, ok, type Result } from './result';
 
@@ -40,6 +42,44 @@ export function parseName(x: unknown): Result<string> {
   if (length === 0) return fail('Hãy nhập tên');
   if (length > PLAYER_NAME_MAX) return fail(`Tên dài tối đa ${PLAYER_NAME_MAX} kí tự`);
   return ok(name);
+}
+
+/** Tin nhắn: gộp khoảng trắng, bỏ kí tự điều khiển, không rỗng, tối đa CHAT_TEXT_MAX kí tự. */
+export function parseChatText(x: unknown): Result<string> {
+  if (typeof x !== 'string' || x.length > CHAT_TEXT_MAX * 8) return fail('Tin nhắn không hợp lệ');
+  const text = x
+    .normalize('NFC')
+    .replace(/\s+/gu, ' ')
+    .replace(/[\p{Cc}\p{Cf}]/gu, '')
+    .trim();
+  const length = [...text].length;
+  if (length === 0) return fail('Tin nhắn trống');
+  if (length > CHAT_TEXT_MAX) return fail(`Tin nhắn dài tối đa ${CHAT_TEXT_MAX} kí tự`);
+  return ok(text);
+}
+
+const SDP_MAX = 20_000;
+const isShortText = (x: unknown, max: number): x is string =>
+  typeof x === 'string' && x.length <= max;
+
+/** Tín hiệu WebRTC gửi tới ghế `to`: chỉ nhận đúng các trường cần, giới hạn độ dài. */
+export function parseSignal(x: unknown): Result<{ to: string; signal: VoiceSignal }> {
+  const bad = fail('Tín hiệu không hợp lệ');
+  if (!isRecord(x) || !isRecord(x.signal)) return bad;
+  const { to, signal } = x;
+  if (typeof to !== 'string' || to.length === 0 || to.length > 32) return bad;
+  if (signal.kind === 'offer' || signal.kind === 'answer') {
+    if (!isShortText(signal.sdp, SDP_MAX) || signal.sdp.length === 0) return bad;
+    return ok({ to, signal: { kind: signal.kind, sdp: signal.sdp } });
+  }
+  if (signal.kind === 'ice') {
+    const { candidate, sdpMid, sdpMLineIndex } = signal;
+    if (!isShortText(candidate, 2000)) return bad;
+    if (sdpMid !== null && !isShortText(sdpMid, 64)) return bad;
+    if (sdpMLineIndex !== null && !isInt(sdpMLineIndex, 0, 64)) return bad;
+    return ok({ to, signal: { kind: 'ice', candidate, sdpMid, sdpMLineIndex } });
+  }
+  return bad;
 }
 
 export function parseProfile(x: unknown): Result<Profile> {

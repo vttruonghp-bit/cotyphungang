@@ -6,6 +6,7 @@ import type { NewPlayer } from '@cotiphu/shared';
 import { ConnectionBanner, ResumeScreen } from './online/Connection';
 import { codeFromUrl, dropCodeFromUrl } from './online/storage';
 import { useOnline } from './online/useOnline';
+import { useVoice } from './online/useVoice';
 import { GameScreen } from './screens/GameScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { LobbyScreen } from './screens/LobbyScreen';
@@ -17,6 +18,11 @@ type Local = 'home' | 'hotseat';
 export function App() {
   const hotSeat = useHotSeat();
   const online = useOnline();
+  const voice = useVoice(
+    online.status === 'online' && online.room !== null,
+    online.ticket,
+    online.room?.seats ?? null,
+  );
   const { load } = hotSeat;
   const aiPending = hotSeat.current?.game.pending;
   const aiGame = hotSeat.current?.game;
@@ -132,6 +138,9 @@ export function App() {
             meId: ticket.playerId,
             seats: room.seats,
             connected: online.status === 'online',
+            chat: online.chat,
+            sendChat: online.sendChat,
+            voice,
           }}
         />
       );

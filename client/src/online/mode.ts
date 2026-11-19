@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
-import type { Seat } from '@cotiphu/shared';
+import type { ChatMessage, Seat } from '@cotiphu/shared';
+import type { Voice } from './useVoice';
 
 /**
  * Cách chơi của màn ván: chung một máy (người cầm máy là người ván đang chờ), hoặc online
@@ -14,6 +15,10 @@ export type PlayMode =
       seats: readonly Seat[];
       /** Máy này đang nối với máy chủ. */
       connected: boolean;
+      /** Tin nhắn trong phòng, cũ trước mới sau. */
+      chat: readonly ChatMessage[];
+      sendChat(text: string): Promise<string | null>;
+      voice: Voice;
     };
 
 export const HOT_SEAT: PlayMode = { kind: 'hotseat' };

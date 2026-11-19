@@ -8,6 +8,7 @@ import {
   type PlayerState,
   type Tile,
 } from '@cotiphu/shared';
+import { playStepSound } from '../audio/gameAudio';
 import { SHORT_NAMES, playerById } from '../game/format';
 import { colorOf } from '../theme';
 import { TokenIcon } from './TokenIcon';
@@ -108,6 +109,8 @@ function useWalk(
     const destination = (walk.from + walk.steps) % BOARD_SIZE;
     onWalkChange?.(walking, destination);
     if (!walking) return;
+    // Quân vừa nhảy sang một ô: phát tiếng bước nhảy.
+    if (step >= 0) playStepSound();
     const delay =
       step === -2
         ? ROLL_MS

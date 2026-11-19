@@ -9,6 +9,10 @@ import type { Action, GameState } from './engine/types';
 export const ROOM_CODE_LENGTH = 6;
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const PLAYER_NAME_MAX = 12;
+/** Tin nhắn dài nhất (kí tự). */
+export const CHAT_TEXT_MAX = 200;
+/** Máy chủ giữ chừng này tin gần nhất của mỗi phòng (để người vào lại xem tiếp). */
+export const CHAT_HISTORY_MAX = 60;
 
 /** Một ghế trong phòng. `id` trùng với mã người chơi trong GameState khi ván bắt đầu. */
 export interface Seat {
@@ -19,7 +23,26 @@ export interface Seat {
   /** Người này đang mở trang (có kết nối). */
   connected: boolean;
   isHost: boolean;
+  /** Đang nối kênh nói chuyện (nghe được người khác). */
+  voice: boolean;
+  /** Đang bật mic. */
+  mic: boolean;
 }
+
+/** Một tin nhắn trong phòng. `id` tăng dần trong phòng. */
+export interface ChatMessage {
+  id: number;
+  /** Mã ghế người gửi. */
+  from: string;
+  text: string;
+  /** Thời điểm máy chủ nhận (ms). */
+  at: number;
+}
+
+/** Tín hiệu WebRTC chuyển giữa hai máy qua máy chủ (máy chủ chỉ chuyển, không đọc). */
+export type VoiceSignal =
+  | { kind: 'offer' | 'answer'; sdp: string }
+  | { kind: 'ice'; candidate: string; sdpMid: string | null; sdpMLineIndex: number | null };
 
 export type RoomPhase = 'lobby' | 'playing' | 'ended';
 
@@ -86,6 +109,16 @@ export interface ClientToServerEvents {
   'room:leave': (ack: (res: Ack) => void) => void;
   /** Gửi một thao tác trong ván; `playerId` phải là của chính ghế này, không được gửi 'timeout'. */
   'game:action': (action: Action, ack: (res: Ack) => void) => void;
+  /** Gửi một tin nhắn cho cả phòng. */
+  'chat:send': (text: string, ack: (res: Ack) => void) => void;
+  /** Vào kênh nói chuyện; trả về những ghế đang ở trong kênh để máy này gọi tới. */
+  'voice:join': (ack: (res: Ack<string[]>) => void) => void;
+  /** Rời kênh nói chuyện. */
+  'voice:leave': (ack: (res: Ack) => void) => void;
+  /** Báo đã bật / tắt mic (để mọi người thấy 🔊 / 🔇). */
+  'voice:mic': (on: boolean, ack: (res: Ack) => void) => void;
+  /** Chuyển tín hiệu WebRTC tới một ghế khác trong kênh. */
+  'voice:signal': (req: { to: string; signal: VoiceSignal }, ack: (res: Ack) => void) => void;
 }
 
 export interface ServerToClientEvents {
@@ -93,4 +126,10 @@ export interface ServerToClientEvents {
   'room:state': (room: RoomView) => void;
   /** Phòng bị đóng (ví dụ chủ phòng rời phòng chờ). */
   'room:closed': (reason: string) => void;
+  /** Toàn bộ tin gần đây (gửi ngay khi vào hoặc vào lại phòng). */
+  'chat:history': (messages: ChatMessage[]) => void;
+  /** Một tin mới. */
+  'chat:message': (message: ChatMessage) => void;
+  /** Tín hiệu WebRTC từ một ghế khác. */
+  'voice:signal': (msg: { from: string; signal: VoiceSignal }) => void;
 }
