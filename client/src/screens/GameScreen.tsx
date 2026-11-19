@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { playDiceSound, setGameSoundEnabled } from '../audio/gameAudio';
+import { useEventSounds } from '../audio/eventSounds';
 import {
   BOARD,
   gridPosition,
@@ -166,6 +167,8 @@ export function GameScreen({
     setRollSoundOn(next);
     setGameSoundEnabled(next);
   };
+  // Tiếng tiền rơi khi mua đất / xây nhà, câu nói khi vào đất người khác, ô thuế, vào tù.
+  useEventSounds(game, previous, actions);
   // Includes AI and remote players; only react to a *new* roll, not other actions.
   useEffect(() => {
     if (!previous) return;
