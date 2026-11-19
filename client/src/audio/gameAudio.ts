@@ -12,15 +12,33 @@ const DICE_VOLUME = 1;
 const STEP_VOLUME = 0.8;
 /** Mỗi bước 0,2 giây mà tiếng dài 0,6 giây: vài bản phát chồng lên nhau. */
 const STEP_POOL = 4;
+/** Câu thoại (không phải tiếng mic): to hơn nhạc nền để nghe rõ lời. */
+const SPEECH_VOLUME = 1;
+
+/** Câu thoại theo tình huống trong ván. */
+export type SpeechLine = 'jail' | 'rent' | 'tax';
+
+const SPEECH_SRC: Record<SpeechLine, string> = {
+  /** Bị vào tù: "Vào tù là rõ". */
+  jail: '/vao-tu-la-ro.mp3',
+  /** Phải trả tiền thuê cho người khác: "Ôi thôi chết". */
+  rent: '/oi-thoi-chet.mp3',
+  /** Dừng ở ô thuế, phải bấm "Là nó". */
+  tax: '/la-no.mp3',
+};
 
 let background: HTMLAudioElement | null = null;
 let dice: HTMLAudioElement | null = null;
 const steps: HTMLAudioElement[] = [];
+const speeches = new Map<SpeechLine, HTMLAudioElement>();
 let nextStep = 0;
 let active = false;
 let voiceDucked = false;
 
 const baseVolume = (): number => (voiceDucked ? VOICE_VOLUME : BACKGROUND_VOLUME);
+
+const playing = (sound: HTMLAudioElement | null): boolean =>
+  sound !== null && !sound.paused && !sound.ended;
 
 function getBackground(): HTMLAudioElement {
   if (!background) {
@@ -44,8 +62,24 @@ function getDice(): HTMLAudioElement {
   return dice;
 }
 
+function getSpeech(kind: SpeechLine): HTMLAudioElement {
+  let sound = speeches.get(kind);
+  if (!sound) {
+    sound = new Audio(SPEECH_SRC[kind]);
+    sound.preload = 'auto';
+    sound.volume = SPEECH_VOLUME;
+    sound.addEventListener('ended', restoreBackground);
+    sound.addEventListener('pause', restoreBackground);
+    sound.addEventListener('error', restoreBackground);
+    speeches.set(kind, sound);
+  }
+  return sound;
+}
+
 function restoreBackground(): void {
-  if (background && (!dice || dice.paused || dice.ended)) background.volume = baseVolume();
+  if (!background || playing(dice)) return;
+  for (const sound of speeches.values()) if (playing(sound)) return;
+  background.volume = baseVolume();
 }
 
 /** Có người bật mic: nhạc nền nhỏ lại để nghe rõ tiếng nói. */
@@ -77,6 +111,7 @@ export function stopGameMusic(): void {
   active = false;
   background?.pause();
   dice?.pause();
+  for (const sound of speeches.values()) sound.pause();
   restoreBackground();
 }
 
@@ -106,6 +141,18 @@ export function playStepSound(): void {
   void sound.play().catch(() => {});
 }
 
+/**
+ * Câu thoại cho tình huống vừa xảy ra. Chỉ một câu phát cùng lúc, nhạc nền nhỏ lại trong lúc nói.
+ */
+export function playSpeech(kind: SpeechLine): void {
+  if (!active || !canPlay()) return;
+  for (const [other, sound] of speeches) if (other !== kind) sound.pause();
+  const sound = getSpeech(kind);
+  sound.currentTime = 0;
+  if (background) background.volume = DUCKED_VOLUME;
+  void sound.play().catch(() => restoreBackground());
+}
+
 export function setGameSoundEnabled(enabled: boolean): void {
   try {
     localStorage.setItem('dice-roll-sound', enabled ? 'on' : 'off');
@@ -117,6 +164,7 @@ export function setGameSoundEnabled(enabled: boolean): void {
     background?.pause();
     dice?.pause();
     for (const a of steps) a.pause();
+    for (const sound of speeches.values()) sound.pause();
     restoreBackground();
   }
 }
