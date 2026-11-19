@@ -15,6 +15,7 @@ import {
   type Action,
   type ManageOp,
   type Profile,
+  type SeatRole,
   type SeatTicket,
   type VoiceSignal,
 } from '@cotiphu/shared';
@@ -91,11 +92,22 @@ export function parseProfile(x: unknown): Result<Profile> {
   return ok({ name: name.value, color: x.color, icon: x.icon });
 }
 
-export function parseCapacity(x: unknown): Result<number> {
-  if (!isInt(x, MIN_PLAYERS, MAX_PLAYERS)) {
+/** Danh sách người chơi khi chơi chung một máy có khách xem. */
+export function parsePlayers(x: unknown): Result<Profile[]> {
+  if (!Array.isArray(x) || x.length < MIN_PLAYERS || x.length > MAX_PLAYERS) {
     return fail(`Số người phải từ ${MIN_PLAYERS} đến ${MAX_PLAYERS}`);
   }
-  return ok(x);
+  const players: Profile[] = [];
+  for (const p of x) {
+    const profile = parseProfile(p);
+    if (!profile.ok) return profile;
+    players.push(profile.value);
+  }
+  return ok(players);
+}
+
+export function parseRole(x: unknown): Result<SeatRole> {
+  return x === 'player' || x === 'spectator' ? ok(x) : fail('Vai không hợp lệ');
 }
 
 const CODE_PATTERN = new RegExp(`^[${ROOM_CODE_ALPHABET}]{${ROOM_CODE_LENGTH}}$`);
@@ -155,14 +167,16 @@ function parseOps(x: unknown): Result<ManageOp[]> {
 }
 
 /**
- * Thao tác trong ván của ghế `playerId`. Dựng lại một bản sạch chỉ có các trường
- * bộ luật cần; không nhận 'timeout' (chỉ máy chủ được gửi) và không làm thay người khác.
+ * Thao tác trong ván. Dựng lại một bản sạch chỉ có các trường bộ luật cần; không nhận 'timeout'
+ * (chỉ máy chủ được gửi). Ai được thao tác cho `playerId` thì phòng kiểm tra sau.
  */
-export function parseAction(x: unknown, playerId: string): Result<Action> {
+export function parseAction(x: unknown): Result<Action> {
   if (!isRecord(x) || typeof x.type !== 'string') return fail('Thao tác không hợp lệ');
   if (x.type === 'timeout') return fail('Chỉ máy chủ được báo hết giờ');
-  if (typeof x.playerId !== 'string') return fail('Thao tác không hợp lệ');
-  if (x.playerId !== playerId) return fail('Bạn chỉ được thao tác cho chính mình');
+  const playerId = x.playerId;
+  if (typeof playerId !== 'string' || playerId.length === 0 || playerId.length > 32) {
+    return fail('Thao tác không hợp lệ');
+  }
   const t = x.type;
   if (isSimple(t)) return ok({ type: t, playerId });
   switch (t) {

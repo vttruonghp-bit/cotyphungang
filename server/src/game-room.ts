@@ -4,8 +4,10 @@
  */
 import { randomInt } from 'node:crypto';
 import {
+  MIN_PLAYERS,
   RuleError,
   applyAction,
+  chooseBotAction,
   createGame,
   isGameOver,
   type Action,
@@ -24,10 +26,11 @@ export const cryptoRng: Rng = { int: (min, max) => randomInt(min, max + 1) };
 export function startGame(room: Room, seat: SeatRecord, rng: Rng): Result {
   if (seat.id !== room.hostId) return fail('Chỉ chủ phòng được bắt đầu ván');
   if (room.phase !== 'lobby') return fail('Ván đã bắt đầu rồi');
-  if (room.seats.length !== room.capacity) {
-    return fail(`Cần đủ ${room.capacity} người, phòng mới có ${room.seats.length}`);
+  const seats = room.seats.filter((s) => s.role === 'player');
+  if (seats.length < MIN_PLAYERS) {
+    return fail(`Cần ít nhất ${MIN_PLAYERS} người chơi (thêm bot hoặc chờ người vào)`);
   }
-  const players: NewPlayer[] = room.seats.map(({ id, name, color, icon }) => ({
+  const players: NewPlayer[] = seats.map(({ id, name, color, icon }) => ({
     id,
     name,
     color,
@@ -44,14 +47,41 @@ export function startGame(room: Room, seat: SeatRecord, rng: Rng): Result {
   return done;
 }
 
+/**
+ * Ghế `seat` được thao tác cho người chơi `playerId` không: cho chính mình, hoặc chủ phòng chơi
+ * chung một máy thao tác cho mọi người chơi trên máy mình.
+ */
+function controls(room: Room, seat: SeatRecord, playerId: string): boolean {
+  if (seat.role !== 'player' || seat.bot) return false;
+  if (playerId === seat.id) return true;
+  return (
+    room.kind === 'local' &&
+    seat.id === room.hostId &&
+    room.seats.some((s) => s.id === playerId && s.local)
+  );
+}
+
 /** Áp dụng thao tác (đã kiểm tra dạng) của ghế `seat`. */
 export function playAction(room: Room, seat: SeatRecord, action: Action, rng: Rng): Result {
   if (room.phase === 'lobby' || !room.game) return fail('Ván chưa bắt đầu');
   if (room.phase === 'ended') return fail('Ván đã kết thúc');
-  if (action.type === 'timeout' || action.playerId !== seat.id) {
+  if (seat.role === 'spectator') return fail('Bạn đang xem, không có lượt trong ván này');
+  if (action.type === 'timeout' || !controls(room, seat, action.playerId)) {
     return fail('Bạn chỉ được thao tác cho chính mình');
   }
-  const result = applyAction(room.game, action, rng);
+  return apply(room, action, rng);
+}
+
+/** Bot `bot` đi một thao tác; thao tác bot chọn bị luật từ chối thì coi như hết giờ. */
+export function playBot(room: Room, bot: SeatRecord, rng: Rng): Result {
+  if (room.phase !== 'playing' || !room.game) return fail('Ván không còn chạy');
+  const action = chooseBotAction(room.game, bot.id) ?? { type: 'timeout' };
+  const res = apply(room, action, rng);
+  return res.ok || action.type === 'timeout' ? res : apply(room, { type: 'timeout' }, rng);
+}
+
+function apply(room: Room, action: Action, rng: Rng): Result {
+  const result = applyAction(room.game!, action, rng);
   if (!result.ok) return fail(result.error);
   room.previous = room.game;
   room.game = result.state;

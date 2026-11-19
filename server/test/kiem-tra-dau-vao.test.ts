@@ -3,7 +3,8 @@ import { PLAYER_NAME_MAX } from '@cotiphu/shared';
 import {
   MAX_MANAGE_OPS,
   parseAction,
-  parseCapacity,
+  parsePlayers,
+  parseRole,
   parseCode,
   parseName,
   parseProfile,
@@ -43,9 +44,22 @@ describe('tên người chơi', () => {
 });
 
 describe('số người, mã phòng, vé', () => {
-  it('số người là số nguyên 2–6', () => {
-    for (const n of [2, 3, 6]) expect(parseCapacity(n)).toEqual({ ok: true, value: n });
-    for (const n of [1, 7, 2.5, '3', null, Infinity]) expect(parseCapacity(n).ok).toBe(false);
+  it('chơi chung một máy: 2–6 người, mỗi người đủ tên, màu, kí hiệu', () => {
+    const p = (name: string, k: number) => ({ name, color: k, icon: k });
+    expect(parsePlayers([p('A', 0), p(' B ', 1)])).toEqual({
+      ok: true,
+      value: [p('A', 0), p('B', 1)],
+    });
+    for (const bad of [[p('A', 0)], Array.from({ length: 7 }, (_, k) => p('A', k)), 'A', null]) {
+      expect(error(parsePlayers(bad))).toBe('Số người phải từ 2 đến 6');
+    }
+    expect(error(parsePlayers([p('A', 0), p('', 1)]))).toBe('Hãy nhập tên');
+  });
+
+  it('vai chỉ là người chơi hoặc khách quan sát', () => {
+    expect(parseRole('player')).toEqual({ ok: true, value: 'player' });
+    expect(parseRole('spectator')).toEqual({ ok: true, value: 'spectator' });
+    for (const bad of ['bot', '', null, 1]) expect(parseRole(bad).ok).toBe(false);
   });
 
   it('mã phòng 6 kí tự trong bảng chữ, nhận chữ thường và khoảng trắng', () => {
@@ -73,49 +87,39 @@ describe('số người, mã phòng, vé', () => {
 
 describe('thao tác trong ván', () => {
   it('dựng lại thao tác sạch, bỏ trường thừa', () => {
-    expect(parseAction({ type: 'roll', playerId: 'p1', dice: [6, 6] }, 'p1')).toEqual({
+    expect(parseAction({ type: 'roll', playerId: 'p1', dice: [6, 6] })).toEqual({
       ok: true,
       value: { type: 'roll', playerId: 'p1' },
     });
-    expect(parseAction({ type: 'metro', playerId: 'p1', destination: null }, 'p1')).toEqual({
+    expect(parseAction({ type: 'metro', playerId: 'p1', destination: null })).toEqual({
       ok: true,
       value: { type: 'metro', playerId: 'p1', destination: null },
     });
     expect(
-      parseAction(
-        { type: 'manage', playerId: 'p1', ops: [{ op: 'mortgage', tile: 3, cash: 1 }] },
-        'p1',
-      ),
+      parseAction({ type: 'manage', playerId: 'p1', ops: [{ op: 'mortgage', tile: 3, cash: 1 }] }),
     ).toEqual({
       ok: true,
       value: { type: 'manage', playerId: 'p1', ops: [{ op: 'mortgage', tile: 3 }] },
     });
   });
 
-  it('cho phép hoàn tác mua tự nguyện qua máy chủ, không làm thay người khác', () => {
-    expect(parseAction({ type: 'cancelPurchase', playerId: 'p1' }, 'p1')).toEqual({
+  it('cho phép hoàn tác mua tự nguyện qua máy chủ', () => {
+    expect(parseAction({ type: 'cancelPurchase', playerId: 'p1' })).toEqual({
       ok: true,
       value: { type: 'cancelPurchase', playerId: 'p1' },
     });
-    expect(error(parseAction({ type: 'cancelPurchase', playerId: 'p2' }, 'p1'))).toBe(
-      'Bạn chỉ được thao tác cho chính mình',
-    );
   });
 
-  it('không nhận hết giờ, không làm thay người khác', () => {
-    expect(error(parseAction({ type: 'timeout' }, 'p1'))).toBe('Chỉ máy chủ được báo hết giờ');
-    expect(error(parseAction({ type: 'pay', playerId: 'p2' }, 'p1'))).toBe(
-      'Bạn chỉ được thao tác cho chính mình',
-    );
-    expect(error(parseAction({ type: 'toString', playerId: 'p1' }, 'p1'))).toBe(
-      'Thao tác không hợp lệ',
-    );
+  it('không nhận hết giờ, mã người chơi phải là chuỗi ngắn', () => {
+    expect(error(parseAction({ type: 'timeout' }))).toBe('Chỉ máy chủ được báo hết giờ');
+    for (const playerId of [undefined, '', 5, 'x'.repeat(33)]) {
+      expect(error(parseAction({ type: 'pay', playerId }))).toBe('Thao tác không hợp lệ');
+    }
+    expect(error(parseAction({ type: 'toString', playerId: 'p1' }))).toBe('Thao tác không hợp lệ');
   });
 
   it('bản nháp Ụp/Mở có giới hạn độ dài', () => {
     const ops = Array.from({ length: MAX_MANAGE_OPS + 1 }, () => ({ op: 'sell', tile: 1 }));
-    expect(error(parseAction({ type: 'manage', playerId: 'p1', ops }, 'p1'))).toBe(
-      'Bản nháp quá dài',
-    );
+    expect(error(parseAction({ type: 'manage', playerId: 'p1', ops }))).toBe('Bản nháp quá dài');
   });
 });

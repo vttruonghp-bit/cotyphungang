@@ -216,3 +216,69 @@
   padding-inline: 12px;
   white-space: nowrap;
 }
+
+/* Thêm bot: ô trống bấm được */
+.lobby-seat.lobby-add-bot {
+  --pc: var(--teal);
+  border-color: #9fd2c3;
+  background: var(--teal-soft);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lobby-add-text {
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 800;
+}
+.lobby-remove {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: -3px -3px -3px auto;
+  border: 0;
+  border-radius: 6px;
+  background: #fee2e2;
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.btn.lobby-role {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+.lobby-watch-head {
+  margin-top: 14px;
+}
+.lobby-watchers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lobby-watchers li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.lobby-watchers li.is-away {
+  opacity: 0.55;
+}
+.lobby-watchers .lobby-dot {
+  margin-left: 2px;
+}
+.lobby-watch-empty {
+  margin: 0;
+  font-size: 12px;
+}

@@ -8,6 +8,7 @@ import {
   type GameState,
   type Profile,
   type RoomView,
+  type SeatRole,
   type SeatTicket,
 } from '@cotiphu/shared';
 import { getSocket, request, whenConnected, type GameSocket } from './socket';
@@ -38,10 +39,14 @@ export interface Online {
   chat: readonly ChatMessage[];
   /** Gửi tin nhắn; trả lỗi hoặc null khi máy chủ đã nhận. */
   sendChat(text: string): Promise<string | null>;
-  create(capacity: number, profile: Profile): Promise<string | null>;
+  create(profile: Profile): Promise<string | null>;
+  /** Chơi chung một máy cho khách xem: tạo phòng và vào ván ngay. */
+  createLocal(players: Profile[]): Promise<string | null>;
   join(code: string, profile: Profile): Promise<string | null>;
   profile(profile: Profile): Promise<string | null>;
-  capacity(capacity: number): Promise<string | null>;
+  role(role: SeatRole): Promise<string | null>;
+  addBot(): Promise<string | null>;
+  removeBot(id: string): Promise<string | null>;
   start(): Promise<string | null>;
   leave(): Promise<string | null>;
   /** Gửi thao tác trong ván; trả lỗi hoặc null khi máy chủ đã nhận (và đã gửi trạng thái mới). */
@@ -244,8 +249,11 @@ export function useOnline(): Online {
   );
 
   const create = useCallback(
-    (capacity: number, profile: Profile) =>
-      enter((s, done) => s.emit('room:create', { capacity, profile }, done)),
+    (profile: Profile) => enter((s, done) => s.emit('room:create', { profile }, done)),
+    [enter],
+  );
+  const createLocal = useCallback(
+    (players: Profile[]) => enter((s, done) => s.emit('room:local', { players }, done)),
     [enter],
   );
   const join = useCallback(
@@ -257,8 +265,13 @@ export function useOnline(): Online {
     (p: Profile) => simple((s, done) => s.emit('room:profile', p, done)),
     [simple],
   );
-  const capacity = useCallback(
-    (n: number) => simple((s, done) => s.emit('room:capacity', n, done)),
+  const role = useCallback(
+    (r: SeatRole) => simple((s, done) => s.emit('room:role', r, done)),
+    [simple],
+  );
+  const addBot = useCallback(() => simple((s, done) => s.emit('room:addBot', done)), [simple]);
+  const removeBot = useCallback(
+    (id: string) => simple((s, done) => s.emit('room:removeBot', id, done)),
     [simple],
   );
   const start = useCallback(() => simple((s, done) => s.emit('room:start', done)), [simple]);
@@ -296,9 +309,12 @@ export function useOnline(): Online {
     chat: room ? chat : [],
     sendChat,
     create,
+    createLocal,
     join,
     profile,
-    capacity,
+    role,
+    addBot,
+    removeBot,
     start,
     leave,
     action,
