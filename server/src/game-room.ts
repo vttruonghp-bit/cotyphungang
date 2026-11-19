@@ -6,9 +6,11 @@ import { randomInt } from 'node:crypto';
 import {
   RuleError,
   applyAction,
+  chooseBotAction,
   createGame,
   isGameOver,
   type Action,
+  type GameState,
   type NewPlayer,
   type Rng,
 } from '@cotiphu/shared';
@@ -51,9 +53,25 @@ export function playAction(room: Room, seat: SeatRecord, action: Action, rng: Rn
   if (action.type === 'timeout' || action.playerId !== seat.id) {
     return fail('Bạn chỉ được thao tác cho chính mình');
   }
-  const result = applyAction(room.game, action, rng);
+  return commit(room, room.game, action, rng);
+}
+
+/**
+ * Chơi hộ một nước cho ghế vắng mặt: bot chọn nước rồi áp dụng như thao tác của chính ghế đó,
+ * nên ván vẫn chạy đúng luật. Người chơi quay lại thì không ai gọi hàm này nữa.
+ */
+export function playForSeat(room: Room, seat: SeatRecord, rng: Rng): Result {
+  if (room.phase !== 'playing' || !room.game) return fail('Ván chưa bắt đầu');
+  const action = chooseBotAction(room.game, seat.id);
+  if (!action) return fail('Ván không chờ ghế này');
+  return commit(room, room.game, action, rng);
+}
+
+/** Đưa một nước qua bộ luật rồi ghi lại vào phòng. */
+function commit(room: Room, game: GameState, action: Action, rng: Rng): Result {
+  const result = applyAction(game, action, rng);
   if (!result.ok) return fail(result.error);
-  room.previous = room.game;
+  room.previous = game;
   room.game = result.state;
   if (isGameOver(result.state)) room.phase = 'ended';
   // Đổi màu/biểu tượng trong ván thì ghế cũng đổi theo.

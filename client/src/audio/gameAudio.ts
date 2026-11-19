@@ -2,12 +2,12 @@
  * One shared mixer for the whole browser tab. Audio continues across turns
  * and React screen re-renders without creating overlapping players.
  */
-/** Nhạc nền: 30% mức cũ (0,3) theo yêu cầu. */
-const BACKGROUND_VOLUME = 0.09;
-/** Nhạc nền khi có người đang bật mic nói chuyện (cũng 30% mức cũ). */
-const VOICE_VOLUME = 0.018;
+/** Nhạc nền: 10% mức gốc (0,3) theo yêu cầu — chỉ còn du dương phía sau. */
+const BACKGROUND_VOLUME = 0.03;
+/** Nhạc nền khi có người đang bật mic nói chuyện (cũng 10% mức gốc). */
+const VOICE_VOLUME = 0.006;
 /** Nhạc nền lúc xúc xắc đang lăn. */
-const DUCKED_VOLUME = 0.005;
+const DUCKED_VOLUME = 0.002;
 const DICE_VOLUME = 1;
 const STEP_VOLUME = 0.8;
 /** Mỗi bước 0,2 giây mà tiếng dài 0,6 giây: vài bản phát chồng lên nhau. */

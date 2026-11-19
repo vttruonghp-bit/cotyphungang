@@ -823,7 +823,14 @@
   font-weight: 900;
   letter-spacing: 0.12em;
 }
-.turn-hero-name > strong {
+/* Tên và số tiền nằm cùng một dòng; tên dài thì cắt bớt, số tiền luôn còn nguyên. */
+.turn-hero-who {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.turn-hero-name strong {
   overflow: hidden;
   color: var(--accent);
   font-size: clamp(30px, 4.3cqw, 54px);
@@ -831,6 +838,14 @@
   line-height: 0.98;
   text-overflow: ellipsis;
   text-shadow: 0 2px 0 rgb(255 255 255 / 80%);
+  white-space: nowrap;
+}
+.turn-hero-cash {
+  flex: none;
+  color: color-mix(in srgb, var(--accent) 72%, #111);
+  font-size: clamp(15px, 2cqw, 26px);
+  font-weight: 900;
+  line-height: 1;
   white-space: nowrap;
 }
 .turn-hero-name > small {

@@ -260,6 +260,8 @@ export function GameScreen({
     return () => clearTimeout(t);
   }, [walking, arrivalTile]);
   const offline = new Set(online?.seats.filter((s) => !s.connected).map((s) => s.id));
+  // Ghế rời ván quá lâu: máy chủ đang đi hộ, trả quyền ngay khi người chơi mở lại trang.
+  const autoSeats = new Set(online?.seats.filter((s) => s.auto).map((s) => s.id));
 
   // Mỗi thao tác mới: về xem ô đang đứng, xếp các lá thẻ vừa rút vào hàng chờ xem. Đặt lại ngay
   // trong lần vẽ này (không đợi effect) để không lóe màn cũ hay hiện nhầm lá thẻ trong một khung hình.
@@ -504,7 +506,7 @@ export function GameScreen({
     !online && me.id !== cur.id && playing
       ? `Chuyển máy cho ${me.name}: ${waitingText(game, me)}`
       : othersText && playing
-        ? `${othersText}${offline.has(waiter.id) ? ' · mất kết nối' : ''}`
+        ? `${othersText}${autoSeats.has(waiter.id) ? ' · máy chủ đang chơi hộ' : offline.has(waiter.id) ? ' · mất kết nối' : ''}`
         : online && myMove && me.id !== cur.id && playing
           ? `Ván đang chờ bạn (ngoài lượt của ${cur.name}).`
           : null;
@@ -619,6 +621,7 @@ export function GameScreen({
               me={waiter}
               mine={online !== null && waiter.id === me.id}
               away={offline.has(waiter.id)}
+              auto={autoSeats.has(waiter.id)}
               tile={
                 centerRollLocked && previous
                   ? (previous.players.find((p) => p.id === waiter.id)?.position ?? waiter.position)
@@ -779,6 +782,8 @@ interface CenterPanelProps {
   mine: boolean;
   /** Online: người đó đang mất kết nối. */
   away: boolean;
+  /** Online: người đó rời ván quá lâu, máy chủ đang chơi hộ. */
+  auto: boolean;
   tile: number;
   viewing: boolean;
   dice: readonly number[] | null;
@@ -905,6 +910,7 @@ function CenterPanel({
   me,
   mine,
   away,
+  auto,
   tile,
   viewing,
   dice,
@@ -936,8 +942,11 @@ function CenterPanel({
       <div className="turn-hero">
         <div className="turn-hero-name">
           <span>{isTurn ? 'LƯỢT CỦA' : 'ĐANG CHỜ'}</span>
-          <strong>{me.name}</strong>
-          {away && <small>mất kết nối</small>}
+          <div className="turn-hero-who">
+            <strong>{me.name}</strong>
+            <b className="turn-hero-cash">{money(me.cash)}</b>
+          </div>
+          {away && <small>{auto ? 'mất kết nối · đang chơi hộ' : 'mất kết nối'}</small>}
         </div>
         <div className="turn-hero-dice">
           {dice && !viewing ? (

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import type { Rng } from '@cotiphu/shared';
 import { cryptoRng } from './game-room';
-import { ROOM_IDLE_MS, Rooms } from './rooms';
+import { AUTOPLAY_AFTER_MS, ROOM_IDLE_MS, Rooms } from './rooms';
 import { attachRoomHandlers, type IoServer } from './socket-handlers';
 import { staticFiles } from './static-files';
 
@@ -26,6 +26,9 @@ export interface AppOptions {
   /** Phòng không ai mở bao lâu thì xóa, và bao lâu kiểm tra một lần. */
   idleMs?: number;
   sweepEveryMs?: number;
+  /** Rời ván bao lâu thì máy chủ chơi hộ, và bao lâu đi hộ một nước. */
+  autoPlayAfterMs?: number;
+  autoPlayEveryMs?: number;
 }
 
 export interface AppServer {
@@ -59,11 +62,21 @@ export function createAppServer(options: AppOptions = {}): AppServer {
   });
 
   const rooms = new Rooms();
-  attachRoomHandlers(io, rooms, options.rng ?? cryptoRng);
+  const rng = options.rng ?? cryptoRng;
+  const { broadcast } = attachRoomHandlers(io, rooms, rng);
 
   const idleMs = options.idleMs ?? ROOM_IDLE_MS;
   const sweeper = setInterval(() => rooms.sweep(idleMs), options.sweepEveryMs ?? 10 * 60 * 1000);
   sweeper.unref();
+
+  // Ai rời ván quá lâu thì máy chủ đi hộ, mỗi nhịp một nước cho mỗi phòng để còn xem được.
+  const autoPlayAfterMs = options.autoPlayAfterMs ?? AUTOPLAY_AFTER_MS;
+  const autoPlayer = setInterval(() => {
+    for (const room of rooms.playing()) {
+      if (rooms.autoPlay(room, rng, autoPlayAfterMs)) broadcast(room);
+    }
+  }, options.autoPlayEveryMs ?? 1000);
+  autoPlayer.unref();
 
   return {
     httpServer,
@@ -72,6 +85,7 @@ export function createAppServer(options: AppOptions = {}): AppServer {
     close: () =>
       new Promise((resolve) => {
         clearInterval(sweeper);
+        clearInterval(autoPlayer);
         // io.close() đóng luôn httpServer; lỗi "chưa mở cổng" thì bỏ qua.
         void io.close(() => resolve());
       }),

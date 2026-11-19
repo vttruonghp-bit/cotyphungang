@@ -42,6 +42,7 @@ describe('tạo phòng và vào phòng', () => {
       color: 2,
       icon: 5,
       connected: true,
+      auto: false,
       isHost: true,
       voice: false,
       mic: false,
