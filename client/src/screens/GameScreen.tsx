@@ -22,6 +22,7 @@ import {
 } from '@cotiphu/shared';
 import { Board } from '../components/Board';
 import { Dice } from '../components/Dice';
+import { FIREWORKS_MS, Fireworks } from '../components/Fireworks';
 import { TurnLine } from '../components/Sheet';
 import { TokenIcon } from '../components/TokenIcon';
 import {
@@ -34,6 +35,7 @@ import {
   tileName,
 } from '../game/format';
 import { debtorOf } from '../game/draft';
+import { fireworksDelay, lostMoney } from '../game/effects';
 import { AI_PLAYER_ID } from '../game/aiOpponent';
 import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
@@ -105,7 +107,7 @@ const revealsOf = ({ game, previous }: GameView): Reveal[] => {
  * mỗi thao tác nên sự kiện vào tù trong `game` luôn là của thao tác này; khoản phải trả thì so với
  * ván trước để một khoản không phát tiếng hai lần.
  */
-function speechFor(previous: GameState, game: GameState): SpeechLine | null {
+function landingSpeech(previous: GameState, game: GameState): SpeechLine | null {
   if (game.events.some((e) => e.type === 'jail')) return 'jail';
   const pd = game.pending;
   if (pd.type !== 'pay') return null;
@@ -120,6 +122,11 @@ function speechFor(previous: GameState, game: GameState): SpeechLine | null {
   // Trả thuê đất/ga/nhà máy cho người khác; trả cho Ngân hàng thì không phải tiền thuê.
   if (pd.reason === 'rent' && pd.creditors.some((c) => c.playerId !== null)) return 'rent';
   return null;
+}
+
+/** Câu thoại của tình huống; không có thì tiếng khóc nếu thao tác làm ai đó bị trừ tiền. */
+function speechFor(previous: GameState, game: GameState): SpeechLine | null {
+  return landingSpeech(previous, game) ?? (lostMoney(previous, game) ? 'cry' : null);
 }
 
 /** Chờ bao lâu sau khi quân dừng (và hiện nút Kết thúc) rồi mới nhắc "Kết thúc đi ạ". */
@@ -257,6 +264,26 @@ export function GameScreen({
     // Chỉ xét khi có thao tác mới.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions]);
+
+  // Pháo hoa thoáng qua 2 giây: được tiền từ ô Xuất phát hoặc từ lá Cơ hội / Khí vận.
+  const fireworksSeen = useRef(actions);
+  const fireworksCount = useRef(0);
+  const [fireworks, setFireworks] = useState(0);
+  useEffect(() => {
+    if (fireworksSeen.current === actions) return;
+    fireworksSeen.current = actions;
+    const delay = fireworksDelay(previous, game);
+    if (delay === null) return;
+    const t = setTimeout(() => setFireworks((fireworksCount.current += 1)), delay);
+    return () => clearTimeout(t);
+    // Chỉ xét khi có thao tác mới.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions]);
+  useEffect(() => {
+    if (!fireworks) return;
+    const t = setTimeout(() => setFireworks(0), FIREWORKS_MS);
+    return () => clearTimeout(t);
+  }, [fireworks]);
 
   // "Kết thúc đi ạ": lượt đã xong mà chưa bấm Kết thúc thì nhắc người cầm máy, mỗi lượt một lần,
   // sau khi quân dừng chân và câu thoại trước (nếu có) nói xong.
@@ -549,6 +576,7 @@ export function GameScreen({
   return (
     <PlayModeContext.Provider value={mode}>
       <main className="land game-screen" style={accentStyle}>
+        {fireworks > 0 && <Fireworks key={fireworks} />}
         {/* Khi màn phụ đang mở, màn chính phía sau không bấm hay đọc tới được. */}
         <div className="land-main" inert={sheet !== null}>
           <div className="player-column side-layout">
