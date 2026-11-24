@@ -38,7 +38,8 @@ export function startGame(room: Room, seat: SeatRecord, rng: Rng): Result {
     icon,
   }));
   try {
-    room.game = createGame(players, rng);
+    // Mở ván: mỗi người tự đổ xúc xắc chọn thứ tự trước khi đi.
+    room.game = createGame(players, rng, true, true);
   } catch (err) {
     if (err instanceof RuleError) return fail(err.message);
     throw err;

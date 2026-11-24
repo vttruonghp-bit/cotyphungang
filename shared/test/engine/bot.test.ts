@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, chooseBotAction, createGame, isGameOver, seededRng } from '../../src';
+import {
+  applyAction,
+  chooseBotAction,
+  createGame,
+  isGameOver,
+  seededRng,
+  waitingOn,
+} from '../../src';
 import { checkInvariants } from './sim';
 import { PLAYERS } from './players';
 
@@ -12,7 +19,7 @@ describe('bot tự chơi', () => {
       let steps = 0;
       while (!isGameOver(s) && steps < 6000) {
         if (s.pending.type === 'ended') break;
-        const action = chooseBotAction(s, s.pending.playerId);
+        const action = chooseBotAction(s, waitingOn(s)[0]!);
         expect(action, `seed ${seed}: không có thao tác cho ${s.pending.type}`).not.toBeNull();
         const r = applyAction(s, action!, rng);
         if (!r.ok) throw new Error(`seed ${seed}, ${s.pending.type}: ${r.error}`);
@@ -26,9 +33,8 @@ describe('bot tự chơi', () => {
 
   it('không chọn thao tác cho người khác hay khi ván đã xong', () => {
     const s = createGame(PLAYERS.slice(0, 2), seededRng(3));
-    const pending = s.pending;
-    if (pending.type === 'ended') throw new Error('ván không thể xong ngay');
-    const other = s.players.find((p) => p.id !== pending.playerId)!;
+    const first = waitingOn(s)[0];
+    const other = s.players.find((p) => p.id !== first)!;
     expect(chooseBotAction(s, other.id)).toBeNull();
     expect(chooseBotAction(s, 'không-có')).toBeNull();
   });

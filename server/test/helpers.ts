@@ -2,6 +2,7 @@ import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket } from 'socket.io-client';
 import {
   seededRng,
+  waitingOn,
   type Ack,
   type Action,
   type ClientToServerEvents,
@@ -119,6 +120,11 @@ export interface TestServer {
   phone(): Promise<Phone>;
   /** Chờ mọi điện thoại trong phòng nhận được trạng thái mới nhất của máy chủ. */
   settle(code: string, phones: Phone[]): Promise<RoomView>;
+  /**
+   * Mở ván: từng điện thoại bấm đổ chọn thứ tự cho tới lượt đầu tiên. Trả trạng thái lúc đó và
+   * các điện thoại theo thứ tự đi.
+   */
+  rollForOrder(code: string, phones: Phone[]): Promise<{ view: RoomView; turn: Phone[] }>;
   close(): Promise<void>;
 }
 
@@ -128,6 +134,12 @@ export async function startServer(options: AppOptions = {}): Promise<TestServer>
   const { port } = app.httpServer.address() as AddressInfo;
   const url = `http://127.0.0.1:${port}`;
   const sockets: ClientSocket[] = [];
+  const settle = async (code: string, phones: Phone[]): Promise<RoomView> => {
+    const room = app.rooms.get(code);
+    if (!room) throw new Error(`Không có phòng ${code}`);
+    await until(() => phones.every((p) => p.view?.version === room.version));
+    return phones[0]!.view!;
+  };
 
   return {
     app,
@@ -142,11 +154,19 @@ export async function startServer(options: AppOptions = {}): Promise<TestServer>
       await until(() => socket.connected);
       return new Phone(socket);
     },
-    async settle(code, phones) {
-      const room = app.rooms.get(code);
-      if (!room) throw new Error(`Không có phòng ${code}`);
-      await until(() => phones.every((p) => p.view?.version === room.version));
-      return phones[0]!.view!;
+    settle,
+    async rollForOrder(code, phones) {
+      let view = await settle(code, phones);
+      while (view.game?.pending.type === 'order') {
+        const id = waitingOn(view.game)[0]!;
+        const phone = phones.find((p) => p.id === id);
+        if (!phone) throw new Error(`Không có điện thoại của ${id}`);
+        const r = await phone.act({ type: 'orderRoll', playerId: id });
+        if (!r.ok) throw new Error(r.error);
+        view = await settle(code, phones);
+      }
+      const turn = view.game!.players.map((pl) => phones.find((p) => p.id === pl.id)!);
+      return { view, turn };
     },
     async close() {
       for (const s of sockets) s.disconnect();

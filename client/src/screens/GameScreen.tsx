@@ -16,6 +16,7 @@ import {
   UTILITY_MULTIPLIERS,
   getCard,
   redeemCost,
+  waitingOn,
   type Action,
   type GameState,
   type PlayerState,
@@ -23,6 +24,7 @@ import {
 import { Board } from '../components/Board';
 import { Dice } from '../components/Dice';
 import { FIREWORKS_MS, Fireworks } from '../components/Fireworks';
+import { ORDER_ROLL_MS, OrderPanel } from '../components/OrderPanel';
 import { TurnLine } from '../components/Sheet';
 import { TokenIcon } from '../components/TokenIcon';
 import {
@@ -134,6 +136,9 @@ function speechFor(previous: GameState, game: GameState): SpeechLine | null {
   return landingSpeech(previous, game) ?? (lostMoney(previous, game) ? 'cry' : null);
 }
 
+/** Chọn xong thứ tự: giữ bảng xếp hạng trong ô trung tâm bấy lâu (gồm lúc xúc xắc cuối còn lăn). */
+const ORDER_LINGER_MS = ORDER_ROLL_MS + 2500;
+
 /** Chờ bao lâu sau khi quân dừng (và hiện nút Kết thúc) rồi mới nhắc "Kết thúc đi ạ". */
 const END_TURN_NUDGE_MS = 1500;
 
@@ -227,7 +232,8 @@ export function GameScreen({
       previous.pending.dice === null &&
       game.pending.type === 'cardDice' &&
       game.pending.dice !== null;
-    if (currentRolls <= previousRolls && !cardRoll) return;
+    const orderRoll = game.events.some((event) => event.type === 'orderRoll');
+    if (currentRolls <= previousRolls && !cardRoll && !orderRoll) return;
     if (skipServerEcho.current) {
       skipServerEcho.current = false;
       return;
@@ -318,6 +324,19 @@ export function GameScreen({
   const meColor = colorOf(me.color);
   const pd = game.pending;
 
+  // Vừa chọn xong thứ tự: ô trung tâm còn hiện bảng xếp hạng một lúc, có thao tác mới thì thôi.
+  const orderEvent = game.events.find((e) => e.type === 'order');
+  const [orderClosedAt, setOrderClosedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!orderEvent) return;
+    const t = setTimeout(() => setOrderClosedAt(actions), ORDER_LINGER_MS);
+    return () => clearTimeout(t);
+    // Chỉ hẹn giờ lại khi có thao tác mới.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions]);
+  const orderDone =
+    orderEvent?.type === 'order' && previous && orderClosedAt !== actions ? orderEvent : null;
+
   const newMovementRoll = Boolean(
     previous && game.events.slice(previous.events.length).some((e) => e.type === 'roll')
   );
@@ -393,7 +412,7 @@ export function GameScreen({
   };
 
   const send = async (a: Action) => {
-    if (a.type === 'roll' || a.type === 'rollCardDice') {
+    if (a.type === 'roll' || a.type === 'rollCardDice' || a.type === 'orderRoll') {
       skipServerEcho.current = true;
       playDiceSound();
     }
@@ -516,6 +535,32 @@ export function GameScreen({
   } else if (myMove && pd.type === 'chooseTile') {
     sheet = <ChooseTileSheet {...sheetProps} extra={danger} />;
   }
+
+  const ordering = pd.type === 'order' ? pd : null;
+  const orderPanel =
+    ordering || orderDone ? (
+      <OrderPanel
+        game={game}
+        rolls={ordering ? ordering.rolls : orderDone!.rolls}
+        order={ordering ? null : orderDone!.order}
+        layout={
+          ordering
+            ? game.players.map((p) => p.id)
+            : previous?.pending.type === 'order'
+              ? previous.players.map((p) => p.id)
+              : orderDone!.order
+        }
+        canRoll={(id) =>
+          !spectator &&
+          (!remote || id === remote.meId) &&
+          id !== AI_PLAYER_ID &&
+          waitingOn(game).includes(id)
+        }
+        onRoll={(id) => void send({ type: 'orderRoll', playerId: id })}
+        busy={busy > 0}
+        onClose={() => setOrderClosedAt(actions)}
+      />
+    ) : null;
 
   const main = ((): MainAction | null => {
     if (!myMove) return null;
@@ -745,7 +790,7 @@ export function GameScreen({
             >
               {rollSoundOn ? '🔊' : '🔇'}
             </button>
-            <CenterPanel
+            {orderPanel ?? <CenterPanel
               game={game}
               me={waiter}
               mine={remote !== null && myMove}
@@ -801,7 +846,7 @@ export function GameScreen({
                   {secondary.label}
                 </button>}
               </div>
-            </CenterPanel>
+            </CenterPanel>}
             </div>
           </div>
 
@@ -840,6 +885,8 @@ export function waitingOther(s: GameState, p: PlayerState): string {
   const pd = s.pending;
   const n = p.name;
   switch (pd.type) {
+    case 'order':
+      return 'Mọi người đổ xúc xắc chọn thứ tự…';
     case 'roll':
       return `Đang chờ ${n} đổ xúc xắc…`;
     case 'endTurn':
@@ -880,6 +927,8 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 export function waitingText(s: GameState, me: PlayerState): string {
   const pd = s.pending;
   switch (pd.type) {
+    case 'order':
+      return 'Mỗi người bấm Xúc xắc của mình để chọn thứ tự';
     case 'roll':
       return `Chờ ${me.name} nhấn “Sục”`;
     case 'endTurn':

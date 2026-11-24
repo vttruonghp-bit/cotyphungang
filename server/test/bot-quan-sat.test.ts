@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { seededRng } from '@cotiphu/shared';
+import { seededRng, waitingOn } from '@cotiphu/shared';
 import { Rooms } from '../src/rooms';
 import { CLOSED_HOST_LEFT } from '../src/socket-handlers';
 import { profile, startServer, until, type TestServer } from './helpers';
@@ -45,9 +45,16 @@ describe('bot do máy chủ chơi', () => {
     await host.create(profile('Chủ', 0, 0));
     expect(await host.call('room:addBot')).toEqual({ ok: true });
     expect(await host.call('room:start')).toEqual({ ok: true });
-    const v = await host.waitFor(
-      (x) => x.game?.pending.type === 'roll' && x.game.pending.playerId === host.id,
-    );
+    // Chọn thứ tự: chủ phòng tự đổ phần mình, bot tự đổ phần bot.
+    await host.waitFor((x) => x.game?.pending.type === 'order');
+    expect(await host.act({ type: 'orderRoll', playerId: host.id })).toEqual({ ok: true });
+    const v = await host.waitFor((x) => {
+      const g = x.game;
+      if (g?.pending.type === 'order' && waitingOn(g).includes(host.id)) {
+        void host.act({ type: 'orderRoll', playerId: host.id });
+      }
+      return g?.pending.type === 'roll' && g.pending.playerId === host.id;
+    });
     const bot = v.game!.players.find((p) => p.id !== host.id)!;
     expect(await host.act({ type: 'roll', playerId: bot.id })).toEqual({
       ok: false,

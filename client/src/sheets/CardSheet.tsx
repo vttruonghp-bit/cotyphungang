@@ -439,6 +439,8 @@ function nextText(game: GameState, draws: Draw[], k: number, online: boolean): s
   const pd = game.pending;
   const name = 'playerId' in pd ? (playerById(game, pd.playerId)?.name ?? '') : '';
   switch (pd.type) {
+    case 'order':
+      return 'Mọi người đổ xúc xắc chọn thứ tự.';
     case 'endTurn':
       return `${name} kết thúc lượt hoặc Ụp/Mở.`;
     case 'drawCard':

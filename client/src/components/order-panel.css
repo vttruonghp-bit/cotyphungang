@@ -1,0 +1,157 @@
+/* Ô trung tâm lúc đổ xúc xắc chọn thứ tự: mỗi người chơi một vùng. */
+.land .center.order-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 3px solid #f2b632;
+  background: color-mix(in srgb, #fff6dc 90%, white);
+  color: #172033;
+}
+
+.order-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.2;
+}
+.order-head strong {
+  font-size: clamp(14px, 1.6cqw, 19px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.order-head span {
+  color: #5b6475;
+  font-size: clamp(10px, 1.1cqw, 13px);
+  font-weight: 700;
+}
+
+.order-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--order-cols, 2), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 8px;
+}
+.order-3 .order-grid,
+.order-5 .order-grid,
+.order-6 .order-grid {
+  --order-cols: 3;
+}
+
+.order-zone {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 6px 4px;
+  border: 2px solid var(--zone-color);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--zone-soft) 70%, white);
+  transition:
+    box-shadow 300ms ease,
+    transform 300ms ease;
+}
+.order-zone.is-first {
+  box-shadow:
+    0 0 0 3px #f2b632,
+    0 4px 14px rgb(242 182 50 / 55%);
+}
+
+.order-name {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.order-name strong {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--zone-color) 80%, #101827);
+  font-size: clamp(11px, 1.2cqw, 15px);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-dice {
+  display: flex;
+  justify-content: center;
+}
+
+.order-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+  text-align: center;
+}
+.order-score b {
+  font-size: clamp(14px, 1.7cqw, 20px);
+  font-weight: 900;
+}
+.order-score span {
+  color: #5b6475;
+  font-size: clamp(9px, 1cqw, 12px);
+  font-weight: 800;
+}
+.order-zone.is-first .order-score span {
+  color: #b7791f;
+}
+
+.land .order-roll {
+  width: 100%;
+  max-width: 150px;
+  min-height: 30px;
+  flex: none;
+  padding: 4px 6px;
+  font-size: clamp(11px, 1.15cqw, 14px);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.order-roll:disabled {
+  opacity: 0.45;
+}
+
+.order-go {
+  align-self: center;
+  min-width: 140px;
+}
+
+/* Điện thoại xoay ngang: ô trung tâm nhỏ, thu gọn chữ và khoảng cách. */
+@media (max-height: 550px) and (orientation: landscape) {
+  .land .center.order-panel {
+    gap: 4px;
+    padding: 5px;
+  }
+  .order-head span {
+    display: none;
+  }
+  .order-grid {
+    gap: 4px;
+  }
+  .order-zone {
+    gap: 2px;
+    padding: 3px 2px;
+  }
+  .land .order-roll {
+    min-height: 22px;
+    padding: 2px 4px;
+    font-size: 11px;
+  }
+  .order-name strong {
+    font-size: 11px;
+  }
+  .order-score b {
+    font-size: 13px;
+  }
+  .order-score span {
+    font-size: 9px;
+  }
+}

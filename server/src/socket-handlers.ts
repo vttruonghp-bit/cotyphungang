@@ -57,6 +57,9 @@ type Handler = (socket: IoSocket, payload: unknown, changed: Set<Room>) => Resul
 export function botDelay(room: Room): number {
   const game = room.game;
   if (!game) return 0;
+  // Đổ chọn thứ tự: chờ xúc xắc lăn xong; đổ xong cả lượt thì để mọi người xem bảng xếp hạng.
+  if (game.events.some((e) => e.type === 'order')) return 6000;
+  if (game.events.some((e) => e.type === 'orderRoll')) return 3600;
   const roll = game.events.find((e) => e.type === 'roll');
   const move = game.events.find((e) => e.type === 'move');
   if (roll && move?.type === 'move') {

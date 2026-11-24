@@ -211,11 +211,21 @@ describe('khách quan sát, bot và bắt đầu', () => {
       error: 'Chỉ chủ phòng được bắt đầu ván',
     });
     expect(await host.call('room:start')).toEqual({ ok: true });
-    const v = await server.settle(code, [host, two, watcher]);
+    let v = await server.settle(code, [host, two, watcher]);
     expect(v.phase).toBe('playing');
+    expect(v.game!.pending.type).toBe('order');
     expect(v.game!.players.map((p) => p.name)).toEqual(['Chủ', 'Hai']);
-    // Thứ tự đi do đổ chọn lượt quyết định.
+    // Mỗi người tự bấm đổ chọn thứ tự; người xem không đổ được.
+    expect(await watcher.act({ type: 'orderRoll', playerId: host.id })).toMatchObject({
+      ok: false,
+    });
+    expect(await two.act({ type: 'orderRoll', playerId: host.id })).toEqual({
+      ok: false,
+      error: 'Bạn chỉ được thao tác cho chính mình',
+    });
+    v = (await server.rollForOrder(code, [host, two, watcher].slice(0, 2))).view;
     expect(v.game!.log.filter((l) => l.text.startsWith('Đổ chọn lượt')).length).toBeGreaterThan(1);
+    expect(v.game!.pending.type).toBe('roll');
     expect(await host.call('room:start')).toEqual({ ok: false, error: 'Ván đã bắt đầu rồi' });
     expect(await watcher.act({ type: 'roll', playerId: watcher.id })).toEqual({
       ok: false,

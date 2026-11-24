@@ -1,4 +1,4 @@
-import { BOARD_SIZE, type GameState, type PayReason } from '@cotiphu/shared';
+import { BOARD_SIZE, type GameEvent, type GameState, type PayReason } from '@cotiphu/shared';
 import { ANTICIPATION_MS, ROLL_MS, STEP_MS, walkOf } from '../components/Board';
 
 /** Tự mua đất, tự xây nhà, nộp thuế: tiền giảm nhưng không phải "bị trừ tiền" để khóc. */
@@ -11,7 +11,9 @@ const NOT_A_LOSS: readonly PayReason[] = ['tax', 'purchase', 'upgrade'];
  */
 export function fireworksDelay(previous: GameState | null, game: GameState): number | null {
   if (!previous) return null;
-  const go = game.events.find((e) => e.type === 'move' && e.passedGo);
+  const go = game.events.find(
+    (e): e is Extract<GameEvent, { type: 'move' }> => e.type === 'move' && e.passedGo,
+  );
   if (go) {
     const walk = walkOf(game, previous);
     if (walk && walk.playerId === go.playerId) {

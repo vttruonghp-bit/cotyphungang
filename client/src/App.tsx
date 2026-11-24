@@ -51,7 +51,11 @@ export function App() {
       () => {
         hotSeat.dispatch(action);
       },
-      Math.max(aiPending.type === 'roll' ? 1100 : 800, aiAnimationDelay),
+      aiGame.events.some((e) => e.type === 'order')
+        ? 6000 // Bảng xếp hạng thứ tự còn hiện: đợi rồi mới đi nước đầu.
+        : aiPending.type === 'order'
+          ? 1800
+          : Math.max(aiPending.type === 'roll' ? 1100 : 800, aiAnimationDelay),
     );
     return () => window.clearTimeout(timer);
     // Pending and action count change after every game action.

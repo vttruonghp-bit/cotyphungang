@@ -9,6 +9,7 @@ import {
   createGame,
   isGameOver,
   seededRng,
+  waitingOn,
   type Action,
   type GameState,
   type ManageOp,
@@ -56,7 +57,12 @@ export function checkInvariants(s: GameState) {
   for (const id of seen) check(allIds.has(id), `thẻ lạ ${id}`);
   check(s.log.length <= 100, 'nhật ký quá dài');
   const pd = s.pending;
-  if (pd.type !== 'ended') {
+  if (pd.type === 'order') {
+    check(
+      s.players.every((p) => p.status === 'active'),
+      'chọn thứ tự khi có người đã thua',
+    );
+  } else if (pd.type !== 'ended') {
     const p = s.players.find((x) => x.id === pd.playerId);
     check(p?.status === 'active', 'chờ người không còn chơi');
     check(s.players[s.current]!.status === 'active', 'người giữ lượt không còn chơi');
@@ -71,6 +77,10 @@ const pick = <T>(rng: Rng, xs: readonly T[]): T => xs[rng.int(0, xs.length - 1)]
 export function chooseAction(s: GameState, rng: Rng): Action {
   const pd = s.pending;
   if (pd.type === 'ended') throw new Error('Ván đã kết thúc');
+  if (pd.type === 'order') {
+    const ids = waitingOn(s);
+    return { type: 'orderRoll', playerId: ids[rng.int(0, ids.length - 1)]! };
+  }
   const id = pd.playerId;
   const me = s.players.find((p) => p.id === id)!;
   const mine = s.tiles.flatMap((t, i) => (t?.owner === id ? [i] : []));
