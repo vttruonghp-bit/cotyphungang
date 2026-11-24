@@ -19,7 +19,7 @@ const STEP_POOL = 4;
 const SPEECH_VOLUME = 1;
 
 /** Câu thoại theo tình huống trong ván. */
-export type SpeechLine = 'jail' | 'rent' | 'tax' | 'endTurn';
+export type SpeechLine = 'jail' | 'rent' | 'tax' | 'endTurn' | 'cry';
 
 const SPEECH_SRC: Record<SpeechLine, string> = {
   /** Bị vào tù: "Vào tù là rõ". */
@@ -30,6 +30,8 @@ const SPEECH_SRC: Record<SpeechLine, string> = {
   tax: '/la-no.mp3',
   /** Xong lượt mà chưa bấm "Kết thúc": "Kết thúc đi ạ". */
   endTurn: '/ket-thuc-di-a.mp3',
+  /** Bị trừ tiền (trừ nộp thuế, tự mua, tự xây): tiếng khóc 5 giây. */
+  cry: '/khoc.mp3',
 };
 
 let background: HTMLAudioElement | null = null;

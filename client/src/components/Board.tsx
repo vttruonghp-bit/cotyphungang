@@ -27,9 +27,9 @@ interface BoardProps {
 }
 
 /** Three-second roll, short anticipation, 0.2s per crossed tile. */
-const ROLL_MS = 3000;
-const ANTICIPATION_MS = 200;
-const STEP_MS = 200;
+export const ROLL_MS = 3000;
+export const ANTICIPATION_MS = 200;
+export const STEP_MS = 200;
 const LAND_MS = 200;
 
 function cornerSide(tile: Tile): string {
@@ -59,14 +59,14 @@ function LevelStrip({ level, color }: { level: number; color: string | null }) {
   );
 }
 
-interface Walk {
+export interface Walk {
   playerId: string;
   from: number;
   steps: number;
 }
 
 /** Lần đi theo 2 xúc xắc trong thao tác vừa rồi; đi bằng thẻ, Metro, vào tù thì nhảy thẳng. */
-function walkOf(game: GameState, previous?: GameState | null): Walk | null {
+export function walkOf(game: GameState, previous?: GameState | null): Walk | null {
   // Only animate the move made by this action, never a historical dice roll.
   if (!previous || game.events.length <= previous.events.length) return null;
   const ev = game.events.slice(previous.events.length);
