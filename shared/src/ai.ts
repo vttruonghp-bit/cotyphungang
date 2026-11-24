@@ -1,21 +1,36 @@
+/**
+ * Bot chọn nước đi cho một người chơi bất kỳ: dùng cho đối thủ máy khi chơi một mình, và để
+ * máy chủ chơi hộ ghế vắng mặt quá lâu trong ván online. Chỉ đọc ván và trả về một nước;
+ * mọi nước vẫn đi qua bộ luật như thao tác của người thật.
+ */
 import { BOARD } from './board';
 import { redeemCost } from './finance';
 import type { Action, GameState, ManageOp } from './engine/types';
 
+const owned = (s: GameState, playerId: string) =>
+  s.tiles.flatMap((t, i) => (t?.owner === playerId ? [i] : []));
+const buyPrice = (i: number) => {
+  const tile = BOARD[i];
+  return tile && 'price' in tile ? tile.price : 0;
+};
+const spendReserve = (cash: number) => Math.max(100, Math.floor(cash * 0.22));
+
 /**
- * Người máy (bot): mỗi lần chọn một thao tác cho `playerId`, theo đúng luật như người thật.
- * Không ngẫu nhiên để dễ đoán và dễ kiểm tra. Trả null khi ván không chờ người này.
+ * Một nước mỗi lần gọi, để xúc xắc, thẻ và nhật ký vẫn xem được.
+ * null khi ván không chờ `playerId` (hoặc người này không còn trong ván).
  */
 export function chooseBotAction(s: GameState, playerId: string): Action | null {
   const pending = s.pending;
   if (pending.type === 'ended' || pending.playerId !== playerId) return null;
   const p = s.players.find((x) => x.id === playerId);
-  if (!p) return null;
+  if (!p || p.status !== 'active') return null;
   const cash = p.cash;
-  const owned = s.tiles.flatMap((t, i) => (t?.owner === playerId ? [i] : []));
   switch (pending.type) {
-    case 'roll':
+    case 'roll': {
+      // Redeem mortgaged property only with a safe cash buffer, once per turn.
+      // Main bot flow rolls immediately, preserving a snappy game.
       return { type: 'roll', playerId };
+    }
     case 'jail':
       if (p.heldCards.some((c) => c.kind === 'jailFree')) return { type: 'useJailCard', playerId };
       return { type: 'roll', playerId };
@@ -25,8 +40,9 @@ export function chooseBotAction(s: GameState, playerId: string): Action | null {
         : { type: 'payBail', playerId };
     case 'buy': {
       const cost = buyPrice(pending.tile);
-      // Mua khi mua xong vẫn còn một khoản dự phòng.
-      return { type: cash >= cost + reserve(cash) ? 'buy' : 'declineBuy', playerId };
+      const canAfford = cash >= cost + spendReserve(cash);
+      // Cheap lots or stations remain interesting if cash stays adequate.
+      return { type: canAfford ? 'buy' : 'declineBuy', playerId };
     }
     case 'upgrade': {
       const t = BOARD[pending.tile]!;
@@ -37,13 +53,16 @@ export function chooseBotAction(s: GameState, playerId: string): Action | null {
             : Infinity
           : redeemCost(buyPrice(pending.tile)) +
             (pending.mode === 'redeemBuild' && t.kind === 'property' ? t.upgradeCost : 0);
-      return { type: cash >= cost + reserve(cash) ? 'upgrade' : 'skipUpgrade', playerId };
+      return {
+        type: cash >= cost + spendReserve(cash) ? 'upgrade' : 'skipUpgrade',
+        playerId,
+      };
     }
     case 'pay':
       if (cash >= pending.total) return { type: 'pay', playerId };
       if (pending.reason === 'upgrade') return { type: 'cancelUpgrade', playerId };
-      // Thiếu tiền: bán nhà, cầm đất, bán đất lần lượt (không đụng ô đang nâng cấp dở).
-      for (const i of owned) {
+      // Sell/mortgage in legal order, never try to liquidate the pending upgrade tile.
+      for (const i of owned(s, playerId)) {
         if (pending.upgradeTile === i) continue;
         const t = s.tiles[i]!;
         const op: ManageOp['op'] = t.level > 0 ? 'downgrade' : t.mortgaged ? 'sell' : 'mortgage';
@@ -55,22 +74,19 @@ export function chooseBotAction(s: GameState, playerId: string): Action | null {
     case 'drawCard':
       return { type: 'drawCard', playerId };
     case 'cardDice':
-      return { type: pending.dice === null ? 'rollCardDice' : 'confirmCardDice', playerId };
+      return {
+        type: pending.dice === null ? 'rollCardDice' : 'confirmCardDice',
+        playerId,
+      };
     case 'metro':
       return { type: 'metro', playerId, destination: null };
     case 'chooseTile': {
       if (!pending.options.length) return { type: 'timeout' };
-      const sorted = [...pending.options].sort((a, b) =>
-        pending.purpose === 'gambleDown' ? buyPrice(a) - buyPrice(b) : buyPrice(b) - buyPrice(a),
-      );
+      const sorted = [...pending.options].sort((a, b) => {
+        if (pending.purpose === 'gambleDown') return buyPrice(a) - buyPrice(b);
+        return buyPrice(b) - buyPrice(a);
+      });
       return { type: 'chooseTile', playerId, tile: sorted[0]! };
     }
   }
 }
-
-function buyPrice(i: number): number {
-  const tile = BOARD[i];
-  return tile && 'price' in tile ? tile.price : 0;
-}
-
-const reserve = (cash: number) => Math.max(100, Math.floor(cash * 0.22));

@@ -35,6 +35,8 @@ export interface Seat {
   icon: number;
   /** Người này đang mở trang (có kết nối). */
   connected: boolean;
+  /** Máy chủ đang chơi hộ ghế này vì vắng mặt quá lâu; người chơi quay lại là trả quyền ngay. */
+  auto: boolean;
   isHost: boolean;
   /** Đang nối kênh nói chuyện (nghe được người khác). */
   voice: boolean;

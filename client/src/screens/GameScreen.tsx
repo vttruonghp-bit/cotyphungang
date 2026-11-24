@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { playDiceSound, setGameSoundEnabled } from '../audio/gameAudio';
+import {
+  playDiceSound,
+  playSpeech,
+  setGameSoundEnabled,
+  type SpeechLine,
+} from '../audio/gameAudio';
 import {
   BOARD,
   gridPosition,
@@ -95,6 +100,28 @@ const revealsOf = ({ game, previous }: GameView): Reveal[] => {
     .filter((e) => !(e.type === 'card' && confirmed !== undefined && e.cardId === confirmed))
     .map((event) => ({ game, previous, event }));
 };
+
+/**
+ * Câu thoại cho thao tác vừa rồi, hoặc null nếu không có gì đáng nói. Bộ luật xóa `events` ở đầu
+ * mỗi thao tác nên sự kiện vào tù trong `game` luôn là của thao tác này; khoản phải trả thì so với
+ * ván trước để một khoản không phát tiếng hai lần.
+ */
+function speechFor(previous: GameState, game: GameState): SpeechLine | null {
+  if (game.events.some((e) => e.type === 'jail')) return 'jail';
+  const pd = game.pending;
+  if (pd.type !== 'pay') return null;
+  const before = previous.pending;
+  const same =
+    before.type === 'pay' &&
+    before.playerId === pd.playerId &&
+    before.reason === pd.reason &&
+    before.total === pd.total;
+  if (same) return null;
+  if (pd.reason === 'tax') return 'tax';
+  // Trả thuê đất/ga/nhà máy cho người khác; trả cho Ngân hàng thì không phải tiền thuê.
+  if (pd.reason === 'rent' && pd.creditors.some((c) => c.playerId !== null)) return 'rent';
+  return null;
+}
 
 /** Người ván đang chờ (người phải bấm nút tiếp theo); khi ván kết thúc là người giữ lượt cuối. */
 function waitingPlayer(s: GameState): PlayerState {
@@ -196,6 +223,26 @@ export function GameScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions]);
 
+  // Câu thoại: chọn ngay khi ván đổi, nhưng chờ quân cờ dừng chân mới phát cho khớp ô vừa đến.
+  const speechSeen = useRef(actions);
+  const queuedSpeech = useRef<SpeechLine | null>(null);
+  const [speechTick, setSpeechTick] = useState(0);
+  useEffect(() => {
+    if (speechSeen.current !== actions) {
+      speechSeen.current = actions;
+      // Tiếng luôn thuộc thao tác mới nhất: thao tác không có gì đáng nói thì bỏ câu đang chờ.
+      queuedSpeech.current = previous ? speechFor(previous, game) : null;
+      // Bàn cờ báo "đang đi" sau khung hình này, nên đợi một lần vẽ nữa rồi mới xét.
+      if (queuedSpeech.current) setSpeechTick((n) => n + 1);
+      return;
+    }
+    if (walking || queuedSpeech.current === null) return;
+    playSpeech(queuedSpeech.current);
+    queuedSpeech.current = null;
+    // Chỉ phát theo thao tác mới và lúc quân cờ dừng chân.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions, walking, speechTick]);
+
 
   const cur = game.players[game.current]!;
   const waiter = waitingPlayer(game);
@@ -225,6 +272,8 @@ export function GameScreen({
     return () => clearTimeout(t);
   }, [walking, arrivalTile]);
   const offline = new Set(online?.seats.filter((s) => !s.connected).map((s) => s.id));
+  // Ghế rời ván quá lâu: máy chủ đang đi hộ, trả quyền ngay khi người chơi mở lại trang.
+  const autoSeats = new Set(online?.seats.filter((s) => s.auto).map((s) => s.id));
 
   // Mỗi thao tác mới: về xem ô đang đứng, xếp các lá thẻ vừa rút vào hàng chờ xem. Đặt lại ngay
   // trong lần vẽ này (không đợi effect) để không lóe màn cũ hay hiện nhầm lá thẻ trong một khung hình.
@@ -503,7 +552,7 @@ export function GameScreen({
     !remote && me.id !== cur.id && playing
       ? `Chuyển máy cho ${me.name}: ${waitingText(game, me)}`
       : othersText && playing
-        ? `${othersText}${offline.has(waiter.id) ? ' · mất kết nối' : ''}`
+        ? `${othersText}${autoSeats.has(waiter.id) ? ' · máy chủ đang chơi hộ' : offline.has(waiter.id) ? ' · mất kết nối' : ''}`
         : remote && myMove && me.id !== cur.id && playing
           ? `Ván đang chờ bạn (ngoài lượt của ${cur.name}).`
           : null;
@@ -638,6 +687,7 @@ export function GameScreen({
               me={waiter}
               mine={remote !== null && myMove}
               away={offline.has(waiter.id)}
+              auto={autoSeats.has(waiter.id)}
               tile={
                 centerRollLocked && previous
                   ? (previous.players.find((p) => p.id === waiter.id)?.position ?? waiter.position)
@@ -803,6 +853,8 @@ interface CenterPanelProps {
   mine: boolean;
   /** Online: người đó đang mất kết nối. */
   away: boolean;
+  /** Online: người đó rời ván quá lâu, máy chủ đang chơi hộ. */
+  auto: boolean;
   tile: number;
   viewing: boolean;
   dice: readonly number[] | null;
@@ -929,6 +981,7 @@ function CenterPanel({
   me,
   mine,
   away,
+  auto,
   tile,
   viewing,
   dice,
@@ -960,8 +1013,11 @@ function CenterPanel({
       <div className="turn-hero">
         <div className="turn-hero-name">
           <span>{isTurn ? 'LƯỢT CỦA' : 'ĐANG CHỜ'}</span>
-          <strong>{me.name}</strong>
-          {away && <small>mất kết nối</small>}
+          <div className="turn-hero-who">
+            <strong>{me.name}</strong>
+            <b className="turn-hero-cash">{money(me.cash)}</b>
+          </div>
+          {away && <small>{auto ? 'mất kết nối · đang chơi hộ' : 'mất kết nối'}</small>}
         </div>
         <div className="turn-hero-dice">
           {dice && !viewing ? (

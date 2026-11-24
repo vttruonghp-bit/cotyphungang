@@ -69,7 +69,10 @@ export function botDelay(room: Room): number {
   return 1300;
 }
 
+/** Những gì lớp ngoài (vòng chơi hộ, lúc tắt máy chủ) cần gọi. */
 export interface RoomHandlers {
+  /** Gửi trạng thái mới của phòng sau khi lớp ngoài tự đổi phòng (ví dụ đi hộ một nước). */
+  broadcast(room: Room): void;
   /** Dừng mọi lượt bot đang hẹn giờ (khi tắt máy chủ). */
   stop(): void;
 }
@@ -386,6 +389,7 @@ export function attachRoomHandlers(
   });
 
   return {
+    broadcast,
     stop() {
       for (const { timer } of botTimers.values()) clearTimeout(timer);
       botTimers.clear();

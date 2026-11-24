@@ -11,6 +11,7 @@ import {
   createGame,
   isGameOver,
   type Action,
+  type GameState,
   type NewPlayer,
   type Rng,
 } from '@cotiphu/shared';
@@ -69,21 +70,34 @@ export function playAction(room: Room, seat: SeatRecord, action: Action, rng: Rn
   if (action.type === 'timeout' || !controls(room, seat, action.playerId)) {
     return fail('Bạn chỉ được thao tác cho chính mình');
   }
-  return apply(room, action, rng);
+  return commit(room, room.game, action, rng);
 }
 
 /** Bot `bot` đi một thao tác; thao tác bot chọn bị luật từ chối thì coi như hết giờ. */
 export function playBot(room: Room, bot: SeatRecord, rng: Rng): Result {
   if (room.phase !== 'playing' || !room.game) return fail('Ván không còn chạy');
-  const action = chooseBotAction(room.game, bot.id) ?? { type: 'timeout' };
-  const res = apply(room, action, rng);
-  return res.ok || action.type === 'timeout' ? res : apply(room, { type: 'timeout' }, rng);
+  const game = room.game;
+  const action = chooseBotAction(game, bot.id) ?? { type: 'timeout' };
+  const res = commit(room, game, action, rng);
+  return res.ok || action.type === 'timeout' ? res : commit(room, game, { type: 'timeout' }, rng);
 }
 
-function apply(room: Room, action: Action, rng: Rng): Result {
-  const result = applyAction(room.game!, action, rng);
+/**
+ * Chơi hộ một nước cho ghế vắng mặt: bot chọn nước rồi áp dụng như thao tác của chính ghế đó,
+ * nên ván vẫn chạy đúng luật. Người chơi quay lại thì không ai gọi hàm này nữa.
+ */
+export function playForSeat(room: Room, seat: SeatRecord, rng: Rng): Result {
+  if (room.phase !== 'playing' || !room.game) return fail('Ván chưa bắt đầu');
+  const action = chooseBotAction(room.game, seat.id);
+  if (!action) return fail('Ván không chờ ghế này');
+  return commit(room, room.game, action, rng);
+}
+
+/** Đưa một nước qua bộ luật rồi ghi lại vào phòng. */
+function commit(room: Room, game: GameState, action: Action, rng: Rng): Result {
+  const result = applyAction(game, action, rng);
   if (!result.ok) return fail(result.error);
-  room.previous = room.game;
+  room.previous = game;
   room.game = result.state;
   if (isGameOver(result.state)) room.phase = 'ended';
   // Đổi màu/biểu tượng trong ván thì ghế cũng đổi theo.

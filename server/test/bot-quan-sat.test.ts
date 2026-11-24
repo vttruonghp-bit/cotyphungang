@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { seededRng } from '@cotiphu/shared';
+import { Rooms } from '../src/rooms';
 import { CLOSED_HOST_LEFT } from '../src/socket-handlers';
 import { profile, startServer, until, type TestServer } from './helpers';
 
@@ -119,5 +121,48 @@ describe('chơi chung một máy có khách xem', () => {
       expect(await p.call('room:local', req), JSON.stringify(req)).toEqual({ ok: false, error });
     }
     expect(server.app.rooms.size).toBe(0);
+  });
+});
+
+describe('chơi hộ người vắng mặt không đụng tới bot, khách xem và phòng chơi trên 1 máy', () => {
+  it('chỉ người chơi thật vắng quá hạn mới được chơi hộ', () => {
+    let clock = 0;
+    const rooms = new Rooms(() => clock);
+    const rng = seededRng(3);
+    const { room, seat: host } = rooms.create(profile('Chủ', 0, 0));
+    const guest = rooms.join(room.code, profile('Khách', 1, 1));
+    if (!guest.ok) throw new Error(guest.error);
+    const watcher = rooms.join(room.code, profile('Xem', 2, 2));
+    if (!watcher.ok) throw new Error(watcher.error);
+    expect(rooms.setRole(room, watcher.value.seat, 'spectator').ok).toBe(true);
+    expect(rooms.addBot(room, host).ok).toBe(true);
+    for (const s of [host, guest.value.seat, watcher.value.seat]) {
+      rooms.setSocket(room, s, `s-${s.id}`);
+    }
+    expect(rooms.start(room, host, rng).ok).toBe(true);
+
+    // Khách và người xem cùng mất trang lâu: chỉ khách (người chơi) được chơi hộ.
+    rooms.setSocket(room, guest.value.seat, null);
+    rooms.setSocket(room, watcher.value.seat, null);
+    clock = 10_000;
+    rooms.autoPlay(room, rng, 1_000);
+    const auto = Object.fromEntries(room.seats.map((s) => [s.name, s.auto]));
+    expect(auto).toEqual({ Chủ: false, Khách: true, Xem: false, 'Bot 1': false });
+  });
+
+  it('phòng chơi trên 1 máy: chủ phòng vắng lâu thì cũng không ai chơi hộ', () => {
+    let clock = 0;
+    const rooms = new Rooms(() => clock);
+    const rng = seededRng(4);
+    const created = rooms.createLocal([profile('A', 0, 0), profile('B', 1, 1)], rng);
+    if (!created.ok) throw new Error(created.error);
+    const { room, seat } = created.value;
+    rooms.setSocket(room, seat, 's-host');
+    rooms.setSocket(room, seat, null);
+    clock = 10_000;
+    const turn = room.game!.turnNumber;
+    expect(rooms.autoPlay(room, rng, 1_000)).toBe(false);
+    expect(room.seats.every((s) => !s.auto)).toBe(true);
+    expect(room.game!.turnNumber).toBe(turn);
   });
 });

@@ -35,6 +35,7 @@ export function roomView(room: Room): RoomView {
     icon: s.icon,
     // Bot luôn có mặt; người chơi chung máy chủ phòng có mặt khi chủ phòng mở trang.
     connected: s.bot || (s.local ? host?.socketId != null : s.socketId !== null),
+    auto: s.auto,
     isHost: s.id === room.hostId,
     voice: s.voice,
     mic: s.mic,
