@@ -55,6 +55,17 @@
   background: #e4c77a;
   color: #14243d;
 }
+.side-btn.side-code {
+  flex-direction: column;
+  gap: 1px;
+  background: #3b2f0b;
+  font-size: clamp(8.5px, 2.4cqh, 11px);
+}
+.side-btn.side-code b {
+  color: #fde68a;
+  font-size: clamp(10px, 2.9cqh, 13px);
+  letter-spacing: 0.08em;
+}
 .side-btn.side-mic {
   background: #334155;
 }

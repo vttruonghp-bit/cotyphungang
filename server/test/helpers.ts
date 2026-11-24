@@ -86,8 +86,13 @@ export class Phone {
     return r.data;
   }
 
-  create(capacity: number, profile: Profile): Promise<SeatTicket> {
-    return this.seat(this.call<SeatTicket>('room:create', { capacity, profile }));
+  create(profile: Profile): Promise<SeatTicket> {
+    return this.seat(this.call<SeatTicket>('room:create', { profile }));
+  }
+
+  /** Chơi chung một máy cho khách xem: người đầu là chủ phòng (máy này). */
+  local(players: Profile[]): Promise<SeatTicket> {
+    return this.seat(this.call<SeatTicket>('room:local', { players }));
   }
 
   join(code: string, profile: Profile): Promise<SeatTicket> {

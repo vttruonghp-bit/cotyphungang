@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { MAX_PLAYERS, MIN_PLAYERS, type Profile, type RoomView, type Seat } from '@cotiphu/shared';
+import {
+  MAX_BOTS,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  type Profile,
+  type RoomView,
+  type Seat,
+  type SeatRole,
+} from '@cotiphu/shared';
 import type { Appearance } from '../components/IconPicker';
 import { TokenIcon } from '../components/TokenIcon';
 import { ProfileEditor } from '../online/ProfileEditor';
@@ -9,31 +17,41 @@ import { ICON_NAMES, colorOf } from '../theme';
 import './setup-screen.css';
 import './lobby-screen.css';
 
-const COUNTS = Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => MIN_PLAYERS + i);
-
 interface LobbyScreenProps {
   room: RoomView;
   meId: string;
   onProfile: (profile: Profile) => Promise<string | null>;
-  onCapacity: (capacity: number) => Promise<string | null>;
+  onRole: (role: SeatRole) => Promise<string | null>;
+  onAddBot: () => Promise<string | null>;
+  onRemoveBot: (id: string) => Promise<string | null>;
   onStart: () => Promise<string | null>;
   onLeave: () => Promise<string | null>;
 }
 
-/** Phòng chờ (hình 5, bản online): mã phòng, các ghế, hồ sơ của mình, nút của chủ phòng. */
+/**
+ * Phòng chờ online: mã phòng, người chơi (kể cả bot), khách quan sát, hồ sơ của mình.
+ * Ai vào cũng là người chơi (tối đa 6), tự chuyển sang xem được; chủ phòng thêm bot rồi bắt đầu.
+ */
 export function LobbyScreen({
   room,
   meId,
   onProfile,
-  onCapacity,
+  onRole,
+  onAddBot,
+  onRemoveBot,
   onStart,
   onLeave,
 }: LobbyScreenProps) {
-  const { code, capacity, seats } = room;
+  const { code, seats } = room;
   const me = seats.find((s) => s.id === meId);
+  const players = seats.filter((s) => s.role === 'player');
+  const watchers = seats.filter((s) => s.role === 'spectator');
   const others = seats.filter((s) => s.id !== meId);
   const isHost = me?.isHost ?? false;
-  const full = seats.length >= capacity;
+  const amPlayer = me?.role === 'player';
+  const bots = players.filter((s) => s.bot);
+  const full = players.length >= MAX_PLAYERS;
+  const ready = players.length >= MIN_PLAYERS;
 
   // Tên đang gõ (chưa gửi); null thì hiện tên trên máy chủ.
   const [nameDraft, setNameDraft] = useState<string | null>(null);
@@ -124,17 +142,48 @@ export function LobbyScreen({
     setToast((await copyRoomLink(code)) ? 'Đã chép link mời' : 'Không chép được, hãy gửi mã phòng');
   };
 
-  const takenColors = others.map((s) => s.color);
-  const takenIcons = others.map((s) => s.icon);
-  const missing = capacity - seats.length;
-  const seatNumber = (s: Seat) => seats.indexOf(s) + 1;
+  // Khách quan sát không có quân nên chọn màu nào cũng được.
+  const otherPlayers = amPlayer ? players.filter((s) => s.id !== meId) : [];
+  const takenColors = otherPlayers.map((s) => s.color);
+  const takenIcons = otherPlayers.map((s) => s.icon);
+  const playerNumber = (s: Seat) => players.indexOf(s) + 1;
+  const canAddBot = isHost && bots.length < MAX_BOTS && !full;
+
+  const editor = (
+    <ProfileEditor
+      id="lobby-name"
+      label={
+        <>
+          {isHost ? '★ Chủ phòng' : amPlayer ? `Người chơi ${playerNumber(me)}` : 'Khách xem'} · bạn
+          <ConnDot on />
+        </>
+      }
+      value={value}
+      onChange={change}
+      onNameDone={() => void nameDone()}
+      takenColors={takenColors}
+      takenIcons={takenIcons}
+      invalid={nameDraft !== null && !nameDraft.trim()}
+    />
+  );
+  const roleBtn = (
+    <button
+      type="button"
+      className={`btn btn-small ${amPlayer ? 'btn-outline' : 'btn-teal'} lobby-role`}
+      disabled={busy || (!amPlayer && full)}
+      onClick={() => void run(() => onRole(amPlayer ? 'spectator' : 'player'))}
+    >
+      {amPlayer ? '👁 Chuyển sang xem' : full ? `Đã đủ ${MAX_PLAYERS} người chơi` : '🎲 Vào chơi'}
+    </button>
+  );
 
   return (
     <main className="phone setup-screen lobby-screen">
       <header className="app-header">
         <h1 className="app-title">CỜ TỶ PHÚ</h1>
         <span className="app-turn">
-          Phòng chờ · {seats.length}/{capacity} người
+          Phòng chờ · {players.length}/{MAX_PLAYERS} người chơi
+          {watchers.length > 0 ? ` · ${watchers.length} xem` : ''}
         </span>
       </header>
 
@@ -160,68 +209,75 @@ export function LobbyScreen({
             </div>
           </div>
 
-          {isHost && (
-            <>
-              <p className="eyebrow setup-label" id="lobby-count-label">
-                Chọn số người
-              </p>
-              <div className="setup-count" role="radiogroup" aria-labelledby="lobby-count-label">
-                {COUNTS.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    role="radio"
-                    aria-checked={n === capacity}
-                    className={`setup-count-btn${n === capacity ? ' is-on' : ''}`}
-                    disabled={n < seats.length || busy}
-                    onClick={() => n !== capacity && void run(() => onCapacity(n))}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
           <div className="setup-players-head">
             <span className="eyebrow">
-              {seats.length}/{capacity} người chơi
+              Người chơi · {players.length}/{MAX_PLAYERS}
             </span>
-            <span className="muted">Màu và kí hiệu không trùng nhau</span>
+            {amPlayer ? roleBtn : <span className="muted">Màu và kí hiệu không trùng nhau</span>}
           </div>
           <div className="lobby-seats">
-            <ProfileEditor
-              id="lobby-name"
-              label={
-                <>
-                  {isHost ? '★ Chủ phòng' : `Người chơi ${seatNumber(me)}`} · bạn
-                  <ConnDot on />
-                </>
-              }
-              value={value}
-              onChange={change}
-              onNameDone={() => void nameDone()}
-              takenColors={takenColors}
-              takenIcons={takenIcons}
-              invalid={nameDraft !== null && !nameDraft.trim()}
-            />
-            {swapped && (
+            {amPlayer && editor}
+            {amPlayer && swapped && (
               <p className="box box-amber lobby-swapped" role="status">
                 Màu hoặc kí hiệu bạn chọn đã có người dùng nên được đổi. Bấm quân để chọn lại.
               </p>
             )}
             <div className="lobby-grid">
-              {others.map((s) => (
-                <SeatCard key={s.id} seat={s} number={seatNumber(s)} />
-              ))}
-              {Array.from({ length: Math.max(0, missing) }, (_, k) => (
-                <div key={`empty-${k}`} className="lobby-seat is-empty">
-                  <span className="lobby-seat-label">Người chơi {seats.length + k + 1}</span>
-                  <span className="lobby-wait">Đang chờ…</span>
+              {players
+                .filter((s) => s.id !== meId)
+                .map((s) => (
+                  <SeatCard
+                    key={s.id}
+                    seat={s}
+                    number={playerNumber(s)}
+                    onRemove={isHost && s.bot ? () => void run(() => onRemoveBot(s.id)) : undefined}
+                    busy={busy}
+                  />
+                ))}
+              {canAddBot && (
+                <button
+                  type="button"
+                  className="lobby-seat is-empty lobby-add-bot"
+                  disabled={busy}
+                  onClick={() => void run(onAddBot)}
+                >
+                  <span className="lobby-seat-label">Thêm bot · còn {MAX_BOTS - bots.length}</span>
+                  <span className="lobby-add-text">🤖 + Bot (máy tự chơi)</span>
+                </button>
+              )}
+              {!full && (
+                <div className="lobby-seat is-empty">
+                  <span className="lobby-seat-label">Còn {MAX_PLAYERS - players.length} chỗ</span>
+                  <span className="lobby-wait">Đang chờ bạn bè…</span>
                 </div>
-              ))}
+              )}
             </div>
           </div>
+
+          <div className="setup-players-head lobby-watch-head">
+            <span className="eyebrow">Khách quan sát · {watchers.length}</span>
+            {amPlayer ? <span className="muted">Xem ván, chat và nói chuyện</span> : roleBtn}
+          </div>
+          {!amPlayer && editor}
+          {watchers.some((s) => s.id !== meId) && (
+            <ul className="lobby-watchers">
+              {watchers
+                .filter((s) => s.id !== meId)
+                .map((s) => (
+                  <li key={s.id} className={s.connected ? '' : 'is-away'}>
+                    <TokenIcon icon={s.icon} color={s.color} size={18} />
+                    <span>{s.name}</span>
+                    {s.isHost && <b>★</b>}
+                    <ConnDot on={s.connected} />
+                  </li>
+                ))}
+            </ul>
+          )}
+          {watchers.length === 0 && (
+            <p className="muted lobby-watch-empty">
+              Chưa có ai. Ai vào khi đã đủ 6 người cũng thành khách xem.
+            </p>
+          )}
         </div>
 
         <div className="setup-footer">
@@ -248,14 +304,14 @@ export function LobbyScreen({
               <button
                 type="button"
                 className="btn btn-grow btn-teal"
-                disabled={!full || busy}
+                disabled={!ready || busy}
                 onClick={() => void run(onStart)}
               >
-                {full ? `Bắt đầu ván ${capacity} người` : `Chờ đủ ${capacity} người…`}
+                {ready ? `Bắt đầu ván ${players.length} người` : 'Cần ít nhất 2 người chơi'}
               </button>
             ) : (
               <button type="button" className="btn btn-grow" disabled>
-                {full ? 'Chờ chủ phòng…' : `Chờ đủ ${capacity} người…`}
+                Chờ chủ phòng bắt đầu…
               </button>
             )}
           </div>
@@ -282,8 +338,18 @@ function ConnDot({ on }: { on: boolean }) {
   );
 }
 
-/** Ghế của người khác: chỉ xem. */
-function SeatCard({ seat, number }: { seat: Seat; number: number }) {
+/** Ghế của người chơi khác (hay bot): chỉ xem; chủ phòng bỏ được bot. */
+function SeatCard({
+  seat,
+  number,
+  onRemove,
+  busy,
+}: {
+  seat: Seat;
+  number: number;
+  onRemove?: () => void;
+  busy: boolean;
+}) {
   const c = colorOf(seat.color);
   return (
     <div
@@ -291,14 +357,28 @@ function SeatCard({ seat, number }: { seat: Seat; number: number }) {
       style={{ ['--pc' as string]: c.main, ['--pc-soft' as string]: c.soft }}
     >
       <span className="lobby-seat-label">
-        {seat.isHost ? '★ Chủ phòng' : `Người chơi ${number}`}
-        <ConnDot on={seat.connected} />
+        {seat.isHost ? '★ Chủ phòng' : seat.bot ? '🤖 Bot' : `Người chơi ${number}`}
+        {onRemove ? (
+          <button
+            type="button"
+            className="lobby-remove"
+            aria-label={`Bỏ ${seat.name}`}
+            disabled={busy}
+            onClick={onRemove}
+          >
+            ✕
+          </button>
+        ) : (
+          <ConnDot on={seat.connected} />
+        )}
       </span>
       <span className="lobby-seat-row">
         <TokenIcon icon={seat.icon} color={seat.color} size={28} />
         <span className="lobby-seat-text">
           <b title={seat.name}>{seat.name}</b>
-          <span>{seat.connected ? ICON_NAMES[seat.icon] : 'Mất kết nối'}</span>
+          <span>
+            {seat.bot ? 'Máy chủ tự chơi' : seat.connected ? ICON_NAMES[seat.icon] : 'Mất kết nối'}
+          </span>
         </span>
       </span>
     </div>

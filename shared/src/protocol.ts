@@ -13,6 +13,19 @@ export const PLAYER_NAME_MAX = 12;
 export const CHAT_TEXT_MAX = 200;
 /** Máy chủ giữ chừng này tin gần nhất của mỗi phòng (để người vào lại xem tiếp). */
 export const CHAT_HISTORY_MAX = 60;
+/** Chủ phòng thêm được tối đa chừng này bot (máy chủ tự chơi). */
+export const MAX_BOTS = 2;
+/** Số khách quan sát tối đa mỗi phòng. */
+export const MAX_SPECTATORS = 20;
+
+/** Người chơi có lượt trong ván, hay khách chỉ xem, chat và nói chuyện. */
+export type SeatRole = 'player' | 'spectator';
+
+/**
+ * online: mỗi người chơi một máy. local: mọi người chơi chung máy của chủ phòng, phòng chỉ để
+ * khách quan sát vào xem bằng mã.
+ */
+export type RoomKind = 'online' | 'local';
 
 /** Một ghế trong phòng. `id` trùng với mã người chơi trong GameState khi ván bắt đầu. */
 export interface Seat {
@@ -29,6 +42,11 @@ export interface Seat {
   voice: boolean;
   /** Đang bật mic. */
   mic: boolean;
+  role: SeatRole;
+  /** Máy chủ tự chơi ghế này. */
+  bot: boolean;
+  /** Chơi trên máy của chủ phòng (phòng chơi chung một máy). */
+  local: boolean;
 }
 
 /** Một tin nhắn trong phòng. `id` tăng dần trong phòng. */
@@ -58,9 +76,9 @@ export type PublicGameState = Omit<GameState, 'decks'> & {
 
 export interface RoomView {
   code: string;
+  kind: RoomKind;
   phase: RoomPhase;
-  /** Số người chủ phòng chọn (2–6). Ván bắt đầu khi đủ số ghế này. */
-  capacity: number;
+  /** Người chơi (kể cả bot) trước, theo thứ tự vào phòng; khách quan sát sau. */
   seats: Seat[];
   /** null khi còn ở phòng chờ. */
   game: PublicGameState | null;
@@ -89,12 +107,14 @@ export type Ack<T = void> =
   ([T] extends [void] ? { ok: true } : { ok: true; data: T }) | { ok: false; error: string };
 
 export interface ClientToServerEvents {
-  /** Chủ phòng tạo phòng, chọn số người và hồ sơ của mình. */
-  'room:create': (
-    req: { capacity: number; profile: Profile },
-    ack: (res: Ack<SeatTicket>) => void,
-  ) => void;
-  /** Vào phòng bằng mã. */
+  /** Chủ phòng tạo phòng chờ với hồ sơ của mình. */
+  'room:create': (req: { profile: Profile }, ack: (res: Ack<SeatTicket>) => void) => void;
+  /**
+   * Chơi chung một máy nhưng cho khách xem: tạo phòng và vào ván ngay với `players`
+   * (người đầu là chủ phòng). Máy chủ phòng thao tác cho mọi người chơi.
+   */
+  'room:local': (req: { players: Profile[] }, ack: (res: Ack<SeatTicket>) => void) => void;
+  /** Vào phòng bằng mã: phòng chờ còn chỗ thì là người chơi, không thì là khách quan sát. */
   'room:join': (
     req: { code: string; profile: Profile },
     ack: (res: Ack<SeatTicket>) => void,
@@ -103,13 +123,23 @@ export interface ClientToServerEvents {
   'room:resume': (ticket: SeatTicket, ack: (res: Ack<SeatTicket>) => void) => void;
   /** Đổi tên, màu, biểu tượng khi còn ở phòng chờ. */
   'room:profile': (profile: Profile, ack: (res: Ack) => void) => void;
-  /** Chủ phòng đổi số người (không nhỏ hơn số người đang có). */
-  'room:capacity': (capacity: number, ack: (res: Ack) => void) => void;
-  /** Chủ phòng bắt đầu ván khi đủ người. */
+  /** Tự chuyển giữa người chơi và khách quan sát (chỉ ở phòng chờ). */
+  'room:role': (role: SeatRole, ack: (res: Ack) => void) => void;
+  /** Chủ phòng thêm một bot (tối đa MAX_BOTS). */
+  'room:addBot': (ack: (res: Ack) => void) => void;
+  /** Chủ phòng bỏ một bot. */
+  'room:removeBot': (botId: string, ack: (res: Ack) => void) => void;
+  /** Chủ phòng bắt đầu ván khi có từ 2 người chơi (kể cả bot). */
   'room:start': (ack: (res: Ack) => void) => void;
-  /** Rời phòng chờ (trong ván thì dùng Đầu hàng). */
+  /**
+   * Rời phòng chờ. Trong ván: khách quan sát rời lúc nào cũng được, chủ phòng chơi chung một máy
+   * rời thì đóng phòng, người chơi online thì dùng Đầu hàng.
+   */
   'room:leave': (ack: (res: Ack) => void) => void;
-  /** Gửi một thao tác trong ván; `playerId` phải là của chính ghế này, không được gửi 'timeout'. */
+  /**
+   * Gửi một thao tác trong ván; `playerId` phải là của chính ghế này (chủ phòng chơi chung một máy
+   * thì thao tác cho mọi người chơi), không được gửi 'timeout'.
+   */
   'game:action': (action: Action, ack: (res: Ack) => void) => void;
   /** Gửi một tin nhắn cho cả phòng. */
   'chat:send': (text: string, ack: (res: Ack) => void) => void;

@@ -49,48 +49,28 @@
   margin-bottom: 0;
 }
 
-/* Hai thẻ Tạo phòng / Vào phòng */
-.home-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 12px;
-  background: #eef2f7;
-}
-
-.home-tabs button {
-  min-height: 42px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 9px;
-  background: none;
-  color: var(--muted);
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.home-tabs button.is-on {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 1px 3px rgb(27 39 64 / 12%);
-}
-
-.home-panel {
+/* Vào phòng bằng mã: ô mã và nút trên một hàng */
+.home-join {
   display: flex;
   flex-direction: column;
 }
 
-.home-panel .setup-count {
-  margin-bottom: 12px;
+.home-join-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn.home-join-go {
+  flex: none;
+  min-height: 52px;
+  padding: 0 14px;
 }
 
 .home-code {
+  flex: 1;
+  min-width: 0;
   width: 100%;
-  height: 54px;
-  margin-bottom: 12px;
+  height: 52px;
   padding: 0 12px;
   border: 1.5px solid var(--line);
   border-radius: 12px;
@@ -98,9 +78,9 @@
   color: var(--ink);
   font: inherit;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.2em;
   text-align: center;
   text-transform: uppercase;
 }
@@ -123,7 +103,7 @@
 }
 
 .box.home-error {
-  margin: 10px 0 0;
+  margin: 0;
   padding: 8px 12px;
   color: var(--red);
   font-size: 14px;

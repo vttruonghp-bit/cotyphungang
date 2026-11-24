@@ -26,6 +26,8 @@ export interface AppOptions {
   /** Phòng không ai mở bao lâu thì xóa, và bao lâu kiểm tra một lần. */
   idleMs?: number;
   sweepEveryMs?: number;
+  /** Nhân thời gian chờ của bot giữa hai thao tác (test dùng 0). */
+  botSpeed?: number;
   /** Rời ván bao lâu thì máy chủ chơi hộ, và bao lâu đi hộ một nước. */
   autoPlayAfterMs?: number;
   autoPlayEveryMs?: number;
@@ -63,7 +65,7 @@ export function createAppServer(options: AppOptions = {}): AppServer {
 
   const rooms = new Rooms();
   const rng = options.rng ?? cryptoRng;
-  const { broadcast } = attachRoomHandlers(io, rooms, rng);
+  const handlers = attachRoomHandlers(io, rooms, rng, options.botSpeed);
 
   const idleMs = options.idleMs ?? ROOM_IDLE_MS;
   const sweeper = setInterval(() => rooms.sweep(idleMs), options.sweepEveryMs ?? 10 * 60 * 1000);
@@ -73,7 +75,7 @@ export function createAppServer(options: AppOptions = {}): AppServer {
   const autoPlayAfterMs = options.autoPlayAfterMs ?? AUTOPLAY_AFTER_MS;
   const autoPlayer = setInterval(() => {
     for (const room of rooms.playing()) {
-      if (rooms.autoPlay(room, rng, autoPlayAfterMs)) broadcast(room);
+      if (rooms.autoPlay(room, rng, autoPlayAfterMs)) handlers.broadcast(room);
     }
   }, options.autoPlayEveryMs ?? 1000);
   autoPlayer.unref();
@@ -86,6 +88,7 @@ export function createAppServer(options: AppOptions = {}): AppServer {
       new Promise((resolve) => {
         clearInterval(sweeper);
         clearInterval(autoPlayer);
+        handlers.stop();
         // io.close() đóng luôn httpServer; lỗi "chưa mở cổng" thì bỏ qua.
         void io.close(() => resolve());
       }),
