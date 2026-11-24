@@ -45,5 +45,5 @@ export const ACTION_TIMEOUT_SECONDS = 60;
 export const LOG_VISIBLE_ENTRIES = 15;
 
 /** Số màu và số biểu tượng người chơi được chọn. */
-export const PLAYER_COLOR_COUNT = 8;
-export const PLAYER_ICON_COUNT = 20;
+export const PLAYER_COLOR_COUNT = 10;
+export const PLAYER_ICON_COUNT = 31;

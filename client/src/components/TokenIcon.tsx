@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { ICON_NAMES, colorOf } from '../theme';
 import './token-icon.css';
 
-/** Hình vẽ 24×24 cho 20 kí hiệu. Dùng `currentColor` để đổi màu theo người chơi. */
+/** Hình vẽ 24×24 cho 31 kí hiệu. Dùng `currentColor` để đổi màu theo người chơi. */
 const GLYPHS: ReactNode[] = [
   // 0 Lá
   <>
@@ -144,6 +144,166 @@ const GLYPHS: ReactNode[] = [
     <path d="M7.9 11.5L5 15.5V18l3.3-1.6zM16.1 11.5l2.9 4V18l-3.3-1.6z" fill="currentColor" />
     <path d="M10 16.5h4l-2 4.5z" fill="#f2a23a" />
   </>,
+  // 20 Con chó
+  <>
+    <path d="M6.4 4.6C4.2 4.8 2.6 7.8 3 11.4l3 1.3 1.6-6.6z" fill="currentColor" />
+    <path d="M17.6 4.6c2.2.2 3.8 3.2 3.4 6.8l-3 1.3-1.6-6.6z" fill="currentColor" />
+    <path
+      d="M12 4.6c-3.7 0-6 2.7-6 6.6v3.2c0 3.7 2.7 6.1 6 6.1s6-2.4 6-6.1v-3.2c0-3.9-2.3-6.6-6-6.6z"
+      fill="currentColor"
+    />
+    <circle cx="9.5" cy="10.8" r="1.15" fill="#fff" />
+    <circle cx="14.5" cy="10.8" r="1.15" fill="#fff" />
+    <ellipse cx="12" cy="14.9" rx="1.7" ry="1.15" fill="#fff" />
+    <path
+      d="M12 16v1.5M10.4 17.9c.9.7 2.3.7 3.2 0"
+      stroke="#fff"
+      strokeWidth="1.1"
+      strokeLinecap="round"
+      fill="none"
+    />
+  </>,
+  // 21 Con bướm
+  <>
+    <path
+      d="M11.3 11C9.6 6.4 6.6 3.7 4 4.1 2.1 4.5 2.3 8 3.9 10c1.4 1.7 4.4 2 7.4 1z"
+      fill="currentColor"
+    />
+    <path
+      d="M12.7 11c1.7-4.6 4.7-7.3 7.3-6.9 1.9.4 1.7 3.9.1 5.9-1.4 1.7-4.4 2-7.4 1z"
+      fill="currentColor"
+    />
+    <path
+      d="M11.3 12.6c-3 0-6 1.2-6.2 3.9-.2 2.3 2 3.4 3.8 2.4 1.6-.9 2.4-3.6 2.4-6.3z"
+      fill="currentColor"
+    />
+    <path
+      d="M12.7 12.6c3 0 6 1.2 6.2 3.9.2 2.3-2 3.4-3.8 2.4-1.6-.9-2.4-3.6-2.4-6.3z"
+      fill="currentColor"
+    />
+    <rect
+      x="11"
+      y="6.8"
+      width="2"
+      height="12.4"
+      rx="1"
+      fill="currentColor"
+      stroke="#fff"
+      strokeWidth=".8"
+    />
+    <path
+      d="M11.6 7.2L9.6 3.4M12.4 7.2l2-3.8"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      fill="none"
+    />
+  </>,
+  // 22 Con chim
+  <>
+    <path
+      d="M2.8 13.2c2.6-.2 4.3-1.6 5.1-3.8C8.9 6.8 11.1 5 14 5c2.6 0 4.4 1.6 4.9 3.6l2.8 1.1-2.8 1.1c-.3 4.6-3.8 8.2-9 8.2-2.9 0-5.6-1.6-7.1-5.8z"
+      fill="currentColor"
+    />
+    <circle cx="15.6" cy="8.4" r="1.15" fill="#fff" />
+    <path
+      d="M7.6 12.6c2.3.2 4.8-.7 6.6-2.5-.2 3.4-2.7 5.7-6.2 5.9"
+      stroke="#fff"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      fill="none"
+    />
+    <path
+      d="M10.4 19.2l-.8 2.4M13 19l.4 2.6"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+    />
+  </>,
+  // 23 Bông hoa
+  <>
+    <path d="M12 13.5V22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M12 19.2c1.4-2.3 3.4-3 5.6-2.7-.6 2.1-2.6 3.4-5.6 2.7z" fill="currentColor" />
+    <circle cx="12" cy="5.4" r="3.1" fill="currentColor" />
+    <circle cx="15.9" cy="8.2" r="3.1" fill="currentColor" />
+    <circle cx="14.4" cy="12.8" r="3.1" fill="currentColor" />
+    <circle cx="9.6" cy="12.8" r="3.1" fill="currentColor" />
+    <circle cx="8.1" cy="8.2" r="3.1" fill="currentColor" />
+    <circle cx="12" cy="9.3" r="2.4" fill="#fff" />
+    <circle cx="12" cy="9.3" r="1.2" fill="currentColor" />
+  </>,
+  // 24 Máy bay
+  <path
+    d="M12 1.8c.9 0 1.5 1 1.5 2.3v4.8l7.7 4.7v2.2l-7.7-2.4v4.6l2.3 1.7v1.5L12 20.2l-3.8 1v-1.5l2.3-1.7v-4.6l-7.7 2.4v-2.2l7.7-4.7V4.1c0-1.3.6-2.3 1.5-2.3z"
+    fill="currentColor"
+  />,
+  // 25 Bác sĩ
+  <>
+    <circle cx="12" cy="7" r="4" fill="currentColor" />
+    <circle cx="12" cy="4.6" r="1.6" fill="#fff" />
+    <circle cx="12" cy="4.6" r=".75" fill="currentColor" />
+    <path d="M4.5 21.2c0-4.4 3.3-7.6 7.5-7.6s7.5 3.2 7.5 7.6z" fill="currentColor" />
+    <path d="M11 15.4h2v1.7h1.7v2H13v1.7h-2v-1.7H9.3v-2H11z" fill="#fff" />
+  </>,
+  // 26 Mũ cử nhân
+  <>
+    <path d="M6 11.4v4.4c0 1.8 2.7 3.2 6 3.2s6-1.4 6-3.2v-4.4l-6 3z" fill="currentColor" />
+    <path d="M12 3.8L1.5 8.9 12 14l10.5-5.1z" fill="currentColor" stroke="#fff" strokeWidth=".9" />
+    <path d="M20.3 9.6v6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    <path d="M19.2 16.2h2.2l.5 2.6h-3.2z" fill="currentColor" />
+  </>,
+  // 27 Cái ghế
+  <>
+    <rect x="6" y="2.5" width="12" height="9.2" rx="1.6" fill="currentColor" />
+    <path d="M9.6 5v4.4M14.4 5v4.4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" />
+    <rect x="4.2" y="12.2" width="15.6" height="3.2" rx="1.1" fill="currentColor" />
+    <path
+      d="M6.4 15.2v6.3M17.6 15.2v6.3"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+    />
+  </>,
+  // 28 Xe máy
+  <>
+    <circle cx="5.5" cy="16.8" r="3.3" fill="none" stroke="currentColor" strokeWidth="2.1" />
+    <circle cx="18.5" cy="16.8" r="3.3" fill="none" stroke="currentColor" strokeWidth="2.1" />
+    <path d="M7 13.2h4.6l2.6-3.6h3.3l1.5 4.4-1.6.7-1.2-2.4-3.4 4.6H8z" fill="currentColor" />
+    <path d="M7.4 11.9c.4-1.1 1.4-1.7 2.7-1.7h3.2l-1.1 1.7z" fill="currentColor" />
+    <path
+      d="M15.6 9.6L14.5 6.3h2.6M17.3 9.7l1.2 7.1"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </>,
+  // 29 Thanh gươm
+  <>
+    <path d="M21 3l-.7 3.8-9.6 9.6-3.1-3.1L17.2 3.7z" fill="currentColor" />
+    <path d="M18.8 5.2l-9.2 9.2" stroke="#fff" strokeWidth=".9" strokeLinecap="round" />
+    <path d="M5 13.1l5.9 5.9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <path d="M7.6 16.4l-3.5 3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <circle cx="3.4" cy="20.6" r="1.7" fill="currentColor" />
+  </>,
+  // 30 Khẩu súng
+  <>
+    <path
+      d="M3.4 5.8h17.2c.6 0 1 .4 1 1v3.6c0 .6-.4 1-1 1H3.4c-.6 0-1-.4-1-1V6.8c0-.6.4-1 1-1z"
+      fill="currentColor"
+    />
+    <path d="M19.6 5.8V4.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M4.2 8.6h13.4" stroke="#fff" strokeWidth="1" strokeLinecap="round" />
+    <path d="M4.4 11.2h6l-2.1 9.6H2.2z" fill="currentColor" />
+    <path
+      d="M10.4 11.4v1.7c0 1.6 1.2 2.8 2.8 2.8h.7v-4.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      fill="none"
+    />
+    <path d="M11.9 11.6v2.3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+  </>,
 ];
 
 interface TokenIconProps {
@@ -157,18 +317,44 @@ interface TokenIconProps {
   title?: string;
 }
 
-/** Quân cờ: vòng tròn viền sáng theo màu người chơi, hình kí hiệu ở giữa. */
+/**
+ * Quân cờ: vòng tròn viền sáng theo màu người chơi, hình kí hiệu ở giữa. Màu chuyển sắc (Lục sắc,
+ * Xanh vàng) tô cả viền lẫn hình bằng dải màu.
+ */
 export function TokenIcon({ icon, color, size = 28, blink = false, title }: TokenIconProps) {
   const c = colorOf(color);
+  const gradientId = `tk-grad${useId().replace(/:/g, '')}`;
+  const multi = c.stops.length > 1;
   const glyph = typeof size === 'number' ? size * 0.62 : '62%';
   return (
     <span
-      className={`token-icon${blink ? ' token-blink' : ''}`}
-      style={{ width: size, height: size, color: c.main, ['--glow' as string]: c.main }}
+      className={`token-icon${blink ? ' token-blink' : ''}${multi ? ' token-multi' : ''}`}
+      style={{
+        width: size,
+        height: size,
+        color: c.main,
+        ['--glow' as string]: c.main,
+        ['--paint' as string]: c.paint,
+      }}
       role="img"
       aria-label={title ?? ICON_NAMES[icon] ?? 'Quân cờ'}
     >
-      <svg viewBox="0 0 24 24" width={glyph} height={glyph} aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        width={glyph}
+        height={glyph}
+        aria-hidden="true"
+        style={multi ? { ['--glyph' as string]: `url(#${gradientId})` } : undefined}
+      >
+        {multi && (
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+              {c.stops.map((stop, i) => (
+                <stop key={stop} offset={i / (c.stops.length - 1)} stopColor={stop} />
+              ))}
+            </linearGradient>
+          </defs>
+        )}
         {GLYPHS[icon] ?? GLYPHS[0]}
       </svg>
     </span>

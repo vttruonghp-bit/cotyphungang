@@ -8,10 +8,10 @@
   color: var(--ink);
 }
 
-/* Một dòng 8 màu: ô cao 44px để dễ bấm */
+/* 10 màu, 5 cột: ô cao 44px để dễ bấm */
 .icon-picker-colors {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
   margin-bottom: 6px;
 }
@@ -65,10 +65,10 @@
   transform: rotate(-45deg);
 }
 
-/* 20 kí hiệu, 4 cột */
+/* 31 kí hiệu: ô rộng tối thiểu 64px, số cột theo bề ngang */
 .icon-picker-icons {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: 6px;
 }
 
