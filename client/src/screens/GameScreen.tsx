@@ -248,7 +248,11 @@ export function GameScreen({
   // Ván đang chờ người cầm máy này (chơi chung một máy thì luôn đúng).
   const myMove = !online || waiter.id === me.id;
   // Mua đất, xây nhà: tiếng tiền rơi ngay lúc bấm (mọi máy trong ván đều nghe).
+  // Mở trang giữa ván thì không phát lại tiếng của thao tác cũ.
+  const coinSeen = useRef(actions);
   useEffect(() => {
+    if (coinSeen.current === actions) return;
+    coinSeen.current = actions;
     if (boughtOrBuilt(previous, game)) playCoinSound();
     // Chỉ xét khi có thao tác mới.
     // eslint-disable-next-line react-hooks/exhaustive-deps
