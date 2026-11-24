@@ -36,7 +36,11 @@ export function PlayerCards({ game, meId, seats }: PlayerCardsProps) {
           <div
             key={p.id}
             className={`pcard${turn ? ' is-turn' : ''}${p.status !== 'active' ? ' is-out' : ''}`}
-            style={{ ['--pc' as string]: c.main, ['--pc-soft' as string]: c.soft }}
+            style={{
+              ['--pc' as string]: c.main,
+              ['--pc-soft' as string]: c.soft,
+              ['--pc-paint' as string]: c.paint,
+            }}
             aria-current={turn ? 'true' : undefined}
           >
             <div className="pcard-name">
