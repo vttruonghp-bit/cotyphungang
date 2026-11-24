@@ -99,7 +99,7 @@ describe('máy chủ phục vụ giao diện đã build', () => {
 
   it('Socket.IO vẫn chạy cùng cổng', async () => {
     const p = await server.phone();
-    const t = await p.create(2, { name: 'A', color: 0, icon: 0 });
+    const t = await p.create({ name: 'A', color: 0, icon: 0 });
     expect(t.code).toHaveLength(6);
   });
 });

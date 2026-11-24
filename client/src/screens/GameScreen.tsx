@@ -38,6 +38,7 @@ import { debtorOf } from '../game/draft';
 import { fireworksDelay, lostMoney } from '../game/effects';
 import { AI_PLAYER_ID } from '../game/aiOpponent';
 import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
+import { shareRoom } from '../online/share';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
 import { CardListPanel } from '../sheets/CardListPanel';
 import { ChatPanel, PlayerCards } from './SidePanel';
@@ -70,6 +71,10 @@ interface GameScreenProps {
   mode?: PlayMode;
   /** Chơi chung một máy: về màn đầu, ván vẫn giữ để chơi tiếp. */
   onHome?: () => void;
+  /** Chữ trên nút về màn đầu (mặc định "‹ Màn đầu"). */
+  homeLabel?: string;
+  /** Có thì phải bấm nút về màn đầu hai lần; lần đầu hiện lời nhắc này. */
+  homeConfirm?: string;
 }
 
 /** Nội dung khu bên trái, phía trên các ô người chơi. */
@@ -161,9 +166,14 @@ export function GameScreen({
   onNewGame,
   mode = HOT_SEAT,
   onHome,
+  homeLabel = '‹ Màn đầu',
+  homeConfirm,
 }: GameScreenProps) {
   const { game, previous, actions } = view;
   const online = mode.kind === 'online' ? mode : null;
+  // Mỗi người một máy (kể cả khách quan sát). Chủ phòng chơi chung một máy thì như chơi chung.
+  const remote = online && !online.controlsAll ? online : null;
+  const spectator = online?.spectator ?? false;
   const [manual, setManual] = useState<Manual>(null);
   // Khu bên trái (trên các ô người chơi): chat khi chơi online, không thì lịch sử.
   const defaultPanel: Panel = mode.kind === 'online' ? 'chat' : 'history';
@@ -250,10 +260,12 @@ export function GameScreen({
 
   const cur = game.players[game.current]!;
   const waiter = waitingPlayer(game);
-  // Người cầm máy này: online là chính mình; chơi chung một máy là người ván đang chờ.
-  const me = (online && playerById(game, online.meId)) || waiter;
-  // Ván đang chờ người cầm máy này (chơi chung một máy thì luôn đúng).
-  const myMove = !online || waiter.id === me.id;
+  // Người chơi trên máy này khi mỗi người một máy (khách quan sát thì không có).
+  const mine = remote ? playerById(game, remote.meId) : undefined;
+  // Người cầm máy này: online là chính mình; chơi chung một máy (hay khách xem) là người ván đang chờ.
+  const me = mine || waiter;
+  // Ván đang chờ người cầm máy này (chơi chung một máy thì luôn đúng, khách xem thì không bao giờ).
+  const myMove = !spectator && (!remote || waiter.id === me.id);
   // Mua đất, xây nhà: tiếng tiền rơi ngay lúc bấm (mọi máy trong ván đều nghe).
   // Mở trang giữa ván thì không phát lại tiếng của thao tác cũ.
   const coinSeen = useRef(actions);
@@ -339,7 +351,7 @@ export function GameScreen({
     return () => clearTimeout(t);
   }, [error]);
   // Online: rung nhẹ khi tới lượt mình (máy nào hỗ trợ).
-  const myTurnNow = online !== null && myMove && pd.type !== 'ended';
+  const myTurnNow = remote !== null && myMove && pd.type !== 'ended';
   useEffect(() => {
     if (myTurnNow) navigator.vibrate?.(60);
   }, [myTurnNow]);
@@ -350,6 +362,34 @@ export function GameScreen({
     if (!online) return;
     const err = await online.voice.toggleMic();
     if (err) setError(err);
+  };
+
+  // Rời phòng có thể mất ván (chủ phòng chơi chung một máy): bấm hai lần mới rời.
+  const [homeArmed, setHomeArmed] = useState(false);
+  useEffect(() => {
+    if (!homeArmed) return;
+    const t = setTimeout(() => setHomeArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [homeArmed]);
+  const home = () => {
+    if (homeConfirm && !homeArmed) {
+      setHomeArmed(true);
+      setToast(homeConfirm);
+      return;
+    }
+    setHomeArmed(false);
+    onHome?.();
+  };
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
+  const invite = async (code: string) => {
+    const r = await shareRoom(code);
+    if (r === 'copied') setToast(`Đã chép link mời vào phòng ${code}`);
+    else if (r === 'failed') setToast(`Mã phòng: ${code}`);
   };
 
   const send = async (a: Action) => {
@@ -411,8 +451,10 @@ export function GameScreen({
   // Màn phụ: chỉ hiện sau khi quân dừng và tên ô đích đã được giữ 1 giây.
   // Online chỉ người đang nợ thấy Xử lý nợ, và chỉ người ván đang chờ thấy Metro, tù, chọn ô.
   const debtor = debtorOf(game, previous);
-  const myDebt = debtor !== null && (!online || debtor === me.id) ? debtor : null;
-  const visibleReveals = online ? reveals.filter((r) => r.event.playerId === me.id) : reveals;
+  const myDebt = debtor !== null && !spectator && (!remote || debtor === me.id) ? debtor : null;
+  const visibleReveals = remote
+    ? reveals.filter((r) => mine && r.event.playerId === mine.id)
+    : reveals;
   const reveal = visibleReveals[0];
   let sheet: ReactNode = null;
   // Thẻ làm phá sản vẫn hiện trước, rồi mới tới màn kết thúc.
@@ -452,7 +494,11 @@ export function GameScreen({
     sheet = <SurrenderSheet {...sheetProps} playerId={me.id} />;
   } else if (manual === 'manage' || (myDebt && manual !== 'board')) {
     // Xử lý nợ là của người đang nợ (có thể không phải người giữ lượt), không đóng được.
-    const manageMode: ManageMode = myDebt ? 'debt' : canManage(game, me) ? 'manage' : 'view';
+    const manageMode: ManageMode = myDebt
+      ? 'debt'
+      : !spectator && canManage(game, me)
+        ? 'manage'
+        : 'view';
     // Mỗi người nợ một màn mới (dự thảo và chỗ cuộn bắt đầu lại).
     sheet = (
       <ManageSheet
@@ -561,15 +607,15 @@ export function GameScreen({
   };
   const playing = pd.type !== 'ended';
   // Online, khi ván chờ người khác: dòng "Đang chờ Minh …" thay cho "Chuyển máy cho …".
-  const othersText = online && !myMove ? waitingOther(game, waiter) : null;
+  const othersText = remote && !myMove ? waitingOther(game, waiter) : null;
 
   // Người cầm máy này cần thấy lời nhắc chuyển máy / chờ người khác.
   const notice =
-    !online && me.id !== cur.id && playing
+    !remote && me.id !== cur.id && playing
       ? `Chuyển máy cho ${me.name}: ${waitingText(game, me)}`
       : othersText && playing
         ? `${othersText}${autoSeats.has(waiter.id) ? ' · máy chủ đang chơi hộ' : offline.has(waiter.id) ? ' · mất kết nối' : ''}`
-        : online && myMove && me.id !== cur.id && playing
+        : remote && myMove && me.id !== cur.id && playing
           ? `Ván đang chờ bạn (ngoài lượt của ${cur.name}).`
           : null;
 
@@ -582,8 +628,23 @@ export function GameScreen({
           <div className="player-column side-layout">
             <nav className="side-buttons" aria-label="Thông tin và trò chuyện">
               {onHome && (
-                <button type="button" className="side-btn" onClick={onHome}>
-                  ‹ Màn đầu
+                <button
+                  type="button"
+                  className={`side-btn${homeArmed ? ' side-surrender' : ''}`}
+                  onClick={home}
+                >
+                  {homeArmed ? 'Bấm lần nữa' : homeLabel}
+                </button>
+              )}
+              {online && (
+                <button
+                  type="button"
+                  className="side-btn side-code"
+                  title="Gửi mã cho bạn bè vào xem"
+                  onClick={() => void invite(online.code)}
+                >
+                  Mã phòng
+                  <b>{online.code}</b>
                 </button>
               )}
               <button
@@ -602,12 +663,16 @@ export function GameScreen({
               >
                 Cơ hội / Khí vận
               </button>
-              <button type="button" className="side-btn side-surrender" onClick={() => setManual('surrender')}>
-                ⚠ Đầu hàng
-              </button>
-              <button type="button" className="side-btn side-denvl" onClick={() => setManual('appearance')}>
-                Đen VL
-              </button>
+              {!spectator && (
+                <button type="button" className="side-btn side-surrender" onClick={() => setManual('surrender')}>
+                  ⚠ Đầu hàng
+                </button>
+              )}
+              {!spectator && (
+                <button type="button" className="side-btn side-denvl" onClick={() => setManual('appearance')}>
+                  Đen VL
+                </button>
+              )}
               {online && (
                 <button
                   type="button"
@@ -638,6 +703,7 @@ export function GameScreen({
                 ) : panel === 'chat' && online ? (
                   <ChatPanel
                     game={game}
+                    seats={online.seats}
                     meId={online.meId}
                     messages={online.chat}
                     send={online.sendChat}
@@ -647,7 +713,7 @@ export function GameScreen({
                   <LogPanel game={game} />
                 )}
               </div>
-              <PlayerCards game={game} meId={online?.meId ?? null} seats={online?.seats ?? null} />
+              <PlayerCards game={game} meId={remote?.meId ?? null} seats={online?.seats ?? null} />
             </div>
           </div>
           <div className="land-stage">
@@ -682,7 +748,7 @@ export function GameScreen({
             <CenterPanel
               game={game}
               me={waiter}
-              mine={online !== null && waiter.id === me.id}
+              mine={remote !== null && myMove}
               away={offline.has(waiter.id)}
               auto={autoSeats.has(waiter.id)}
               tile={
@@ -757,6 +823,11 @@ export function GameScreen({
         {error && (
           <div className="toast" role="alert">
             {error}
+          </div>
+        )}
+        {!error && toast && (
+          <div className="toast" role="status">
+            {toast}
           </div>
         )}
       </main>

@@ -265,3 +265,34 @@
   border-top: 1px solid #eef1f5;
   background: #fff;
 }
+
+/* Chơi trên 1 máy: bật cho khách xem (có mã phòng) */
+.setup-share {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid #9fd2c3;
+  border-radius: 14px;
+  background: var(--teal-soft);
+  cursor: pointer;
+}
+.setup-share input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--teal);
+}
+.setup-share > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.setup-share b {
+  color: var(--ink);
+  font-size: 14.5px;
+}

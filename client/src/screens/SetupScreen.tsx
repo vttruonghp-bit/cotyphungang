@@ -5,6 +5,7 @@ import {
   PLAYER_COLOR_COUNT,
   PLAYER_ICON_COUNT,
   type NewPlayer,
+  type Profile,
 } from '@cotiphu/shared';
 import { IconPicker, buttonColor } from '../components/IconPicker';
 import { Sheet } from '../components/Sheet';
@@ -93,13 +94,22 @@ function saveSetup(s: Setup) {
   }
 }
 
-/** Tạo ván mới (hình 5): chơi chung một máy nên không có mã phòng. */
+/**
+ * Tạo ván chơi trên 1 máy (hình 5). Bật "Cho khách xem" thì ván chạy trên máy chủ, có mã phòng
+ * để khách vào xem, chat và nói chuyện; máy này vẫn đi cho mọi người.
+ */
 export function SetupScreen({
   onStart,
   onBack,
   onStartAi,
-}: SetupScreenProps & { onStartAi?: (human: NewPlayer) => string | null }) {
+  onStartShared,
+}: SetupScreenProps & {
+  onStartAi?: (human: NewPlayer) => string | null;
+  onStartShared?: (players: Profile[]) => Promise<string | null>;
+}) {
   const [setup, setSetup] = useState(loadSetup);
+  const [shared, setShared] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { count, players } = setup;
@@ -133,9 +143,25 @@ export function SetupScreen({
       document.getElementById(`setup-name-${unnamed}`)?.focus();
       return setError(`Người chơi ${unnamed + 1} chưa có tên.`);
     }
+    const remember = () =>
+      saveSetup({
+        count,
+        players: players.map((p, i) => ({ ...p, name: list[i]?.name ?? p.name })),
+      });
+    if (shared && onStartShared) {
+      setBusy(true);
+      void onStartShared(list.map(({ name, color, icon }) => ({ name, color, icon }))).then(
+        (err) => {
+          setBusy(false);
+          if (err) setError(err);
+          else remember();
+        },
+      );
+      return;
+    }
     const err = onStart(list);
     if (err) return setError(err);
-    saveSetup({ count, players: players.map((p, i) => ({ ...p, name: list[i]?.name ?? p.name })) });
+    remember();
   };
 
   const others = (i: number) => shown.filter((_, k) => k !== i);
@@ -152,7 +178,7 @@ export function SetupScreen({
           )}
           <h1 className="app-title">CỜ TỶ PHÚ</h1>
         </span>
-        <span className="app-turn muted">Chơi chung một máy</span>
+        <span className="app-turn muted">Chơi trên 1 máy</span>
       </header>
 
       <section className="setup-card">
@@ -200,6 +226,23 @@ export function SetupScreen({
             ))}
           </div>
 
+          {onStartShared && (
+            <label className="setup-share">
+              <input
+                type="checkbox"
+                checked={shared}
+                onChange={(e) => {
+                  setShared(e.target.checked);
+                  setError(null);
+                }}
+              />
+              <span>
+                <b>Cho khách xem</b>
+                <span>Có mã phòng để bạn bè vào xem ván, chat và nói chuyện (cần mạng).</span>
+              </span>
+            </label>
+          )}
+
           <div className="box box-teal setup-note">
             <b>Tất cả màu và kí hiệu phải khác nhau trong cùng một ván.</b>
             <span>Chơi chung một điện thoại: tới lượt ai thì chuyển máy cho người đó.</span>
@@ -224,10 +267,12 @@ export function SetupScreen({
             >
               Đặt lại
             </button>
-            <button type="button" className="btn btn-grow btn-teal" onClick={start}>
-              Bắt đầu ván {count} người
+            <button type="button" className="btn btn-grow btn-teal" disabled={busy} onClick={start}>
+              {busy
+                ? 'Đang tạo phòng…'
+                : `Bắt đầu ván ${count} người${shared ? ' · có khách xem' : ''}`}
             </button>
-            {onStartAi && (
+            {onStartAi && !shared && (
               <button
                 type="button"
                 className="btn btn-grow"
