@@ -12,18 +12,12 @@
   box-sizing: border-box;
 }
 
-/* Màu chuyển sắc: viền tô bằng dải màu, hình tô bằng gradient SVG của chính quân đó. */
+/* Màu chuyển sắc: viền tô bằng dải màu (hình bên trong tô bằng gradient SVG trong TokenIcon). */
 .token-multi {
   border-color: transparent;
   background:
     linear-gradient(#fff, #fff) padding-box,
     var(--paint) border-box;
-}
-.token-multi [fill='currentColor'] {
-  fill: var(--glyph);
-}
-.token-multi [stroke='currentColor'] {
-  stroke: var(--glyph);
 }
 
 .token-blink {

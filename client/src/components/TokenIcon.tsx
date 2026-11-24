@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, useId, type ReactNode } from 'react';
 import { ICON_NAMES, colorOf } from '../theme';
 import './token-icon.css';
 
@@ -317,15 +317,31 @@ interface TokenIconProps {
   title?: string;
 }
 
+/** Thay mọi nét `currentColor` trong hình bằng `paint` (vd. `url(#id)` của một gradient). */
+function paintGlyph(node: ReactNode, paint: string): ReactNode {
+  return Children.map(node, (child) => {
+    if (!isValidElement<{ fill?: string; stroke?: string; children?: ReactNode }>(child)) {
+      return child;
+    }
+    const { fill, stroke, children } = child.props;
+    return cloneElement(child, {
+      ...(fill === 'currentColor' ? { fill: paint } : {}),
+      ...(stroke === 'currentColor' ? { stroke: paint } : {}),
+      ...(children ? { children: paintGlyph(children, paint) } : {}),
+    });
+  });
+}
+
 /**
  * Quân cờ: vòng tròn viền sáng theo màu người chơi, hình kí hiệu ở giữa. Màu chuyển sắc (Lục sắc,
  * Xanh vàng) tô cả viền lẫn hình bằng dải màu.
  */
 export function TokenIcon({ icon, color, size = 28, blink = false, title }: TokenIconProps) {
   const c = colorOf(color);
-  const gradientId = `tk-grad${useId().replace(/:/g, '')}`;
+  const gradientId = `tk-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const multi = c.stops.length > 1;
   const glyph = typeof size === 'number' ? size * 0.62 : '62%';
+  const shape = GLYPHS[icon] ?? GLYPHS[0];
   return (
     <span
       className={`token-icon${blink ? ' token-blink' : ''}${multi ? ' token-multi' : ''}`}
@@ -339,23 +355,25 @@ export function TokenIcon({ icon, color, size = 28, blink = false, title }: Toke
       role="img"
       aria-label={title ?? ICON_NAMES[icon] ?? 'Quân cờ'}
     >
-      <svg
-        viewBox="0 0 24 24"
-        width={glyph}
-        height={glyph}
-        aria-hidden="true"
-        style={multi ? { ['--glyph' as string]: `url(#${gradientId})` } : undefined}
-      >
+      <svg viewBox="0 0 24 24" width={glyph} height={glyph} aria-hidden="true">
         {multi && (
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            {/* Theo cả khung 24×24 (không theo từng nét) để nét thẳng đứng vẫn có màu. */}
+            <linearGradient
+              id={gradientId}
+              gradientUnits="userSpaceOnUse"
+              x1="2"
+              y1="2"
+              x2="22"
+              y2="22"
+            >
               {c.stops.map((stop, i) => (
                 <stop key={stop} offset={i / (c.stops.length - 1)} stopColor={stop} />
               ))}
             </linearGradient>
           </defs>
         )}
-        {GLYPHS[icon] ?? GLYPHS[0]}
+        {multi ? paintGlyph(shape, `url(#${gradientId})`) : shape}
       </svg>
     </span>
   );
