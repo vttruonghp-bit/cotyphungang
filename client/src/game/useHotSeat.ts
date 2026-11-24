@@ -76,7 +76,8 @@ export function useHotSeat(): HotSeat {
     (players: NewPlayer[]) => {
       const seed = randomSeed();
       try {
-        const game = createGame(players, rngFor(seed, 0));
+        // Mở ván bằng lượt đổ xúc xắc chọn thứ tự: mỗi người tự bấm Xúc xắc của mình.
+        const game = createGame(players, rngFor(seed, 0), true, true);
         commit({ version: 1, seed, actions: 1, game, previous: null });
         return null;
       } catch (err) {

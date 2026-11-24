@@ -35,6 +35,7 @@ import {
   tileState,
 } from './core';
 import { applyDrawnCard, drawCard, getCard, land, resolveCardDice } from './landing';
+import { needsOrderRoll, rankByRolls, waitingOn } from './order';
 import { rollDie, shuffle, type Rng } from './rng';
 import type {
   Action,
@@ -42,6 +43,7 @@ import type {
   GameState,
   ManageOp,
   NewPlayer,
+  OrderRolls,
   Pending,
   PlayerState,
   Step,
@@ -51,7 +53,16 @@ import type {
 // Tạo ván
 // ---------------------------------------------------------------------------
 
-export function createGame(newPlayers: NewPlayer[], rng: Rng, stagedDiceCards = true): GameState {
+/**
+ * Tạo ván mới. `rollForOrder`: mọi người tự bấm đổ chọn thứ tự trước ván (giao diện hiện từng
+ * người); không thì máy tự đổ ngay cho tất cả (dùng cho mô phỏng và test).
+ */
+export function createGame(
+  newPlayers: NewPlayer[],
+  rng: Rng,
+  stagedDiceCards = true,
+  rollForOrder = false,
+): GameState {
   if (newPlayers.length < MIN_PLAYERS || newPlayers.length > MAX_PLAYERS) {
     throw new RuleError(`Cần ${MIN_PLAYERS}–${MAX_PLAYERS} người chơi`);
   }
@@ -100,6 +111,11 @@ export function createGame(newPlayers: NewPlayer[], rng: Rng, stagedDiceCards = 
     events: [],
     loserId: null,
   };
+
+  if (rollForOrder) {
+    s.pending = { type: 'order', rolls: {} };
+    return s;
+  }
 
   // Mỗi người đổ 2 viên, cao nhất đi trước; bằng nhau thì những người bằng nhau đổ lại.
   let candidates = s.players.map((_, i) => i);
@@ -253,6 +269,7 @@ function enterStep(s: GameState, step: Step, rng: Rng): boolean {
     case 'jailRelease':
     case 'roll':
     case 'jail':
+    case 'order':
       s.pending = step;
       return true;
     case 'ended':
@@ -316,8 +333,40 @@ function expectPending<T extends Pending['type']>(
   return pd as Extract<Pending, { type: T }>;
 }
 
+/** Đã đủ thứ tự: xếp người chơi theo điểm đổ (cao đi trước) rồi bắt đầu lượt đầu tiên. */
+function finishOrder(s: GameState, rolls: OrderRolls) {
+  const order = rankByRolls(
+    rolls,
+    s.players.map((p) => p.id),
+  );
+  s.players = order.map((id) => getPlayer(s, id));
+  s.current = 0;
+  s.events.push({ type: 'order', order, rolls });
+  const total = (id: string) => rolls[id]!.map(([a, b]) => a + b).join('/');
+  addLog(s, order[0]!, `Thứ tự: ${s.players.map((p) => `${p.name} ${total(p.id)}`).join(' → ')}`);
+  startTurn(s);
+}
+
+/** Một người đổ chọn thứ tự; người cuối cùng đổ xong thì vào ván. */
+function orderRoll(s: GameState, playerId: string, rng: Rng) {
+  const pd = s.pending;
+  if (pd.type !== 'order') throw new RuleError('Đã chọn xong thứ tự');
+  getPlayer(s, playerId);
+  const ids = s.players.map((p) => p.id);
+  if (!needsOrderRoll(pd.rolls, playerId, ids)) {
+    throw new RuleError('Bạn đã đổ xong, chờ người khác');
+  }
+  const dice: [number, number] = [rollDie(rng), rollDie(rng)];
+  pd.rolls[playerId] = [...(pd.rolls[playerId] ?? []), dice];
+  s.events.push({ type: 'orderRoll', playerId, dice });
+  addLog(s, playerId, `Đổ chọn lượt: ${dice[0] + dice[1]}`);
+  if (ids.every((id) => !needsOrderRoll(pd.rolls, id, ids))) finishOrder(s, pd.rolls);
+}
+
 function handle(s: GameState, a: Action, rng: Rng): void {
   switch (a.type) {
+    case 'orderRoll':
+      return orderRoll(s, a.playerId, rng);
     case 'roll': {
       const pd = expectPending(s, a.playerId, 'roll', 'jail');
       return pd.type === 'roll' ? doRoll(s, rng) : doJailRoll(s, rng);
@@ -541,6 +590,7 @@ function handle(s: GameState, a: Action, rng: Rng): void {
     case 'surrender': {
       const p = getPlayer(s, a.playerId);
       if (p.status !== 'active') throw new RuleError('Bạn không còn trong ván');
+      if (s.pending.type === 'order') throw new RuleError('Chờ đổ xong thứ tự đã');
       // Đang có khoản bắt buộc chờ (của bất kỳ ai) thì mọi thao tác khác bị khóa.
       const owes = (x: Step) => x.type === 'pay' && x.playerId === p.id;
       if (s.pending.type === 'pay' || s.pending.type === 'jailRelease' || s.queue.some(owes)) {
@@ -802,6 +852,11 @@ function autoLiquidate(s: GameState, p: PlayerState, target: number) {
 function timeout(s: GameState, rng: Rng): void {
   const pd = s.pending;
   switch (pd.type) {
+    case 'order': {
+      // Đổ hộ mọi người còn thiếu cho tới khi đủ thứ tự.
+      while (s.pending.type === 'order') orderRoll(s, waitingOn(s)[0]!, rng);
+      return;
+    }
     case 'roll':
       return handle(s, { type: 'roll', playerId: pd.playerId }, rng);
     case 'jail':

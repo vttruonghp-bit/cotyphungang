@@ -42,6 +42,9 @@ export function autoplay(s: GameState, steps: number, seed: number): GameState {
     const me = s.players.find((p) => p.id === id)!;
     let a: Action;
     switch (pd.type) {
+      case 'order':
+        a = { type: 'timeout' };
+        break;
       case 'roll':
       case 'jail':
         a = { type: 'roll', playerId: id };

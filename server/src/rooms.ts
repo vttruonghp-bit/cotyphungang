@@ -23,6 +23,7 @@ import {
   type RoomPhase,
   type SeatRole,
   type SeatTicket,
+  waitingOn,
 } from '@cotiphu/shared';
 import { playAction, playBot, playForSeat, startGame } from './game-room';
 import { done, fail, ok, type Result } from './result';
@@ -352,9 +353,9 @@ export class Rooms {
 
   /** Bot đang tới lượt (ván đang chờ bot), null nếu không có. */
   botToMove(room: Room): SeatRecord | null {
-    const pending = room.phase === 'playing' ? room.game?.pending : undefined;
-    if (!pending || pending.type === 'ended') return null;
-    return room.seats.find((s) => s.bot && s.id === pending.playerId) ?? null;
+    if (room.phase !== 'playing' || !room.game) return null;
+    const waiting = waitingOn(room.game);
+    return room.seats.find((s) => s.bot && waiting.includes(s.id)) ?? null;
   }
 
   /** Cho bot đang tới lượt đi một thao tác. */
@@ -388,10 +389,9 @@ export class Rooms {
         changed = true;
       }
     }
-    const pending = room.game.pending;
-    const waitingId = 'playerId' in pending ? pending.playerId : null;
-    const waiting = waitingId === null ? undefined : room.seats.find((s) => s.id === waitingId);
-    if (waiting?.auto && playForSeat(room, waiting, rng).ok) changed = true;
+    const waitingIds = waitingOn(room.game);
+    const waiting = room.seats.find((s) => s.auto && waitingIds.includes(s.id));
+    if (waiting && playForSeat(room, waiting, rng).ok) changed = true;
     if (changed) this.touch(room);
     return changed;
   }

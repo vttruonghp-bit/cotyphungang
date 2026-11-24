@@ -103,6 +103,8 @@ export function TurnLine({ game, who }: { game: GameState; who?: SheetProps['who
   const text = shown ? who!.text : `Lượt ${cur.name}`;
   const me = playerById(game, meId);
   const curColor = colorOf(cur.color).main;
+  if (game.pending.type === 'order')
+    return <span className="app-turn">Đổ xúc xắc chọn thứ tự</span>;
   if (!me || me.id === cur.id) {
     const mine = me && !shown;
     return (

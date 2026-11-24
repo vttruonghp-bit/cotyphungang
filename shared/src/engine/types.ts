@@ -46,8 +46,16 @@ export interface Creditor {
 export type PayReason =
   'rent' | 'tax' | 'card' | 'jailBail' | 'purchase' | 'upgrade' | 'fortuneMirror' | 'swapPenalty';
 
+/** Các lần đổ chọn thứ tự của mỗi người (bằng điểm với ai thì đổ thêm lần nữa). */
+export type OrderRolls = Record<string, [number, number][]>;
+
 /** Việc ván đang chờ một người chơi làm. */
 export type Pending =
+  /**
+   * Trước ván: mỗi người tự đổ 2 xúc xắc chọn thứ tự, điểm cao đi trước; ai bằng điểm nhau thì
+   * đổ lại để phân thứ tự. Nhiều người đổ cùng lúc nên không có `playerId`.
+   */
+  | { type: 'order'; rolls: OrderRolls }
   /** Đầu lượt hoặc lượt thêm sau đổ đôi: nút Sục. */
   | { type: 'roll'; playerId: string }
   /** Đầu lượt khi đang ở tù: thử đổ đôi, trả 50Đ, hoặc dùng thẻ. */
@@ -151,7 +159,11 @@ export type GameEvent =
   | { type: 'jail'; playerId: string }
   | { type: 'card'; playerId: string; cardId: string; detail?: CardDetail }
   /** Thẻ Mở đường cao tốc: ô đã chọn, viên xúc xắc và ô đến. */
-  | { type: 'highway'; playerId: string; tile: number; die: number; to: number };
+  | { type: 'highway'; playerId: string; tile: number; die: number; to: number }
+  /** Đổ chọn thứ tự trước ván. */
+  | { type: 'orderRoll'; playerId: string; dice: [number, number] }
+  /** Đã đủ thứ tự: `order` là mã người chơi từ người đi trước, `rolls` là mọi lần đổ. */
+  | { type: 'order'; order: string[]; rolls: OrderRolls };
 
 export interface GameState {
   /** Interactive sessions defer dice-card effects until explicit confirmation. */
@@ -198,6 +210,8 @@ export type ManageOp =
   | { op: 'redeem'; tile: number };
 
 export type Action =
+  /** Đổ chọn thứ tự trước ván (mỗi người tự đổ phần mình). */
+  | { type: 'orderRoll'; playerId: string }
   | { type: 'roll'; playerId: string }
   | { type: 'drawCard'; playerId: string }
   | { type: 'endTurn'; playerId: string }

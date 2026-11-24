@@ -19,9 +19,7 @@ async function playing(n: number) {
     phones.push(p);
   }
   expect(await host.call('room:start')).toEqual({ ok: true });
-  const v = await server.settle(code, phones);
-  const first = v.game!.current;
-  const turn = phones.map((_, k) => phones[(first + k) % n]!);
+  const { view: v, turn } = await server.rollForOrder(code, phones);
   return { code, phones, turn, view: v };
 }
 

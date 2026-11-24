@@ -5,6 +5,7 @@
  */
 import { BOARD } from './board';
 import { redeemCost } from './finance';
+import { waitingOn } from './engine/order';
 import type { Action, GameState, ManageOp } from './engine/types';
 
 const owned = (s: GameState, playerId: string) =>
@@ -21,6 +22,10 @@ const spendReserve = (cash: number) => Math.max(100, Math.floor(cash * 0.22));
  */
 export function chooseBotAction(s: GameState, playerId: string): Action | null {
   const pending = s.pending;
+  if (pending.type === 'order') {
+    // Chọn thứ tự trước ván: đổ phần mình nếu còn phải đổ.
+    return waitingOn(s).includes(playerId) ? { type: 'orderRoll', playerId } : null;
+  }
   if (pending.type === 'ended' || pending.playerId !== playerId) return null;
   const p = s.players.find((x) => x.id === playerId);
   if (!p || p.status !== 'active') return null;
