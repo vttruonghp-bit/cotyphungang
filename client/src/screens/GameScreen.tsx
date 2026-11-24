@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { boughtOrBuilt, endTurnKey } from '../audio/cues';
 import {
+  isSpeaking,
+  playCoinSound,
   playDiceSound,
   playSpeech,
   setGameSoundEnabled,
@@ -31,6 +34,7 @@ import {
   tileName,
 } from '../game/format';
 import { debtorOf } from '../game/draft';
+import { AI_PLAYER_ID } from '../game/aiOpponent';
 import { HOT_SEAT, PlayModeContext, type PlayMode } from '../online/mode';
 import { AppearanceSheet } from '../sheets/AppearanceSheet';
 import { CardListPanel } from '../sheets/CardListPanel';
@@ -117,6 +121,9 @@ function speechFor(previous: GameState, game: GameState): SpeechLine | null {
   if (pd.reason === 'rent' && pd.creditors.some((c) => c.playerId !== null)) return 'rent';
   return null;
 }
+
+/** Chờ bao lâu sau khi quân dừng (và hiện nút Kết thúc) rồi mới nhắc "Kết thúc đi ạ". */
+const END_TURN_NUDGE_MS = 1500;
 
 /** Người ván đang chờ (người phải bấm nút tiếp theo); khi ván kết thúc là người giữ lượt cuối. */
 function waitingPlayer(s: GameState): PlayerState {
@@ -240,6 +247,30 @@ export function GameScreen({
   const me = (online && playerById(game, online.meId)) || waiter;
   // Ván đang chờ người cầm máy này (chơi chung một máy thì luôn đúng).
   const myMove = !online || waiter.id === me.id;
+  // Mua đất, xây nhà: tiếng tiền rơi ngay lúc bấm (mọi máy trong ván đều nghe).
+  useEffect(() => {
+    if (boughtOrBuilt(previous, game)) playCoinSound();
+    // Chỉ xét khi có thao tác mới.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions]);
+
+  // "Kết thúc đi ạ": lượt đã xong mà chưa bấm Kết thúc thì nhắc người cầm máy, mỗi lượt một lần,
+  // sau khi quân dừng chân và câu thoại trước (nếu có) nói xong.
+  const nudgeKey = myMove && waiter.id !== AI_PLAYER_ID ? endTurnKey(game) : null;
+  const nudged = useRef<string | null>(null);
+  useEffect(() => {
+    if (nudgeKey === null || walking || nudged.current === nudgeKey) return;
+    let t = setTimeout(function tick() {
+      if (isSpeaking()) {
+        t = setTimeout(tick, 400);
+        return;
+      }
+      nudged.current = nudgeKey;
+      playSpeech('endTurn');
+    }, END_TURN_NUDGE_MS);
+    return () => clearTimeout(t);
+  }, [nudgeKey, walking]);
+
   const accent = colorOf(waiter.color);
   const meColor = colorOf(me.color);
   const pd = game.pending;

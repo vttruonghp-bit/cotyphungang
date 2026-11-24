@@ -9,14 +9,17 @@ const VOICE_VOLUME = 0.006;
 /** Nhạc nền lúc xúc xắc đang lăn. */
 const DUCKED_VOLUME = 0.002;
 const DICE_VOLUME = 1;
-const STEP_VOLUME = 0.8;
+/** Tiếng bước nhảy: nhỏ lại để không lấn câu thoại và nhạc nền. */
+const STEP_VOLUME = 0.3;
+/** Tiếng tiền rơi khi mua đất, xây nhà. */
+const COIN_VOLUME = 0.9;
 /** Mỗi bước 0,2 giây mà tiếng dài 0,6 giây: vài bản phát chồng lên nhau. */
 const STEP_POOL = 4;
 /** Câu thoại (không phải tiếng mic): to hơn nhạc nền để nghe rõ lời. */
 const SPEECH_VOLUME = 1;
 
 /** Câu thoại theo tình huống trong ván. */
-export type SpeechLine = 'jail' | 'rent' | 'tax';
+export type SpeechLine = 'jail' | 'rent' | 'tax' | 'endTurn';
 
 const SPEECH_SRC: Record<SpeechLine, string> = {
   /** Bị vào tù: "Vào tù là rõ". */
@@ -25,10 +28,13 @@ const SPEECH_SRC: Record<SpeechLine, string> = {
   rent: '/oi-thoi-chet.mp3',
   /** Dừng ở ô thuế, phải bấm "Là nó". */
   tax: '/la-no.mp3',
+  /** Xong lượt mà chưa bấm "Kết thúc": "Kết thúc đi ạ". */
+  endTurn: '/ket-thuc-di-a.mp3',
 };
 
 let background: HTMLAudioElement | null = null;
 let dice: HTMLAudioElement | null = null;
+let coins: HTMLAudioElement | null = null;
 const steps: HTMLAudioElement[] = [];
 const speeches = new Map<SpeechLine, HTMLAudioElement>();
 let nextStep = 0;
@@ -111,6 +117,7 @@ export function stopGameMusic(): void {
   active = false;
   background?.pause();
   dice?.pause();
+  coins?.pause();
   for (const sound of speeches.values()) sound.pause();
   restoreBackground();
 }
@@ -141,6 +148,24 @@ export function playStepSound(): void {
   void sound.play().catch(() => {});
 }
 
+/** Tiếng vài đồng xu rơi leng keng: có người vừa mua đất hoặc xây nhà. */
+export function playCoinSound(): void {
+  if (!active || !canPlay()) return;
+  if (!coins) {
+    coins = new Audio('/tien-roi.mp3');
+    coins.preload = 'auto';
+    coins.volume = COIN_VOLUME;
+  }
+  coins.currentTime = 0;
+  void coins.play().catch(() => {});
+}
+
+/** Đang có câu thoại phát dở (để câu nhắc chờ câu trước nói xong). */
+export function isSpeaking(): boolean {
+  for (const sound of speeches.values()) if (playing(sound)) return true;
+  return false;
+}
+
 /**
  * Câu thoại cho tình huống vừa xảy ra. Chỉ một câu phát cùng lúc, nhạc nền nhỏ lại trong lúc nói.
  */
@@ -164,6 +189,7 @@ export function setGameSoundEnabled(enabled: boolean): void {
     background?.pause();
     dice?.pause();
     for (const a of steps) a.pause();
+    coins?.pause();
     for (const sound of speeches.values()) sound.pause();
     restoreBackground();
   }
