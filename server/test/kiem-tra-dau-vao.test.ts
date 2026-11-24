@@ -32,13 +32,13 @@ describe('tên người chơi', () => {
   });
 
   it('hồ sơ chỉ giữ tên, màu, biểu tượng', () => {
-    expect(parseProfile({ name: 'An', color: 7, icon: 19, isHost: true })).toEqual({
+    expect(parseProfile({ name: 'An', color: 9, icon: 30, isHost: true })).toEqual({
       ok: true,
-      value: { name: 'An', color: 7, icon: 19 },
+      value: { name: 'An', color: 9, icon: 30 },
     });
     expect(error(parseProfile({ name: 'An', color: 1.5, icon: 0 }))).toBe('Màu không hợp lệ');
     expect(error(parseProfile({ name: 'An', color: NaN, icon: 0 }))).toBe('Màu không hợp lệ');
-    expect(error(parseProfile({ name: 'An', color: 0, icon: 20 }))).toBe('Biểu tượng không hợp lệ');
+    expect(error(parseProfile({ name: 'An', color: 0, icon: 31 }))).toBe('Biểu tượng không hợp lệ');
     expect(error(parseProfile('An'))).toBe('Thiếu tên, màu hoặc biểu tượng');
   });
 });

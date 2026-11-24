@@ -109,7 +109,7 @@ describe('thao tác trong ván', () => {
       [{ type: 'metro', playerId: a.id, destination: 99 }, 'Ô đích Metro không hợp lệ'],
       [{ type: 'metro', playerId: a.id }, 'Ô đích Metro không hợp lệ'],
       [{ type: 'chooseTile', playerId: a.id, tile: 1.5 }, 'Không chọn được ô này'],
-      [{ type: 'changeAppearance', playerId: a.id, color: 9, icon: 0 }, 'Màu không hợp lệ'],
+      [{ type: 'changeAppearance', playerId: a.id, color: 10, icon: 0 }, 'Màu không hợp lệ'],
       [{ type: 'changeAppearance', playerId: a.id, color: 5, icon: -2 }, 'Biểu tượng không hợp lệ'],
     ];
     for (const [action, error] of cases) {

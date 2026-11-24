@@ -374,9 +374,9 @@ describe('dữ liệu sai không làm hỏng máy chủ', () => {
       [{ profile: profile('   ', 0, 0) }, 'Hãy nhập tên'],
       [{ profile: profile('Nguyễn Văn Bình', 0, 0) }, 'Tên dài tối đa 12 kí tự'],
       [{ profile: { name: 42, color: 0, icon: 0 } }, 'Tên không hợp lệ'],
-      [{ profile: profile('A', 8, 0) }, 'Màu không hợp lệ'],
+      [{ profile: profile('A', 10, 0) }, 'Màu không hợp lệ'],
       [{ profile: profile('A', -1, 0) }, 'Màu không hợp lệ'],
-      [{ profile: profile('A', 0, 20) }, 'Biểu tượng không hợp lệ'],
+      [{ profile: profile('A', 0, 31) }, 'Biểu tượng không hợp lệ'],
       [{ profile: { name: 'A', color: 0, icon: '1' } }, 'Biểu tượng không hợp lệ'],
     ];
     for (const [req, error] of cases) {

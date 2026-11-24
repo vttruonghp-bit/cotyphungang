@@ -19,7 +19,7 @@ interface IconPickerProps extends Appearance {
 export const buttonColor = (color: number) =>
   `color-mix(in srgb, ${colorOf(color).main} 72%, var(--navy))`;
 
-/** Bảng Đen vl (luật §12): một dòng 8 màu, bên dưới 20 kí hiệu vẽ theo màu đang chọn. */
+/** Bảng Đen vl (luật §12): 10 màu (8 trơn, 2 chuyển sắc), bên dưới 31 kí hiệu vẽ theo màu đang chọn. */
 export function IconPicker({ color, icon, takenColors, takenIcons, onChange }: IconPickerProps) {
   const c = colorOf(color);
   return (
@@ -42,7 +42,7 @@ export function IconPicker({ color, icon, takenColors, takenIcons, onChange }: I
               disabled={taken}
               onClick={() => onChange({ color: i, icon })}
             >
-              <span style={{ background: pc.main }} />
+              <span style={{ background: pc.paint }} />
             </button>
           );
         })}

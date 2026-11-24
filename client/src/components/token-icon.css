@@ -12,6 +12,14 @@
   box-sizing: border-box;
 }
 
+/* Màu chuyển sắc: viền tô bằng dải màu (hình bên trong tô bằng gradient SVG trong TokenIcon). */
+.token-multi {
+  border-color: transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--paint) border-box;
+}
+
 .token-blink {
   animation: token-blink 1.1s ease-in-out infinite;
 }

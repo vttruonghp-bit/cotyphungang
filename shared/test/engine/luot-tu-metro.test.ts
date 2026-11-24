@@ -148,22 +148,22 @@ describe('tạo ván: kiểm tra người chơi (mục 1)', () => {
     expect(() => createGame(ps, seededRng(1))).toThrow();
   });
 
-  it('màu phải là 1 trong 8 màu (0–7, số nguyên)', () => {
-    for (const color of [-1, 8, 1.5, Number.NaN]) {
+  it('màu phải là 1 trong 10 màu (0–9, số nguyên)', () => {
+    for (const color of [-1, 10, 1.5, Number.NaN]) {
       const ps = [{ ...PLAYERS[0]!, color }, PLAYERS[1]!];
       expect(() => createGame(ps, seededRng(1)), `màu ${color}`).toThrow();
     }
-    const ok = [{ ...PLAYERS[0]!, color: 7 }, PLAYERS[1]!];
-    expect(createGame(ok, seededRng(1)).players[0]!.color).toBe(7);
+    const ok = [{ ...PLAYERS[0]!, color: 9 }, PLAYERS[1]!];
+    expect(createGame(ok, seededRng(1)).players[0]!.color).toBe(9);
   });
 
-  it('biểu tượng phải là 1 trong 20 biểu tượng (0–19, số nguyên)', () => {
-    for (const icon of [-1, 20, 2.5, Number.NaN]) {
+  it('biểu tượng phải là 1 trong 31 biểu tượng (0–30, số nguyên)', () => {
+    for (const icon of [-1, 31, 2.5, Number.NaN]) {
       const ps = [{ ...PLAYERS[0]!, icon }, PLAYERS[1]!];
       expect(() => createGame(ps, seededRng(1)), `biểu tượng ${icon}`).toThrow();
     }
-    const ok = [{ ...PLAYERS[0]!, icon: 19 }, PLAYERS[1]!];
-    expect(createGame(ok, seededRng(1)).players[0]!.icon).toBe(19);
+    const ok = [{ ...PLAYERS[0]!, icon: 30 }, PLAYERS[1]!];
+    expect(createGame(ok, seededRng(1)).players[0]!.icon).toBe(30);
   });
 
   it('mỗi người bắt đầu với 500Đ ở ô 00, không ở tù, không giữ thẻ', () => {
@@ -1082,9 +1082,9 @@ describe('đổi màu và biểu tượng (mục 1, 12)', () => {
 
   it('màu/biểu tượng ngoài phạm vi bị từ chối', () => {
     const s = newGame();
-    reject(s, { type: 'changeAppearance', playerId: 'a', color: 8, icon: 12 });
+    reject(s, { type: 'changeAppearance', playerId: 'a', color: 10, icon: 12 });
     reject(s, { type: 'changeAppearance', playerId: 'a', color: -1, icon: 12 });
-    reject(s, { type: 'changeAppearance', playerId: 'a', color: 7, icon: 20 });
+    reject(s, { type: 'changeAppearance', playerId: 'a', color: 7, icon: 31 });
     reject(s, { type: 'changeAppearance', playerId: 'a', color: 7, icon: 1.5 });
   });
 

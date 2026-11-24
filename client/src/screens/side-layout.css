@@ -251,15 +251,19 @@
   gap: 1px;
   min-width: 0;
   padding: 3px 6px;
-  border: 2px solid var(--pc);
+  /* Viền tô bằng --pc-paint (màu chuyển sắc thì viền là dải màu). */
+  --pcard-bg: color-mix(in srgb, var(--pc) 22%, white);
+  border: 2px solid transparent;
   border-radius: 9px;
-  background: color-mix(in srgb, var(--pc) 22%, white);
+  background:
+    linear-gradient(var(--pcard-bg), var(--pcard-bg)) padding-box,
+    var(--pc-paint, linear-gradient(var(--pc), var(--pc))) border-box;
   color: #172033;
   font-size: clamp(10px, 2.9cqh, 13px);
   line-height: 1.25;
 }
 .pcard.is-turn {
-  background: color-mix(in srgb, var(--pc) 42%, white);
+  --pcard-bg: color-mix(in srgb, var(--pc) 42%, white);
   box-shadow:
     0 0 10px 2px color-mix(in srgb, var(--pc) 70%, transparent),
     inset 0 0 0 1px rgb(255 255 255 / 70%);
